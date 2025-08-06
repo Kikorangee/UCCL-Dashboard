@@ -104,6 +104,27 @@
       margin-bottom: 15px;
     }
 
+    .form-control[type="file"] {
+      padding: 10px;
+      border: 2px dashed #e2e8f0;
+      background: #f8f9fa;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .form-control[type="file"]:hover {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+
+    .form-control[type="file"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      background: #ffffff;
+    }
+
     .form-control {
       width: 100%;
       padding: 12px 16px;
@@ -455,6 +476,32 @@
       <div id="apiResult"></div>
     </div>
 
+    <!-- UCCL Maintenance Data Import -->
+    <div class="card special-section">
+      <h3 class="card-title">
+        <span class="icon">📁</span>
+        Import UCCL Maintenance Data
+      </h3>
+      
+      <div class="instructions">
+        <strong>📝 Instructions:</strong><br>
+        1. Select your UCCL maintenance CSV file<br>
+        2. Click "Import & Parse Data" to load vehicle information<br>
+        3. Use the cross-reference tools below to match with Geotab data
+      </div>
+
+      <div class="form-group">
+        <div class="form-row">
+          <input id="csvFileInput" name="csvFileInput" type="file" class="form-control" accept=".csv,.txt" autocomplete="off">
+          <button id="importCsvButton" name="importCsvButton" class="btn btn-primary">
+            <span class="icon">📊</span>
+            Import & Parse Data
+          </button>
+        </div>
+        <div id="importStatus"></div>
+      </div>
+    </div>
+
     <!-- UCCL Maintenance Cross-Reference -->
     <div class="card special-section">
       <h3 class="card-title">
@@ -462,11 +509,11 @@
         UCCL Maintenance Cross-Reference
       </h3>
       
-      <div class="alert alert-success">
-        <span class="icon">📊</span>
+      <div id="dataStatus" class="alert alert-warning">
+        <span class="icon">⚠️</span>
         <div>
-          <strong>Maintenance Data Loaded: 178 vehicles found</strong><br>
-          <small>Fleet numbers: 1-4 (trailers), 445-499 (vehicles), 500+ (larger fleet)</small>
+          <strong>No maintenance data loaded</strong><br>
+          <small>Please import your CSV file first using the section above</small>
         </div>
       </div>
 
@@ -1010,10 +1057,114 @@
     // CSV download button event
     document.getElementById('downloadCsv').onclick = downloadCSV;
 
-    // UCCL Maintenance Cross-Reference Data (from uploaded CSV)
-    const maintenanceData = [
-      {fleetNumber: 1, regPlate: "589AT", vehicle: "Transport Trailers 4A 2002", driver: "Bulky Trailer (Nick)", kmReading: "6,428"},
-      {fleetNumber: 4, regPlate: "E560P", vehicle: "Transfleet 4TDH-27 2004", driver: "Bulky Trailer (Heta)", kmReading: "236,150"},
+    // UCCL Maintenance Cross-Reference Data (will be loaded from imported CSV)
+    let maintenanceData = [];
+    let maintenanceDataLoaded = false;
+
+    // CSV File Import functionality
+    document.getElementById('importCsvButton').onclick = async function() {
+      const fileInput = document.getElementById('csvFileInput');
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        showMessage('importStatus', 'Please select a CSV file first', 'error');
+        return;
+      }
+      
+      if (!file.name.toLowerCase().endsWith('.csv')) {
+        showMessage('importStatus', 'Please select a valid CSV file', 'error');
+        return;
+      }
+      
+      try {
+        showMessage('importStatus', 'Reading and parsing CSV file...', 'warning');
+        
+        // Read file content
+        const fileContent = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = (e) => reject(new Error('Failed to read file'));
+          reader.readAsText(file);
+        });
+        
+        // Import Papa Parse dynamically
+        if (!window.Papa) {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js';
+          document.head.appendChild(script);
+          
+          await new Promise((resolve, reject) => {
+            script.onload = resolve;
+            script.onerror = reject;
+          });
+        }
+        
+        // Parse CSV
+        const parsedData = Papa.parse(fileContent, {
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          delimitersToGuess: [',', '\t', '|', ';']
+        });
+        
+        if (parsedData.errors && parsedData.errors.length > 0) {
+          console.warn('CSV parsing warnings:', parsedData.errors);
+        }
+        
+        // Clean and structure the data
+        maintenanceData = parsedData.data.slice(1).filter(row => {
+          // Filter rows that have a fleet number (using column _2 based on your CSV structure)
+          return row['_2'] && row['_2'] !== null && row['_2'] !== '';
+        }).map(row => {
+          // Clean and parse the maintenance record
+          const kmReading = row['_6'] ? row['_6'].toString().replace(/[,\s]/g, '') : '0';
+          const serviceDue = row['SERVICE  '] ? row['SERVICE  '].toString().replace(/[,\s]/g, '') : null;
+          
+          return {
+            fleetNumber: row['_2'],
+            regPlate: row['_3'] ? row['_3'].toString().trim() : '',
+            vehicle: row['_1'] ? row['_1'].toString().trim() : '',
+            driver: row[' '] ? row[' '].toString().trim() : '',
+            kmReading: kmReading,
+            serviceDue: serviceDue,
+            wofDue: row['WOF/COF'] ? row['WOF/COF'].toString().trim() : '',
+            location: row['_9'] ? row['_9'].toString().trim() : '',
+            regoCost: row['REGO'] ? row['REGO'].toString().trim() : '',
+            regoExpiry: row['_5'] ? row['_5'].toString().trim() : '',
+            huboPaidTo: row[' ROAD USER (RUC) '] ? row[' ROAD USER (RUC) '].toString().trim() : '',
+            huboReading: row['_7'] ? row['_7'].toString().replace(/[,\s]/g, '').trim() : '',
+            readingDate: row['_8'] ? row['_8'].toString().trim() : '',
+            kmsRemaining: row['_10'] ? row['_10'].toString().replace(/[,\s]/g, '').trim() : ''
+          };
+        });
+        
+        maintenanceDataLoaded = true;
+        
+        // Update UI to show success
+        showMessage('importStatus', `✅ Successfully imported ${maintenanceData.length} vehicle records!`, 'success');
+        
+        // Update the data status section
+        document.getElementById('dataStatus').innerHTML = `
+          <span class="icon">✅</span>
+          <div>
+            <strong>Maintenance Data Loaded: ${maintenanceData.length} vehicles found</strong><br>
+            <small>Fleet numbers range: ${Math.min(...maintenanceData.map(v => v.fleetNumber))} - ${Math.max(...maintenanceData.map(v => v.fleetNumber))}</small>
+          </div>
+        `;
+        document.getElementById('dataStatus').className = 'alert alert-success';
+        
+        // Show sample data
+        const sampleData = maintenanceData.slice(0, 3);
+        document.getElementById('importStatus').innerHTML += 
+          `<div class="result-container">Sample imported data:\n${JSON.stringify(sampleData, null, 2)}</div>`;
+        
+      } catch (error) {
+        console.error('Import error:', error);
+        showMessage('importStatus', `Failed to import CSV: ${error.message}`, 'error');
+        maintenanceData = [];
+        maintenanceDataLoaded = false;
+      }
+    };-27 2004", driver: "Bulky Trailer (Heta)", kmReading: "236,150"},
       {fleetNumber: 7, regPlate: "5578C", vehicle: "Morgan Lowloader 1996", driver: "Trailer", kmReading: "30,000"},
       {fleetNumber: 445, regPlate: "FDT602", vehicle: "Toyota Hiace 2009", kmReading: "339,229", serviceDue: "350,000"},
       {fleetNumber: 448, regPlate: "GUR891", vehicle: "Toyota Hiace 2013", kmReading: "261,683", serviceDue: "270,000"},
@@ -1029,6 +1180,11 @@
     document.getElementById('runCrossRef').onclick = async function() {
       if (!credentials) {
         showMessage('crossRefResult', 'Please authenticate first', 'error');
+        return;
+      }
+
+      if (!maintenanceDataLoaded || maintenanceData.length === 0) {
+        showMessage('crossRefResult', 'Please import your maintenance CSV file first', 'error');
         return;
       }
 
@@ -1079,6 +1235,14 @@
         if (result) {
           showMessage('crossRefResult', 'Cross-reference completed successfully!', 'success');
           document.getElementById('crossRefResult').innerHTML += `<div class="result-container">${JSON.stringify(result, null, 2)}</div>`;
+          
+          // Store result for CSV download
+          lastApiResult = {
+            method: 'CrossReference',
+            typeName: crossRefType,
+            data: result,
+            timestamp: new Date().toISOString()
+          };
         }
 
       } catch (error) {
@@ -1088,11 +1252,20 @@
 
     // Show maintenance summary
     document.getElementById('loadMaintenanceData').onclick = function() {
+      if (!maintenanceDataLoaded || maintenanceData.length === 0) {
+        showMessage('crossRefResult', 'Please import your maintenance CSV file first', 'error');
+        return;
+      }
+      
       const summary = {
         totalVehicles: maintenanceData.length,
-        sampleData: maintenanceData.slice(0, 5),
-        fleetNumbers: maintenanceData.map(v => v.fleetNumber),
-        avgKmReading: Math.round(maintenanceData.reduce((sum, v) => sum + parseInt(v.kmReading.replace(/,/g, '') || 0), 0) / maintenanceData.length)
+        sampleData: maintenanceData.slice(0, 10),
+        fleetNumbers: maintenanceData.map(v => v.fleetNumber).slice(0, 20),
+        avgKmReading: Math.round(maintenanceData.reduce((sum, v) => {
+          const km = parseInt(v.kmReading || 0);
+          return sum + (isNaN(km) ? 0 : km);
+        }, 0) / maintenanceData.length),
+        vehicleTypes: [...new Set(maintenanceData.map(v => v.vehicle.split(' ')[0]))].slice(0, 10)
       };
       
       showMessage('crossRefResult', `Maintenance data summary: ${summary.totalVehicles} vehicles loaded`, 'success');
@@ -1115,7 +1288,10 @@
         searchValue: fleetNumber,
         geotabDevices: devices,
         maintenanceRecord: maintenanceRecord,
-        matchFound: devices.length > 0
+        matchFound: devices.length > 0,
+        recommendation: devices.length > 0 && maintenanceRecord ? 
+          'Potential match found - verify device name matches fleet number' : 
+          'No match found - check fleet number or device naming convention'
       };
     }
 
@@ -1127,6 +1303,16 @@
         resultsLimit: 10
       });
       
+      // Also try searching by device name containing reg plate
+      if (devices.length === 0) {
+        const devicesByName = await callGeotabAPI('Get', {
+          typeName: 'Device',
+          search: { name: `%${regPlate}%` },
+          resultsLimit: 10
+        });
+        devices.push(...devicesByName);
+      }
+      
       const maintenanceRecord = maintenanceData.find(m => m.regPlate === regPlate);
       
       return {
@@ -1134,7 +1320,10 @@
         searchValue: regPlate,
         geotabDevices: devices,
         maintenanceRecord: maintenanceRecord,
-        matchFound: devices.length > 0
+        matchFound: devices.length > 0,
+        recommendation: devices.length > 0 && maintenanceRecord ? 
+          'Registration plate match found' : 
+          'No match found - check if VIN field is populated in Geotab'
       };
     }
 
@@ -1147,7 +1336,7 @@
       });
       
       const maintenanceRecords = maintenanceData.filter(m => 
-        m.vehicle.toLowerCase().includes(vehicleName.toLowerCase())
+        m.vehicle && m.vehicle.toLowerCase().includes(vehicleName.toLowerCase())
       );
       
       return {
@@ -1155,7 +1344,8 @@
         searchValue: vehicleName,
         geotabDevices: devices,
         maintenanceRecords: maintenanceRecords,
-        matchFound: devices.length > 0 || maintenanceRecords.length > 0
+        matchFound: devices.length > 0 || maintenanceRecords.length > 0,
+        recommendation: `Found ${devices.length} Geotab devices and ${maintenanceRecords.length} maintenance records`
       };
     }
 
@@ -1164,6 +1354,8 @@
       const yesterday = new Date(Date.now() - 24*60*60*1000).toISOString();
       const today = new Date().toISOString();
       
+      showMessage('crossRefResult', 'Getting recent odometer readings from Geotab...', 'warning');
+      
       const odometerData = await callGeotabAPI('Get', {
         typeName: 'StatusData',
         search: {
@@ -1171,52 +1363,92 @@
           fromDate: yesterday,
           toDate: today
         },
-        resultsLimit: 100
+        resultsLimit: 200
+      });
+      
+      // Get all devices for device name lookup
+      const devices = await callGeotabAPI('Get', {
+        typeName: 'Device',
+        resultsLimit: 300
+      });
+      
+      // Create device lookup map
+      const deviceMap = {};
+      devices.forEach(device => {
+        deviceMap[device.id] = device;
       });
       
       // Compare with maintenance data
       const comparison = maintenanceData.map(maint => {
-        const maintKm = parseInt(maint.kmReading.replace(/,/g, '') || 0);
+        const maintKm = parseInt(maint.kmReading || 0);
+        
+        // Try to find matching odometer reading
+        const matchingOdometer = odometerData.find(odo => {
+          const device = deviceMap[odo.device.id];
+          if (!device) return false;
+          
+          // Check if device name contains fleet number
+          return device.name.includes(maint.fleetNumber.toString()) ||
+                 device.vehicleIdentificationNumber === maint.regPlate ||
+                 device.name.toLowerCase().includes(maint.vehicle.toLowerCase().split(' ')[0]);
+        });
+        
+        const geotabKm = matchingOdometer ? Math.round(matchingOdometer.data) : 'No match';
+        const difference = (matchingOdometer && maintKm > 0) ? Math.abs(geotabKm - maintKm) : 'N/A';
+        
         return {
           fleetNumber: maint.fleetNumber,
           regPlate: maint.regPlate,
           vehicle: maint.vehicle,
           maintenanceKm: maintKm,
-          geotabOdometer: 'Pending lookup...',
-          difference: 'TBD'
+          geotabKm: geotabKm,
+          difference: difference,
+          status: matchingOdometer ? 'Matched' : 'No Geotab Match',
+          deviceName: matchingOdometer ? deviceMap[matchingOdometer.device.id].name : 'Not found'
         };
       });
       
       return {
         searchType: 'Odometer Sync',
-        odometerReadings: odometerData.length,
-        comparison: comparison.slice(0, 10), // Show first 10
-        maintenanceVehicles: maintenanceData.length
+        totalOdometerReadings: odometerData.length,
+        totalDevices: devices.length,
+        comparison: comparison,
+        summary: {
+          matched: comparison.filter(c => c.status === 'Matched').length,
+          unmatched: comparison.filter(c => c.status === 'No Geotab Match').length,
+          avgDifference: Math.round(comparison
+            .filter(c => typeof c.difference === 'number')
+            .reduce((sum, c) => sum + c.difference, 0) / 
+            comparison.filter(c => typeof c.difference === 'number').length || 0)
+        }
       };
     }
 
     async function generateFullCrossReference() {
       // Get all devices and try to match with maintenance data
+      showMessage('crossRefResult', 'Getting all Geotab devices...', 'warning');
+      
       const devices = await callGeotabAPI('Get', {
         typeName: 'Device',
-        resultsLimit: 200
+        resultsLimit: 300
       });
       
       const matched = [];
       const unmatched = [];
       
       maintenanceData.forEach(maint => {
-        const deviceMatch = devices.find(device => 
+        const deviceMatches = devices.filter(device => 
           device.name.includes(maint.fleetNumber.toString()) ||
-          device.vehicleIdentificationNumber === maint.regPlate ||
-          device.name.toLowerCase().includes(maint.vehicle.toLowerCase().split(' ')[0])
+          (device.vehicleIdentificationNumber && device.vehicleIdentificationNumber.includes(maint.regPlate)) ||
+          (maint.vehicle && device.name.toLowerCase().includes(maint.vehicle.toLowerCase().split(' ')[0]))
         );
         
-        if (deviceMatch) {
+        if (deviceMatches.length > 0) {
           matched.push({
             maintenanceRecord: maint,
-            geotabDevice: deviceMatch,
-            matchType: 'Auto-matched'
+            geotabDevices: deviceMatches,
+            matchType: deviceMatches.length > 1 ? 'Multiple matches' : 'Single match',
+            confidence: deviceMatches.some(d => d.name.includes(maint.fleetNumber.toString())) ? 'High' : 'Medium'
           });
         } else {
           unmatched.push(maint);
@@ -1225,11 +1457,17 @@
       
       return {
         searchType: 'Full Cross-Reference',
-        totalDevices: devices.length,
+        totalGeotabDevices: devices.length,
         totalMaintenanceRecords: maintenanceData.length,
         matched: matched,
         unmatched: unmatched,
-        matchRate: `${Math.round((matched.length / maintenanceData.length) * 100)}%`
+        matchRate: `${Math.round((matched.length / maintenanceData.length) * 100)}%`,
+        summary: {
+          highConfidence: matched.filter(m => m.confidence === 'High').length,
+          mediumConfidence: matched.filter(m => m.confidence === 'Medium').length,
+          multipleMatches: matched.filter(m => m.matchType === 'Multiple matches').length,
+          unmatchedVehicles: unmatched.length
+        }
       };
     }
 
