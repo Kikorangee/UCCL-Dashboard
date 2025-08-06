@@ -212,57 +212,101 @@
   <script>
     let lastApiResult = null;
     let isApiReady = false;
+    let initializationAttempts = 0;
+    const maxAttempts = 50; // 5 seconds total
 
     function showMessage(elementId, message, type = 'info') {
       const element = document.getElementById(elementId);
-      element.innerHTML = `<div class="${type}">${message}</div>`;
+      if (element) {
+        element.innerHTML = `<div class="${type}">${message}</div>`;
+      }
     }
 
-    // Wait for MyGeotab API to be ready
+    // Enhanced API detection for MyGeotab iframe environment
     function waitForAPI() {
       return new Promise((resolve) => {
-        if (typeof api !== 'undefined' && api.call) {
-          isApiReady = true;
-          resolve();
-        } else {
-          // Check every 100ms for API availability
-          const checkAPI = setInterval(() => {
-            if (typeof api !== 'undefined' && api.call) {
-              isApiReady = true;
-              clearInterval(checkAPI);
-              resolve();
-            }
-          }, 100);
+        const checkAPI = () => {
+          initializationAttempts++;
           
-          // Fallback after 10 seconds
-          setTimeout(() => {
-            clearInterval(checkAPI);
-            if (!isApiReady) {
-              console.warn('MyGeotab API not available after 10 seconds');
+          // Check multiple ways the API might be available
+          let apiObject = null;
+          
+          // Method 1: Direct global api
+          if (typeof api !== 'undefined' && api && api.call) {
+            apiObject = api;
+          }
+          // Method 2: Window.api
+          else if (typeof window.api !== 'undefined' && window.api && window.api.call) {
+            apiObject = window.api;
+          }
+          // Method 3: Parent window api (iframe context)
+          else if (window.parent && typeof window.parent.api !== 'undefined' && window.parent.api && window.parent.api.call) {
+            apiObject = window.parent.api;
+          }
+          // Method 4: Top window api
+          else if (window.top && typeof window.top.api !== 'undefined' && window.top.api && window.top.api.call) {
+            apiObject = window.top.api;
+          }
+
+          if (apiObject) {
+            // Make API globally available
+            if (typeof window.api === 'undefined') {
+              window.api = apiObject;
             }
-            resolve();
-          }, 10000);
-        }
+            if (typeof api === 'undefined') {
+              window.api = apiObject;
+            }
+            isApiReady = true;
+            console.log('MyGeotab API found and ready');
+            resolve(apiObject);
+            return;
+          }
+
+          // Continue checking if we haven't exceeded max attempts
+          if (initializationAttempts < maxAttempts) {
+            setTimeout(checkAPI, 100);
+          } else {
+            console.warn('MyGeotab API not found after maximum attempts');
+            resolve(null);
+          }
+        };
+
+        checkAPI();
       });
     }
 
-    // MyGeotab API call function - uses the global 'api' object
+    // MyGeotab API call function with enhanced error handling
     async function callMyGeotabAPI(method, params = {}) {
       if (!isApiReady) {
-        await waitForAPI();
+        const apiObject = await waitForAPI();
+        if (!apiObject) {
+          throw new Error('MyGeotab API is not available. Please ensure you are running this within MyGeotab.');
+        }
       }
       
-      if (typeof api === 'undefined' || !api.call) {
-        throw new Error('MyGeotab API is not available. Please ensure you are running this in MyGeotab.');
+      // Get the API object (handle different contexts)
+      let apiToUse = window.api || api;
+      if (!apiToUse && window.parent && window.parent.api) {
+        apiToUse = window.parent.api;
+      }
+      if (!apiToUse && window.top && window.top.api) {
+        apiToUse = window.top.api;
+      }
+
+      if (!apiToUse || !apiToUse.call) {
+        throw new Error('MyGeotab API call method is not available');
       }
 
       return new Promise((resolve, reject) => {
         try {
-          api.call(method, params, function(result) {
-            resolve(result);
-          }, function(error) {
-            reject(new Error(error.message || error.name || 'API call failed'));
-          });
+          apiToUse.call(method, params, 
+            function(result) {
+              resolve(result);
+            }, 
+            function(error) {
+              reject(new Error(error.message || error.name || JSON.stringify(error) || 'API call failed'));
+            }
+          );
         } catch (e) {
           reject(new Error('Failed to call MyGeotab API: ' + e.message));
         }
@@ -683,25 +727,65 @@
       }
     }
 
-    // Initialize the dashboard
+    // Initialize the dashboard with enhanced iframe support
     document.addEventListener('DOMContentLoaded', async function() {
       console.log('UCCL Dashboard loaded successfully');
       
-      // Wait for MyGeotab API to be ready
+      // Show loading status
+      showMessage('apiResult', '🔄 Initializing MyGeotab API connection...', 'warning');
+      
       try {
-        await waitForAPI();
-        if (isApiReady) {
+        // Wait for MyGeotab API to be ready
+        const apiObject = await waitForAPI();
+        
+        if (apiObject && isApiReady) {
           console.log('MyGeotab API is ready');
-          // Update UI to show API is connected
+          showMessage('apiResult', '✅ Connected to MyGeotab API successfully!', 'success');
+          
+          // Update status indicators
           const statusElements = document.querySelectorAll('.status-indicator');
-          statusElements.forEach(el => el.style.background = '#10b981'); // Green
+          statusElements.forEach(el => {
+            if (el) {
+              el.style.background = '#10b981'; // Green
+            }
+          });
+          
+          // Clear the API result after 3 seconds
+          setTimeout(() => {
+            const apiResultElement = document.getElementById('apiResult');
+            if (apiResultElement && apiResultElement.innerHTML.includes('Connected to MyGeotab API')) {
+              apiResultElement.innerHTML = '';
+            }
+          }, 3000);
+          
         } else {
-          console.warn('MyGeotab API not available - some features may not work');
-          showMessage('apiResult', '⚠️ MyGeotab API not detected. Some features may not work outside of MyGeotab.', 'warning');
+          console.warn('MyGeotab API not available');
+          showMessage('apiResult', 
+            '⚠️ MyGeotab API not detected. You may be viewing this outside of MyGeotab.<br>' +
+            'Some features may not work properly. For full functionality, access this through MyGeotab.', 
+            'warning'
+          );
+          
+          // Update status indicators to yellow
+          const statusElements = document.querySelectorAll('.status-indicator');
+          statusElements.forEach(el => {
+            if (el) {
+              el.style.background = '#f59e0b'; // Yellow/orange
+            }
+          });
         }
+        
       } catch (error) {
         console.error('Error initializing API:', error);
         showMessage('apiResult', '❌ Error initializing MyGeotab API: ' + error.message, 'error');
+        
+        // Update status indicators to red
+        const statusElements = document.querySelectorAll('.status-indicator');
+        statusElements.forEach(el => {
+          if (el) {
+            el.style.background = '#dc2626'; // Red
+          }
+        });
       }
     });
   </script>
