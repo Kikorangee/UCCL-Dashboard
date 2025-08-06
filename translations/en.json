@@ -1,0 +1,18 @@
+{
+  "name": "UCCL Fleet Dashboard",
+  "description": "Enhanced API Tool with 20+ Pre-built Calls",
+  "apiTesting": "API Testing",
+  "groupOdometer": "Group-Based Odometer Collection",
+  "quickExamples": "Quick API Examples",
+  "vehicleData": "Vehicle & Device Data",
+  "locationData": "Location & Trip Data",
+  "fuelData": "Fuel & Engine Data",
+  "userData": "Users & Groups",
+  "maintenance": "Maintenance & Reports",
+  "advanced": "Advanced Multi-Calls",
+  "instructions": "Instructions",
+  "connected": "Connected to MyGeotab",
+  "runApiCall": "Run API Call",
+  "downloadCsv": "Download CSV",
+  "getGroupOdometer": "Get Group Odometer Readings"
+}
