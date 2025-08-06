@@ -1,0 +1,16 @@
+{
+    "name": "UCCL Fleet Dashboard",
+    "supportEmail": "francis@directt.co.nz",
+    "version": "1.0.0",
+    "items": [
+        {
+            "url": "https://kikorangee.github.io/UCCL-Dashboard/main.html",
+            "path": "ActivityLink/",
+            "menuName": {
+                "en": "UCCL Dashboard"
+            },
+            "icon": "https://kikorangee.github.io/UCCL-Dashboard/icon.svg"
+        }
+    ],
+    "isSigned": false
+}
