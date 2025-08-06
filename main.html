@@ -1,587 +1,253 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>UCCL Fleet Dashboard</title>
-  <style>
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-      margin: 15px; 
-      background: #f8f9fa;
-    }
-    input, button, select, textarea { 
-      margin: 4px 0; 
-      padding: 8px; 
-      width: 100%; 
-      box-sizing: border-box; 
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    button { 
-      background: #2563eb; 
-      color: white; 
-      border: none; 
-      cursor: pointer; 
-      font-weight: 500;
-      transition: background-color 0.2s;
-    }
-    button:hover { background: #1d4ed8; }
-    .error { color: #dc2626; background: #fef2f2; padding: 10px; border-radius: 4px; margin: 8px 0; border-left: 4px solid #dc2626; }
-    .success { color: #059669; background: #f0fdf4; padding: 10px; border-radius: 4px; margin: 8px 0; border-left: 4px solid #059669; }
-    .warning { background: #fef3c7; color: #92400e; padding: 10px; border-radius: 4px; margin: 8px 0; border-left: 4px solid #f59e0b; }
-    .result { 
-      background: #fff; 
-      padding: 0; 
-      margin: 12px 0; 
-      border-radius: 8px; 
-      border: 1px solid #e5e7eb;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .result-header {
-      background: #f8fafc;
-      padding: 12px 16px;
-      border-bottom: 1px solid #e5e7eb;
-      font-weight: 600;
-      color: #374151;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .result-content {
-      padding: 16px;
-    }
-    .result-content pre {
-      background: #f9fafb;
-      padding: 12px;
-      border-radius: 4px;
-      border: 1px solid #e5e7eb;
-      max-height: 400px;
-      overflow-y: auto;
-      font-family: Monaco, Menlo, monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
-      margin: 0;
-    }
-    .section { 
-      background: white;
-      border: 1px solid #e5e7eb; 
-      padding: 20px; 
-      margin: 15px 0; 
-      border-radius: 8px; 
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    h2 { margin-top: 0; color: #1f2937; font-size: 24px; }
-    h3 { margin-top: 0; color: #374151; font-size: 18px; }
-    .example-grid { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-      gap: 10px; 
-      margin: 15px 0; 
-    }
-    .example-btn { 
-      padding: 10px 14px; 
-      background: #3b82f6; 
-      color: white; 
-      border: none; 
-      border-radius: 6px; 
-      cursor: pointer; 
-      font-size: 13px;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-    .example-btn:hover { 
-      background: #2563eb; 
-      transform: translateY(-1px);
-    }
-    .category { 
-      background: #f8fafc; 
-      padding: 15px; 
-      margin: 10px 0; 
-      border-radius: 6px; 
-      border: 1px solid #e2e8f0;
-    }
-    .category h4 { 
-      margin: 0 0 12px 0; 
-      color: #475569; 
-      font-size: 16px;
-    }
-    .header-info {
-      background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-      color: white;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    .status-indicator {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      background: #10b981;
-      border-radius: 50%;
-      margin-right: 8px;
-    }
-    .button-group {
-      display: flex;
-      gap: 8px;
-      margin: 8px 0;
-    }
-    .button-group button {
-      flex: 1;
-    }
-    .small-button {
-      width: auto !important;
-      padding: 8px 16px;
-      font-size: 12px;
-    }
-  </style>
-  <script>
-    geotab.addin.uccldashboard = () => {
-      let api, state;
-      let lastApiResult = null;
-
-      function showMessage(elementId, message, type = 'info') {
-        const element = document.getElementById(elementId);
-        if (element) {
-          element.innerHTML = `<div class="${type}">${message}</div>`;
+    <title>UCCL Fleet Dashboard</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5;
         }
-      }
-
-      function displayResult(result, method, typeName, containerId) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        const resultCount = Array.isArray(result) ? result.length : (result ? 1 : 0);
-        
-        const resultDiv = document.createElement('div');
-        resultDiv.className = 'result';
-        
-        const header = document.createElement('div');
-        header.className = 'result-header';
-        header.innerHTML = `
-          <div><strong>${method}</strong> ${typeName ? `• ${typeName}` : ''} <span style="color: #6b7280; font-weight: normal;">(${resultCount} items)</span></div>
-          <button onclick="removeResult(this.parentElement.parentElement)" style="background: #dc2626; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; width: auto;">✕ Remove</button>
-        `;
-        
-        const content = document.createElement('div');
-        content.className = 'result-content';
-        
-        const pre = document.createElement('pre');
-        pre.textContent = JSON.stringify(result, null, 2);
-        content.appendChild(pre);
-        
-        resultDiv.appendChild(header);
-        resultDiv.appendChild(content);
-        container.appendChild(resultDiv);
-        
-        resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-
-      function callMyGeotabAPI(method, params = {}) {
-        return new Promise((resolve, reject) => {
-          try {
-            api.call(method, params, 
-              function(result) {
-                resolve(result);
-              }, 
-              function(error) {
-                reject(new Error(error.message || error.name || 'API call failed'));
-              }
-            );
-          } catch (e) {
-            reject(new Error('Failed to call MyGeotab API: ' + e.message));
-          }
-        });
-      }
-
-      // Global functions for onclick handlers
-      window.removeResult = function(element) {
-        if (element) {
-          element.remove();
+        .section { 
+            background: white; 
+            padding: 20px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            border: 1px solid #ddd;
         }
-      };
-
-      window.clearAllResults = function(containerId) {
-        const container = document.getElementById(containerId);
-        if (container) {
-          container.querySelectorAll('.result').forEach(result => result.remove());
-          container.querySelectorAll('.success, .warning, .error').forEach(message => message.remove());
+        button { 
+            background: #2563eb; 
+            color: white; 
+            border: none; 
+            padding: 10px 15px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin: 5px;
         }
-      };
-
-      window.loadExample = function(type) {
-        const today = new Date().toISOString().split('T')[0];
-        const yesterday = new Date(Date.now() - 24*60*60*1000).toISOString().split('T')[0];
-        const lastWeek = new Date(Date.now() - 7*24*60*60*1000).toISOString().split('T')[0];
-        
-        const examples = {
-          'devices': { method: 'Get', typeName: 'Device', params: '{"resultsLimit": 50}' },
-          'device-status': { method: 'Get', typeName: 'DeviceStatusInfo', params: '{"resultsLimit": 20}' },
-          'device-odometer': { method: 'Get', typeName: 'StatusData', params: `{"search": {"diagnosticSearch": {"id": "DiagnosticOdometerId"}, "fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 10}` },
-          'devices-in-group': { method: 'Get', typeName: 'Device', params: '{"search": {"groups": [{"id": "GroupCompanyId"}]}, "resultsLimit": 10}' },
-          'device-info': { method: 'Get', typeName: 'Device', params: '{"search": {"id": "b1"}}' },
-          'gps-data': { method: 'Get', typeName: 'LogRecord', params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 100}` },
-          'trips': { method: 'Get', typeName: 'Trip', params: `{"search": {"fromDate": "${lastWeek}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 20}` },
-          'stops': { method: 'Get', typeName: 'Stop', params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 50}` },
-          'zones': { method: 'Get', typeName: 'Zone', params: '{"resultsLimit": 50}' },
-          'zone-stops': { method: 'Get', typeName: 'ZoneStop', params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 20}` },
-          'fuel-data': { method: 'Get', typeName: 'StatusData', params: `{"search": {"diagnosticSearch": {"id": "DiagnosticFuelLevelId"}, "fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 50}` },
-          'engine-data': { method: 'Get', typeName: 'StatusData', params: `{"search": {"diagnosticSearch": {"id": "DiagnosticIgnitionId"}, "fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 50}` },
-          'fault-data': { method: 'Get', typeName: 'FaultData', params: `{"search": {"fromDate": "${lastWeek}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 20}` },
-          'diagnostics': { method: 'Get', typeName: 'Diagnostic', params: '{"resultsLimit": 100}' },
-          'users': { method: 'Get', typeName: 'User', params: '{"search": {"name": "%"}}' },
-          'groups': { method: 'Get', typeName: 'Group', params: '{"search":{"name":"%"}}' },
-          'driver-changes': { method: 'Get', typeName: 'DriverChange', params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 50}` },
-          'user-details': { method: 'Get', typeName: 'User', params: '{"search": {"name": "francis@directt.co.nz"}}' },
-          'maintenance': { method: 'Get', typeName: 'MaintenanceReminder', params: '{"resultsLimit": 20}' },
-          'exceptions': { method: 'Get', typeName: 'ExceptionEvent', params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 20}` },
-          'dvir': { method: 'Get', typeName: 'DVIRLog', params: `{"search": {"fromDate": "${lastWeek}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 10}` },
-          'text-messages': { method: 'Get', typeName: 'TextMessage', params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 20}` },
-          'multi-odometer': { method: 'ExecuteMultiCall', typeName: '', params: `{"calls": [{"method": "Get", "params": {"typeName": "StatusData", "search": {"diagnosticSearch": {"id": "DiagnosticOdometerId"}, "deviceSearch": {"id": "b1"}, "fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 1}}, {"method": "Get", "params": {"typeName": "StatusData", "search": {"diagnosticSearch": {"id": "DiagnosticOdometerId"}, "deviceSearch": {"id": "b2"}, "fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 1}}]}` },
-          'multi-status': { method: 'ExecuteMultiCall', typeName: '', params: '{"calls": [{"method": "Get", "params": {"typeName": "Device", "resultsLimit": 5}}, {"method": "Get", "params": {"typeName": "User", "resultsLimit": 5}}, {"method": "Get", "params": {"typeName": "Zone", "resultsLimit": 5}}]}' },
-          'fleet-summary': { method: 'ExecuteMultiCall', typeName: '', params: `{"calls": [{"method": "Get", "params": {"typeName": "Device", "resultsLimit": 1000}}, {"method": "Get", "params": {"typeName": "Trip", "search": {"fromDate": "${today}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 1000}}, {"method": "Get", "params": {"typeName": "ExceptionEvent", "search": {"fromDate": "${today}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 100}}]}` }
-        };
-        
-        const example = examples[type];
-        if (example) {
-          document.getElementById('method').value = example.method;
-          document.getElementById('typeName').value = example.typeName;
-          document.getElementById('params').value = example.params;
+        button:hover { background: #1d4ed8; }
+        input, select, textarea { 
+            padding: 8px; 
+            margin: 5px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
         }
-      };
-
-      function downloadCSV() {
-        if (!lastApiResult) {
-          showMessage('apiResult', '⚠️ No data available for download. Run an API call first!', 'warning');
-          return;
+        .result { 
+            background: #f9f9f9; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 4px; 
+            border: 1px solid #ddd;
+            max-height: 400px;
+            overflow-y: auto;
         }
-        
-        let csvContent = '';
-        const data = lastApiResult.data;
-        
-        if (Array.isArray(data) && data.length > 0) {
-          const headers = Object.keys(data[0]);
-          csvContent = headers.map(h => `"${h}"`).join(',') + '\n';
-          
-          data.forEach(row => {
-            const values = headers.map(header => {
-              const value = row[header];
-              if (value === null || value === undefined) return '""';
-              if (typeof value === 'object') return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
-              return `"${String(value).replace(/"/g, '""')}"`;
-            });
-            csvContent += values.join(',') + '\n';
-          });
-        } else {
-          csvContent = `"Result"\n"${JSON.stringify(data)}"`;
-        }
-        
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
-        const filename = `UCCL_${lastApiResult.method}_${timestamp}.csv`;
-        
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        
-        if (link.download !== undefined) {
-          const url = URL.createObjectURL(blob);
-          link.setAttribute('href', url);
-          link.setAttribute('download', filename);
-          link.style.visibility = 'hidden';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          
-          showMessage('apiResult', `✅ CSV file "${filename}" downloaded successfully!`, 'success');
-        }
-      }
-
-      return {
-        initialize(apiParam, stateParam, callback) {
-          api = apiParam;
-          state = stateParam;
-          
-          // Set up event listeners
-          const runApiButton = document.getElementById('runApi');
-          if (runApiButton) {
-            runApiButton.addEventListener('click', async function() {
-              const method = document.getElementById('method').value;
-              const typeName = document.getElementById('typeName').value.trim();
-              let params = {};
-              
-              const paramsText = document.getElementById('params').value.trim();
-              if (paramsText) {
-                try {
-                  params = JSON.parse(paramsText);
-                } catch (e) {
-                  showMessage('apiResult', `❌ Invalid JSON: ${e.message}`, 'error');
-                  return;
-                }
-              }
-              
-              if (typeName && method !== 'ExecuteMultiCall') {
-                params.typeName = typeName;
-              }
-              
-              try {
-                showMessage('apiResult', '🔍 Making API call...', 'warning');
-                
-                const result = await callMyGeotabAPI(method, params);
-                
-                const resultCount = Array.isArray(result) ? result.length : (result ? 1 : 0);
-                showMessage('apiResult', `✅ Success! Found ${resultCount} result(s)`, 'success');
-                
-                displayResult(result, method, typeName, 'apiResult');
-                
-                lastApiResult = {
-                  method: method,
-                  typeName: typeName,
-                  data: result,
-                  timestamp: new Date().toISOString()
-                };
-                
-              } catch (error) {
-                showMessage('apiResult', `❌ API call failed: ${error.message}`, 'error');
-              }
-            });
-          }
-
-          const downloadCsvButton = document.getElementById('downloadCsv');
-          if (downloadCsvButton) {
-            downloadCsvButton.addEventListener('click', downloadCSV);
-          }
-
-          const runGroupOdometerButton = document.getElementById('runGroupOdometer');
-          if (runGroupOdometerButton) {
-            runGroupOdometerButton.addEventListener('click', async function() {
-              const groupId = document.getElementById('groupId').value.trim();
-              const diagnosticId = document.getElementById('diagnosticId').value.trim();
-
-              if (!groupId || !diagnosticId) {
-                showMessage('groupOdometerResult', '❌ Please enter both Group ID and Diagnostic ID', 'error');
-                return;
-              }
-
-              try {
-                showMessage('groupOdometerResult', '🔍 Getting devices from group...', 'warning');
-
-                const devices = await callMyGeotabAPI('Get', {
-                  typeName: 'Device',
-                  search: { groups: [{ id: groupId }] },
-                  resultsLimit: 1000
-                });
-
-                if (!devices || devices.length === 0) {
-                  showMessage('groupOdometerResult', '❌ No devices found in group. Check your Group ID.', 'error');
-                  return;
-                }
-
-                showMessage('groupOdometerResult', `✅ Found ${devices.length} devices. Building odometer calls...`, 'success');
-
-                const results = [];
-                const calls = [];
-                const now = new Date().toISOString();
-                const yesterday = new Date(Date.now() - 24*60*60*1000).toISOString();
-
-                devices.forEach(function(device) {
-                  results.push({
-                    deviceId: device.id,
-                    name: device.name,
-                    vehicleIdentificationNumber: device.vehicleIdentificationNumber || 'N/A',
-                    serialNumber: device.serialNumber || 'N/A',
-                    odometer: null,
-                    odometerDate: null,
-                    status: 'Pending'
-                  });
-
-                  calls.push({
-                    method: 'Get',
-                    params: {
-                      typeName: 'StatusData',
-                      search: {
-                        fromDate: yesterday,
-                        toDate: now,
-                        diagnosticSearch: { id: diagnosticId },
-                        deviceSearch: { id: device.id }
-                      },
-                      resultsLimit: 1
-                    }
-                  });
-                });
-
-                showMessage('groupOdometerResult', `🚀 Executing ${calls.length} odometer API calls...`, 'warning');
-
-                const callResults = await callMyGeotabAPI('ExecuteMultiCall', { calls: calls });
-
-                for (let i = 0; i < callResults.length; i++) {
-                  const statusData = callResults[i] && callResults[i][0];
-                  if (statusData && statusData.data !== undefined) {
-                    results[i].odometer = statusData.data;
-                    results[i].odometerDate = statusData.dateTime;
-                    results[i].status = statusData.data > 0 ? 'Success' : 'Zero Reading';
-                  } else {
-                    results[i].odometer = 'No data';
-                    results[i].status = 'No Data';
-                  }
-                }
-
-                const withData = results.filter(r => r.odometer && r.odometer !== 'No data' && r.odometer > 0).length;
-                const zeroReadings = results.filter(r => r.odometer === 0).length;
-                const noData = results.filter(r => r.odometer === 'No data').length;
-
-                showMessage('groupOdometerResult', 
-                  `✅ Group odometer collection complete!<br>
-                  📊 <strong>Summary:</strong><br>
-                  • Total vehicles: ${results.length}<br>
-                  • With odometer data: ${withData}<br>
-                  • Zero readings: ${zeroReadings}<br>
-                  • No data: ${noData}`, 'success');
-
-                displayResult(results, 'Group Odometer Collection', 'Summary', 'groupOdometerResult');
-
-                lastApiResult = {
-                  method: 'ExecuteMultiCall',
-                  typeName: 'GroupOdometer',
-                  data: callResults,
-                  timestamp: new Date().toISOString(),
-                  deviceMapping: results
-                };
-
-              } catch (error) {
-                showMessage('groupOdometerResult', `❌ Error: ${error.message}`, 'error');
-              }
-            });
-          }
-          
-          callback();
-        },
-        
-        focus(api, state) {
-          showMessage('apiResult', '✅ Connected to MyGeotab API successfully! All functions ready.', 'success');
-          setTimeout(() => {
-            const el = document.getElementById('apiResult');
-            if (el && el.innerHTML.includes('Connected to MyGeotab API successfully')) {
-              el.innerHTML = '';
-            }
-          }, 3000);
-        },
-        
-        blur(api, state) {
-          // Clean up if needed
-        }
-      };
-    };
-  </script>
+        .success { color: green; background: #e8f5e8; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .error { color: red; background: #ffe8e8; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .warning { color: orange; background: #fff3cd; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        pre { font-size: 12px; white-space: pre-wrap; }
+        .debug { background: #f0f8ff; border: 1px solid #ccc; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px; }
+    </style>
 </head>
 <body>
-  <div class="header-info">
-    <h2>🚀 UCCL Fleet Dashboard</h2>
-    <p><span class="status-indicator"></span>Connected to MyGeotab • Enhanced API Tool with 20+ Pre-built Calls</p>
-  </div>
-
-  <div class="section">
-    <h3>🔧 API Testing</h3>
+    <h1>🚀 UCCL Fleet Dashboard</h1>
     
-    <select id="method">
-      <option value="Get">Get</option>
-      <option value="Add">Add</option>
-      <option value="Set">Set</option>
-      <option value="Remove">Remove</option>
-      <option value="ExecuteMultiCall">ExecuteMultiCall</option>
-    </select>
-    
-    <input id="typeName" placeholder="typeName" value="User">
-    
-    <textarea id="params" placeholder='Parameters (JSON)' rows="6">{"search":{"name":"%"}}</textarea>
-    
-    <div class="button-group">
-      <button id="runApi" style="background: #059669;">🚀 Run API Call</button>
-      <button id="downloadCsv" style="background: #0891b2;">📊 Download CSV</button>
-      <button onclick="clearAllResults('apiResult')" class="small-button" style="background: #6b7280;">🗑️ Clear</button>
-    </div>
-    
-    <div id="apiResult"></div>
-  </div>
-
-  <div class="section">
-    <h3>🏢 Group-Based Odometer Collection</h3>
-    <div class="warning">
-      <strong>📝 Instructions:</strong><br>
-      1. First get your Group ID and Diagnostic ID using the examples below<br>
-      2. Enter them here and click "Get Group Odometer Readings"
-    </div>
-    <input id="groupId" placeholder="Group ID (e.g., GroupCompanyId)" value="GroupCompanyId">
-    <input id="diagnosticId" placeholder="Diagnostic ID (e.g., DiagnosticOdometerId)" value="DiagnosticOdometerAdjustmentId">
-    <div class="button-group">
-      <button id="runGroupOdometer" style="background: #059669;">🚗 Get Group Odometer Readings</button>
-      <button onclick="clearAllResults('groupOdometerResult')" class="small-button" style="background: #6b7280;">🗑️ Clear</button>
-    </div>
-    <div id="groupOdometerResult"></div>
-  </div>
-
-  <div class="section">
-    <h3>📋 Quick API Examples</h3>
-    
-    <div class="category">
-      <h4>🚗 Vehicle & Device Data</h4>
-      <div class="example-grid">
-        <button class="example-btn" onclick="loadExample('devices')">Get All Devices</button>
-        <button class="example-btn" onclick="loadExample('device-status')">Get Device Status</button>
-        <button class="example-btn" onclick="loadExample('device-odometer')">Get Device Odometer</button>
-        <button class="example-btn" onclick="loadExample('devices-in-group')">Get Devices in Group</button>
-        <button class="example-btn" onclick="loadExample('device-info')">Get Device Details</button>
-      </div>
+    <div class="section">
+        <h3>🔍 Environment Detection</h3>
+        <div id="debugInfo" class="debug">Checking MyGeotab environment...</div>
+        <button onclick="checkEnvironment()">🔄 Refresh Environment Check</button>
     </div>
 
-    <div class="category">
-      <h4>📍 Location & Trip Data</h4>
-      <div class="example-grid">
-        <button class="example-btn" onclick="loadExample('gps-data')">Get GPS Data</button>
-        <button class="example-btn" onclick="loadExample('trips')">Get Recent Trips</button>
-        <button class="example-btn" onclick="loadExample('stops')">Get Stops</button>
-        <button class="example-btn" onclick="loadExample('zones')">Get All Zones</button>
-        <button class="example-btn" onclick="loadExample('zone-stops')">Get Zone Stops</button>
-      </div>
+    <div class="section">
+        <h3>🧪 Basic Button Test</h3>
+        <button onclick="testBasicButton()">Test Basic Button (No MyGeotab Required)</button>
+        <button id="testGeotabButton">Test MyGeotab Button (Requires MyGeotab)</button>
+        <div id="testResult"></div>
     </div>
 
-    <div class="category">
-      <h4>⛽ Fuel & Engine Data</h4>
-      <div class="example-grid">
-        <button class="example-btn" onclick="loadExample('fuel-data')">Get Fuel Data</button>
-        <button class="example-btn" onclick="loadExample('engine-data')">Get Engine Status</button>
-        <button class="example-btn" onclick="loadExample('fault-data')">Get Fault Data</button>
-        <button class="example-btn" onclick="loadExample('diagnostics')">Get All Diagnostics</button>
-      </div>
+    <div class="section">
+        <h3>🔧 API Testing</h3>
+        
+        <select id="method">
+            <option value="Get">Get</option>
+        </select>
+        
+        <input id="typeName" placeholder="typeName" value="User">
+        
+        <textarea id="params" placeholder="Parameters (JSON)" rows="4">{"search":{"name":"%"}}</textarea>
+        
+        <button id="runApi">🚀 Run API Call</button>
+        <button onclick="testDirectAPI()">🧪 Test Direct API</button>
+        
+        <div id="apiResult"></div>
     </div>
 
-    <div class="category">
-      <h4>👥 Users & Groups</h4>
-      <div class="example-grid">
-        <button class="example-btn" onclick="loadExample('users')">Get All Users</button>
-        <button class="example-btn" onclick="loadExample('groups')">Get All Groups</button>
-        <button class="example-btn" onclick="loadExample('diagnostics')">Get Odometer Diagnostics</button>
-        <button class="example-btn" onclick="loadExample('driver-changes')">Get Driver Changes</button>
-        <button class="example-btn" onclick="loadExample('user-details')">Get User Details</button>
-      </div>
-    </div>
+    <script>
+        // Global variables for API access
+        let myGeotabAPI = null;
+        let myGeotabState = null;
 
-    <div class="category">
-      <h4>🔧 Maintenance & Reports</h4>
-      <div class="example-grid">
-        <button class="example-btn" onclick="loadExample('maintenance')">Get Maintenance</button>
-        <button class="example-btn" onclick="loadExample('exceptions')">Get Exceptions</button>
-        <button class="example-btn" onclick="loadExample('dvir')">Get DVIR Logs</button>
-        <button class="example-btn" onclick="loadExample('text-messages')">Get Text Messages</button>
-      </div>
-    </div>
+        // Basic button test (no MyGeotab required)
+        function testBasicButton() {
+            document.getElementById('testResult').innerHTML = '<div class="success">✅ Basic button works! JavaScript is running properly.</div>';
+            console.log('Basic button test successful');
+        }
 
-    <div class="category">
-      <h4>⚡ Advanced Multi-Calls</h4>
-      <div class="example-grid">
-        <button class="example-btn" onclick="loadExample('multi-odometer')">Multi-Device Odometer</button>
-        <button class="example-btn" onclick="loadExample('multi-status')">Multi-Device Status</button>
-        <button class="example-btn" onclick="loadExample('fleet-summary')">Fleet Summary</button>
-      </div>
-    </div>
-  </div>
+        // Environment detection
+        function checkEnvironment() {
+            const debug = document.getElementById('debugInfo');
+            let info = '';
+            
+            info += 'Current URL: ' + window.location.href + '\n';
+            info += 'User Agent: ' + navigator.userAgent + '\n';
+            info += 'Window context: ' + (window !== window.parent ? 'iframe' : 'main window') + '\n';
+            info += 'Document ready state: ' + document.readyState + '\n';
+            info += 'Geotab object available: ' + (typeof geotab !== 'undefined') + '\n';
+            
+            if (typeof geotab !== 'undefined') {
+                info += 'Geotab.addin available: ' + (typeof geotab.addin !== 'undefined') + '\n';
+            }
+            
+            info += 'Current time: ' + new Date().toISOString() + '\n';
+            
+            debug.textContent = info;
+            console.log('Environment check:', info);
+        }
+
+        // Test direct API call
+        function testDirectAPI() {
+            const result = document.getElementById('apiResult');
+            
+            if (!myGeotabAPI) {
+                result.innerHTML = '<div class="error">❌ MyGeotab API not available. Add-in may not be properly loaded.</div>';
+                return;
+            }
+            
+            try {
+                result.innerHTML = '<div class="warning">🔍 Testing direct API call...</div>';
+                
+                myGeotabAPI.call('Get', {
+                    typeName: 'User',
+                    search: { name: '%' },
+                    resultsLimit: 5
+                }, 
+                function(data) {
+                    result.innerHTML = '<div class="success">✅ Direct API test successful! Found ' + data.length + ' users.</div>' +
+                                     '<div class="result"><pre>' + JSON.stringify(data, null, 2) + '</pre></div>';
+                },
+                function(error) {
+                    result.innerHTML = '<div class="error">❌ Direct API test failed: ' + (error.message || error.name) + '</div>';
+                });
+                
+            } catch (e) {
+                result.innerHTML = '<div class="error">❌ Exception in direct API test: ' + e.message + '</div>';
+            }
+        }
+
+        // Initialize environment check on load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, checking environment...');
+            checkEnvironment();
+            
+            // Set up basic button that doesn't require MyGeotab
+            const testGeotabBtn = document.getElementById('testGeotabButton');
+            if (testGeotabBtn) {
+                testGeotabBtn.addEventListener('click', function() {
+                    if (typeof geotab === 'undefined') {
+                        document.getElementById('testResult').innerHTML = '<div class="error">❌ MyGeotab framework not available</div>';
+                    } else {
+                        document.getElementById('testResult').innerHTML = '<div class="success">✅ MyGeotab framework is available!</div>';
+                    }
+                });
+            }
+        });
+
+        // MyGeotab Add-in (only if geotab is available)
+        if (typeof geotab !== 'undefined') {
+            console.log('Geotab framework detected, setting up add-in...');
+            
+            geotab.addin.uccldashboard = () => {
+                return {
+                    initialize(api, state, callback) {
+                        console.log('Add-in initializing with API:', !!api);
+                        myGeotabAPI = api;
+                        myGeotabState = state;
+                        
+                        // Set up API button
+                        setTimeout(() => {
+                            const runApiBtn = document.getElementById('runApi');
+                            if (runApiBtn) {
+                                runApiBtn.addEventListener('click', async function() {
+                                    const method = document.getElementById('method').value;
+                                    const typeName = document.getElementById('typeName').value.trim();
+                                    let params = {};
+                                    
+                                    const paramsText = document.getElementById('params').value.trim();
+                                    if (paramsText) {
+                                        try {
+                                            params = JSON.parse(paramsText);
+                                        } catch (e) {
+                                            document.getElementById('apiResult').innerHTML = '<div class="error">Invalid JSON: ' + e.message + '</div>';
+                                            return;
+                                        }
+                                    }
+                                    
+                                    if (typeName && method !== 'ExecuteMultiCall') {
+                                        params.typeName = typeName;
+                                    }
+                                    
+                                    try {
+                                        document.getElementById('apiResult').innerHTML = '<div class="warning">Making API call...</div>';
+                                        
+                                        api.call(method, params, 
+                                            function(result) {
+                                                const resultCount = Array.isArray(result) ? result.length : (result ? 1 : 0);
+                                                document.getElementById('apiResult').innerHTML = 
+                                                    '<div class="success">✅ Success! Found ' + resultCount + ' result(s)</div>' +
+                                                    '<div class="result"><pre>' + JSON.stringify(result, null, 2) + '</pre></div>';
+                                            }, 
+                                            function(error) {
+                                                document.getElementById('apiResult').innerHTML = '<div class="error">❌ API call failed: ' + (error.message || error.name) + '</div>';
+                                            }
+                                        );
+                                        
+                                    } catch (error) {
+                                        document.getElementById('apiResult').innerHTML = '<div class="error">❌ Exception: ' + error.message + '</div>';
+                                    }
+                                });
+                                console.log('API button listener added');
+                            }
+                        }, 100);
+                        
+                        callback();
+                    },
+                    
+                    focus(api, state) {
+                        console.log('Add-in focused');
+                        document.getElementById('debugInfo').textContent += '\n✅ Add-in focused successfully at ' + new Date().toISOString();
+                    },
+                    
+                    blur(api, state) {
+                        console.log('Add-in blurred');
+                    }
+                };
+            };
+        } else {
+            console.warn('Geotab framework not available - add-in will not function');
+            
+            // Show error after page loads
+            setTimeout(() => {
+                const debugDiv = document.getElementById('debugInfo');
+                if (debugDiv) {
+                    debugDiv.innerHTML = '<div class="error">❌ MyGeotab framework (geotab object) is not available.<br>' +
+                                       'This usually means:<br>' +
+                                       '• You\'re viewing this directly on GitHub Pages instead of through MyGeotab<br>' +
+                                       '• The add-in is not properly registered<br>' +
+                                       '• There\'s a configuration issue<br><br>' +
+                                       'Please access this through MyGeotab as a registered add-in.</div>';
+                }
+            }, 1000);
+        }
+    </script>
 </body>
 </html>
