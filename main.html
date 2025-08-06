@@ -32,16 +32,84 @@
     .success { color: #059669; background: #f0fdf4; padding: 10px; border-radius: 4px; margin: 8px 0; border-left: 4px solid #059669; }
     .warning { background: #fef3c7; color: #92400e; padding: 10px; border-radius: 4px; margin: 8px 0; border-left: 4px solid #f59e0b; }
     .result { 
-      white-space: pre-wrap; 
       background: #fff; 
-      padding: 12px; 
+      padding: 0; 
       margin: 8px 0; 
       border-radius: 6px; 
-      max-height: 400px; 
+      max-height: 600px; 
       overflow-y: auto; 
       border: 1px solid #e5e7eb;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .result-header {
+      background: #f8fafc;
+      padding: 12px 16px;
+      border-bottom: 1px solid #e5e7eb;
+      font-weight: 600;
+      color: #374151;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .result-content {
+      padding: 16px;
+    }
+    .result-json {
+      white-space: pre-wrap; 
       font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      background: #f9fafb;
+      padding: 12px;
+      border-radius: 4px;
+      border: 1px solid #e5e7eb;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
       font-size: 13px;
+    }
+    .result-table th {
+      background: #f8fafc;
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 2px solid #e5e7eb;
+      font-weight: 600;
+      color: #374151;
+      position: sticky;
+      top: 0;
+    }
+    .result-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: top;
+    }
+    .result-table tr:hover {
+      background: #f8fafc;
+    }
+    .result-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .result-controls button {
+      padding: 4px 8px;
+      font-size: 11px;
+      border: 1px solid #d1d5db;
+      background: white;
+      color: #374151;
+      border-radius: 4px;
+      cursor: pointer;
+      width: auto;
+      margin: 0;
+    }
+    .result-controls button:hover {
+      background: #f3f4f6;
+    }
+    .result-stats {
+      font-size: 12px;
+      color: #6b7280;
     }
     .section { 
       background: white;
@@ -139,8 +207,290 @@
         });
       }
 
+      // Enhanced result display function
+      function displayResult(result, method, typeName, containerId = 'apiResult') {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const resultCount = Array.isArray(result) ? result.length : (result ? 1 : 0);
+        const resultId = 'result_' + Date.now();
+        
+        // Create result container
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'result';
+        resultDiv.id = resultId;
+        
+        // Create header
+        const header = document.createElement('div');
+        header.className = 'result-header';
+        header.innerHTML = `
+          <div>
+            <strong>${method}</strong> ${typeName ? `• ${typeName}` : ''} 
+            <span class="result-stats">(${resultCount} items)</span>
+          </div>
+          <div class="result-controls">
+            <button onclick="toggleView('${resultId}', 'table')">📊 Table</button>
+            <button onclick="toggleView('${resultId}', 'json')">📝 JSON</button>
+            <button onclick="copyResult('${resultId}')">📋 Copy</button>
+            <button onclick="removeResult('${resultId}')">✕</button>
+          </div>
+        `;
+        
+        // Create content container
+        const content = document.createElement('div');
+        content.className = 'result-content';
+        
+        // Generate table view (default for arrays)
+        if (Array.isArray(result) && result.length > 0 && typeof result[0] === 'object') {
+          content.appendChild(createTableView(result));
+          content.appendChild(createJSONView(result, true)); // hidden initially
+        } else {
+          content.appendChild(createJSONView(result, false));
+        }
+        
+        resultDiv.appendChild(header);
+        resultDiv.appendChild(content);
+        container.appendChild(resultDiv);
+        
+        // Scroll to new result
+        resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      // Create table view for array data
+      function createTableView(data) {
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'table-view';
+        
+        if (!Array.isArray(data) || data.length === 0) {
+          tableContainer.innerHTML = '<p>No data to display in table format.</p>';
+          return tableContainer;
+        }
+        
+        // Get all unique keys from all objects
+        const allKeys = [...new Set(data.flatMap(obj => Object.keys(obj || {})))];
+        
+        // Limit columns for readability (show most important ones first)
+        const priorityKeys = ['id', 'name', 'deviceType', 'serialNumber', 'vehicleIdentificationNumber', 'licensePlate', 'comment'];
+        const importantKeys = allKeys.filter(key => priorityKeys.includes(key));
+        const otherKeys = allKeys.filter(key => !priorityKeys.includes(key)).slice(0, 5); // limit to 5 more
+        const displayKeys = [...importantKeys, ...otherKeys];
+        
+        const table = document.createElement('table');
+        table.className = 'result-table';
+        
+        // Create header
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        displayKeys.forEach(key => {
+          const th = document.createElement('th');
+          th.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+        
+        // Create body
+        const tbody = document.createElement('tbody');
+        data.slice(0, 100).forEach(item => { // Limit to 100 rows for performance
+          const row = document.createElement('tr');
+          displayKeys.forEach(key => {
+            const td = document.createElement('td');
+            const value = item[key];
+            if (value === null || value === undefined) {
+              td.textContent = '-';
+              td.style.color = '#9ca3af';
+            } else if (typeof value === 'object') {
+              td.textContent = JSON.stringify(value).substring(0, 50) + '...';
+              td.style.fontFamily = 'monospace';
+              td.style.fontSize = '11px';
+            } else {
+              td.textContent = String(value).substring(0, 100);
+            }
+            row.appendChild(td);
+          });
+          tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+        
+        if (data.length > 100) {
+          const notice = document.createElement('p');
+          notice.style.textAlign = 'center';
+          notice.style.color = '#6b7280';
+          notice.style.fontSize = '12px';
+          notice.style.margin = '8px 0';
+          notice.textContent = `Showing first 100 of ${data.length} items. Use JSON view to see all data.`;
+          tableContainer.appendChild(notice);
+        }
+        
+        tableContainer.appendChild(table);
+        return tableContainer;
+      }
+
+      // Create JSON view
+      function createJSONView(data, hidden = false) {
+        const jsonContainer = document.createElement('div');
+        jsonContainer.className = 'json-view';
+        if (hidden) jsonContainer.style.display = 'none';
+        
+        const jsonDiv = document.createElement('div');
+        jsonDiv.className = 'result-json';
+        jsonDiv.textContent = JSON.stringify(data, null, 2);
+        
+        jsonContainer.appendChild(jsonDiv);
+        return jsonContainer;
+      }
+
+      // Toggle between table and JSON view
+      window.toggleView = function(resultId, viewType) {
+        const resultDiv = document.getElementById(resultId);
+        if (!resultDiv) return;
+        
+        const tableView = resultDiv.querySelector('.table-view');
+        const jsonView = resultDiv.querySelector('.json-view');
+        
+        if (viewType === 'table' && tableView) {
+          tableView.style.display = 'block';
+          if (jsonView) jsonView.style.display = 'none';
+        } else if (viewType === 'json' && jsonView) {
+          if (tableView) tableView.style.display = 'none';
+          jsonView.style.display = 'block';
+        }
+      };
+
+      // Copy result to clipboard
+      window.copyResult = function(resultId) {
+        const resultDiv = document.getElementById(resultId);
+        if (!resultDiv) return;
+        
+        const jsonDiv = resultDiv.querySelector('.result-json');
+        if (jsonDiv) {
+          navigator.clipboard.writeText(jsonDiv.textContent).then(() => {
+            // Show temporary feedback
+            const button = resultDiv.querySelector('.result-controls button[onclick*="copyResult"]');
+            const originalText = button.textContent;
+            button.textContent = '✅ Copied!';
+            setTimeout(() => {
+              button.textContent = originalText;
+            }, 1000);
+          });
+        }
+      };
+
+      // Remove result
+      window.removeResult = function(resultId) {
+        const resultDiv = document.getElementById(resultId);
+        if (resultDiv) {
+          resultDiv.remove();
+        }
+      };
+
       // CSV Download functionality
       function convertToCSV(data, method, typeName) {
+        if (!data) return '';
+        
+        let csvContent = '';
+        
+        if (Array.isArray(data)) {
+          if (data.length === 0) return 'No data available';
+          
+          // Check if it's Group-based odometer results
+          if (lastApiResult.typeName === 'GroupOdometer' && lastApiResult.deviceMapping) {
+            csvContent = 'Device_ID,Vehicle_Name,VIN,Serial_Number,Odometer_Reading,Date_Time,Status\n';
+            
+            lastApiResult.deviceMapping.forEach(function(device) {
+              csvContent += `"${device.deviceId}","${device.name}","${device.vehicleIdentificationNumber}","${device.serialNumber}",${device.odometer},"${device.odometerDate || ''}","${device.status}"\n`;
+            });
+          }
+          // Check if it's ExecuteMultiCall results
+          else if (method === 'ExecuteMultiCall') {
+            csvContent = 'Call_Index,Result_Count,Status,Data\n';
+            
+            data.forEach((callResult, index) => {
+              const resultCount = Array.isArray(callResult) ? callResult.length : (callResult ? 1 : 0);
+              csvContent += `${index + 1},${resultCount},Success,"${JSON.stringify(callResult).replace(/"/g, '""')}"\n`;
+            });
+          } else {
+            // Regular array of objects
+            const headers = Object.keys(data[0]);
+            csvContent = headers.map(h => `"${h}"`).join(',') + '\n';
+            
+            data.forEach(row => {
+              const values = headers.map(header => {
+                const value = row[header];
+                if (value === null || value === undefined) return '""';
+                if (typeof value === 'object') return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+                return `"${String(value).replace(/"/g, '""')}"`;
+              });
+              csvContent += values.join(',') + '\n';
+            });
+          }
+        } else if (typeof data === 'object') {
+          // Single object
+          const headers = Object.keys(data);
+          csvContent = headers.map(h => `"${h}"`).join(',') + '\n';
+          const values = headers.map(header => {
+            const value = data[header];
+            if (value === null || value === undefined) return '""';
+            if (typeof value === 'object') return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+            return `"${String(value).replace(/"/g, '""')}"`;
+          });
+          csvContent += values.join(',') + '\n';
+        } else {
+          csvContent = `"Value"\n"${data}"`;
+        }
+        
+        return csvContent;
+      }
+
+      // Clear all results
+      window.clearAllResults = function(containerId) {
+        const container = document.getElementById(containerId);
+        if (container) {
+          const results = container.querySelectorAll('.result');
+          results.forEach(result => result.remove());
+          // Also clear any status messages
+          const messages = container.querySelectorAll('.success, .warning, .error');
+          messages.forEach(message => message.remove());
+        }
+      };
+
+      function downloadCSV() {
+        if (!lastApiResult) {
+          showMessage('apiResult', '⚠️ No data available for download. Run an API call first!', 'warning');
+          return;
+        }
+        
+        const csvContent = convertToCSV(lastApiResult.data, lastApiResult.method, lastApiResult.typeName);
+        
+        if (!csvContent) {
+          showMessage('apiResult', '⚠️ No data to export', 'warning');
+          return;
+        }
+        
+        // Create filename
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+        const method = lastApiResult.method || 'API';
+        const typeName = lastApiResult.typeName || 'Data';
+        const filename = `UCCL_${method}_${typeName}_${timestamp}.csv`;
+        
+        // Create and download file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        
+        if (link.download !== undefined) {
+          const url = URL.createObjectURL(blob);
+          link.setAttribute('href', url);
+          link.setAttribute('download', filename);
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          showMessage('apiResult', `✅ CSV file "${filename}" downloaded successfully!`, 'success');
+        } else {
+          alert('CSV download not supported in this browser');
+        }
+      }
         if (!data) return '';
         
         let csvContent = '';
@@ -417,7 +767,9 @@
             
             const resultCount = Array.isArray(result) ? result.length : (result ? 1 : 0);
             showMessage('apiResult', `✅ Success! Found ${resultCount} result(s)`, 'success');
-            document.getElementById('apiResult').innerHTML += `<div class="result">${JSON.stringify(result, null, 2)}</div>`;
+            
+            // Use enhanced display function
+            displayResult(result, method, typeName, 'apiResult');
             
             // Store result for CSV download
             lastApiResult = {
@@ -538,9 +890,8 @@
               deviceMapping: results
             };
 
-            // Show detailed results
-            document.getElementById('groupOdometerResult').innerHTML += 
-              `<div class="result">${JSON.stringify(results, null, 2)}</div>`;
+            // Show detailed results with enhanced display
+            displayResult(results, 'Group Odometer Collection', 'Summary', 'groupOdometerResult');
 
           } catch (error) {
             showMessage('groupOdometerResult', `❌ Error: ${error.message}`, 'error');
@@ -611,8 +962,11 @@
     
     <textarea id="params" placeholder='Parameters (JSON)' rows="6">{"search":{"name":"%"}}</textarea>
     
-    <button id="runApi" style="background: #059669;">🚀 Run API Call</button>
-    <button id="downloadCsv" style="background: #0891b2;">📊 Download CSV</button>
+    <div style="display: flex; gap: 8px; margin: 8px 0;">
+      <button id="runApi" style="background: #059669; flex: 1;">🚀 Run API Call</button>
+      <button id="downloadCsv" style="background: #0891b2; flex: 1;">📊 Download CSV</button>
+      <button onclick="clearAllResults('apiResult')" style="background: #6b7280; width: auto; padding: 8px 16px;">🗑️ Clear</button>
+    </div>
     
     <div id="apiResult"></div>
   </div>
@@ -626,7 +980,10 @@
     </div>
     <input id="groupId" placeholder="Group ID (e.g., GroupCompanyId)" value="GroupCompanyId">
     <input id="diagnosticId" placeholder="Diagnostic ID (e.g., DiagnosticOdometerId)" value="DiagnosticOdometerAdjustmentId">
-    <button id="runGroupOdometer" style="background: #059669;">🚗 Get Group Odometer Readings</button>
+    <div style="display: flex; gap: 8px; margin: 8px 0;">
+      <button id="runGroupOdometer" style="background: #059669; flex: 1;">🚗 Get Group Odometer Readings</button>
+      <button onclick="clearAllResults('groupOdometerResult')" style="background: #6b7280; width: auto; padding: 8px 16px;">🗑️ Clear</button>
+    </div>
     <div id="groupOdometerResult"></div>
   </div>
 
