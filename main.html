@@ -2,143 +2,578 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Geotab API Runner - Complete Toolkit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geotab API Runner - Professional Toolkit</title>
   <style>
-    body { font-family: sans-serif; margin: 20px; }
-    input, button, select, textarea { margin: 4px 0; padding: 8px; width: 100%; box-sizing: border-box; }
-    .error { color: red; background: #ffe6e6; padding: 10px; border-radius: 4px; margin: 8px 0; }
-    .success { color: green; background: #e6ffe6; padding: 10px; border-radius: 4px; margin: 8px 0; }
-    .warning { background: #fff3cd; color: #856404; padding: 10px; border-radius: 4px; margin: 8px 0; }
-    .result { white-space: pre-wrap; background: #eee; padding: 12px; margin: 8px 0; border-radius: 4px; max-height: 400px; overflow-y: auto; }
-    button { cursor: pointer; margin: 2px; }
-    .section { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 4px; }
-    h3 { margin-top: 0; }
-    .example-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 10px 0; }
-    .example-btn { padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    .example-btn:hover { background: #0056b3; }
-    .category { background: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 4px; }
-    .category h4 { margin: 0 0 10px 0; color: #495057; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .header h1 {
+      color: #2d3748;
+      font-size: 2.2em;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .header .subtitle {
+      color: #4a5568;
+      font-size: 1.1em;
+      font-weight: 500;
+    }
+
+    .success-banner {
+      background: linear-gradient(135deg, #48bb78, #38a169);
+      color: white;
+      padding: 15px 25px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-title {
+      color: #2d3748;
+      font-size: 1.4em;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 12px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      background: white;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-control.textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: 'Courier New', monospace;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      margin: 4px;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #48bb78, #38a169);
+      color: white;
+    }
+
+    .btn-info {
+      background: linear-gradient(135deg, #4299e1, #3182ce);
+      color: white;
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #f56565, #e53e3e);
+      color: white;
+    }
+
+    .btn-example {
+      background: linear-gradient(135deg, #805ad5, #6b46c1);
+      color: white;
+      padding: 10px 16px;
+      font-size: 13px;
+      border-radius: 6px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .status-info {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-left: 4px solid #48bb78;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .status-label {
+      font-weight: 600;
+      color: #4a5568;
+    }
+
+    .status-value {
+      color: #2d3748;
+      font-family: monospace;
+      background: #f7fafc;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .alert {
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin: 15px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-weight: 500;
+    }
+
+    .alert-success {
+      background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
+      color: #22543d;
+      border-left: 4px solid #38a169;
+    }
+
+    .alert-error {
+      background: linear-gradient(135deg, #fed7d7, #feb2b2);
+      color: #742a2a;
+      border-left: 4px solid #e53e3e;
+    }
+
+    .alert-warning {
+      background: linear-gradient(135deg, #fefcbf, #faf089);
+      color: #744210;
+      border-left: 4px solid #d69e2e;
+    }
+
+    .result-container {
+      background: #1a202c;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 15px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      border: 1px solid #4a5568;
+    }
+
+    .examples-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+    }
+
+    .example-category {
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .category-title {
+      color: #2d3748;
+      font-size: 1.1em;
+      font-weight: 700;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .example-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .control-panel {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .icon {
+      font-size: 1.2em;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .examples-section {
+        grid-template-columns: 1fr;
+      }
+      
+      .control-panel {
+        justify-content: center;
+      }
+    }
+
+    .special-section {
+      background: linear-gradient(135deg, #fdfcdc, #f0f4f8);
+      border: 2px solid #d6f5d6;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 25px;
+    }
+
+    .instructions {
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-left: 4px solid #4299e1;
+    }
+
+    .instructions strong {
+      color: #2b6cb0;
+    }
   </style>
 </head>
 <body>
-  <h2>🚀 Geotab API Runner - Complete Toolkit</h2>
-  
-  <div class="success">
-    <strong>✅ Enhanced API Runner with 20+ Pre-built API Calls</strong><br>
-    Click any example below to auto-fill the parameters, then hit "Run API Call"
-  </div>
-
-  <div class="section">
-    <h3>🔐 Authentication</h3>
-    <input id="server" placeholder="Server" value="my.geotab.com">
-    <input id="database" placeholder="Database" value="uccnz">
-    <input id="username" placeholder="Username" value="francis@directt.co.nz">
-    <input id="password" placeholder="password" value="@fr4nc1sWynn5">
-    <button id="authButton">Authenticate</button>
-    <div id="authResult"></div>
-  </div>
-
-  <div id="apiSection" style="display:none;" class="section">
-    <h3>🔧 API Testing</h3>
-    <div class="success">✅ Authenticated Successfully!</div>
-    <p><strong>Server:</strong> <span id="connectedServer"></span></p>
-    <p><strong>Database:</strong> <span id="connectedDB"></span></p>
-    <p><strong>User:</strong> <span id="connectedUser"></span></p>
-    
-    <select id="method">
-      <option value="Get">Get</option>
-      <option value="Add">Add</option>
-      <option value="Set">Set</option>
-      <option value="Remove">Remove</option>
-      <option value="ExecuteMultiCall">ExecuteMultiCall</option>
-    </select>
-    
-    <input id="typeName" placeholder="typeName" value="User">
-    
-    <textarea id="params" placeholder='Parameters (JSON)' rows="6">{"search":{"name":"%"}}</textarea>
-    
-    <button id="runApi" style="background: #28a745; color: white; font-weight: bold;">🚀 Run API Call</button>
-    <button id="downloadCsv" style="background: #17a2b8; color: white;">📊 Download CSV</button>
-    <button id="logout" style="background: #dc3545; color: white;">Logout</button>
-    
-    <div id="apiResult"></div>
-  </div>
-
-  <div class="section">
-    <h3>🏢 Group-Based Odometer Collection</h3>
-    <div class="warning">
-      <strong>📝 Instructions:</strong><br>
-      1. First get your Group ID and Diagnostic ID using the examples below<br>
-      2. Enter them here and click "Get Group Odometer Readings"
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>
+        <span class="icon">🚀</span>
+        Geotab API Runner
+        <span style="font-size: 0.6em; color: #718096;">Professional Toolkit</span>
+      </h1>
+      <div class="subtitle">Complete fleet management API testing environment</div>
     </div>
-    <input id="groupId" placeholder="Group ID (e.g., GroupCompanyId)" value="GroupCompanyId">
-    <input id="diagnosticId" placeholder="Diagnostic ID (e.g., DiagnosticOdometerId)" value="DiagnosticOdometerAdjustmentId">
-    <button id="runGroupOdometer" style="background: #28a745; color: white; font-weight: bold;">🚗 Get Group Odometer Readings</button>
-    <div id="groupOdometerResult"></div>
-  </div>
 
-  <div class="section">
-    <h3>📋 Quick API Examples</h3>
-    
-    <div class="category">
-      <h4>🚗 Vehicle & Device Data</h4>
-      <div class="example-grid">
-        <button class="example-btn" onclick="loadExample('devices')">Get All Devices</button>
-        <button class="example-btn" onclick="loadExample('device-status')">Get Device Status</button>
-        <button class="example-btn" onclick="loadExample('device-odometer')">Get Device Odometer</button>
-        <button class="example-btn" onclick="loadExample('devices-in-group')">Get Devices in Group</button>
-        <button class="example-btn" onclick="loadExample('device-info')">Get Device Details</button>
+    <div class="success-banner">
+      <span class="icon">✅</span>
+      <div>
+        <strong>Enhanced API Runner with 20+ Pre-built API Calls</strong><br>
+        <small>Click any example below to auto-fill the parameters, then hit "Run API Call"</small>
       </div>
     </div>
 
-    <div class="category">
-      <h4>📍 Location & Trip Data</h4>
-      <div class="example-grid">
-        <button class="example-btn" onclick="loadExample('gps-data')">Get GPS Data</button>
-        <button class="example-btn" onclick="loadExample('trips')">Get Recent Trips</button>
-        <button class="example-btn" onclick="loadExample('stops')">Get Stops</button>
-        <button class="example-btn" onclick="loadExample('zones')">Get All Zones</button>
-        <button class="example-btn" onclick="loadExample('zone-stops')">Get Zone Stops</button>
+    <!-- Authentication Section -->
+    <div class="card">
+      <h3 class="card-title">
+        <span class="icon">🔐</span>
+        Authentication
+      </h3>
+      
+      <div class="form-group">
+        <div class="form-row">
+          <input id="server" class="form-control" placeholder="Server" value="my.geotab.com">
+          <input id="database" class="form-control" placeholder="Database" value="uccnz">
+        </div>
+        <div class="form-row">
+          <input id="username" class="form-control" placeholder="Username" value="francis@directt.co.nz">
+          <input id="password" class="form-control" type="password" placeholder="Password" value="@fr4nc1sWynn5">
+        </div>
+        <button id="authButton" class="btn btn-primary">
+          <span class="icon">🔑</span>
+          Authenticate
+        </button>
       </div>
+      <div id="authResult"></div>
     </div>
 
-    <div class="category">
-      <h4>⛽ Fuel & Engine Data</h4>
-      <div class="example-grid">
-        <button class="example-btn" onclick="loadExample('fuel-data')">Get Fuel Data</button>
-        <button class="example-btn" onclick="loadExample('engine-data')">Get Engine Status</button>
-        <button class="example-btn" onclick="loadExample('fault-data')">Get Fault Data</button>
-        <button class="example-btn" onclick="loadExample('diagnostics')">Get All Diagnostics</button>
+    <!-- API Testing Section -->
+    <div id="apiSection" class="card hidden">
+      <h3 class="card-title">
+        <span class="icon">🔧</span>
+        API Testing
+      </h3>
+      
+      <div class="alert alert-success">
+        <span class="icon">✅</span>
+        <div>
+          <strong>Authenticated Successfully!</strong><br>
+          Ready to execute API calls
+        </div>
       </div>
+
+      <div class="status-info">
+        <div class="status-row">
+          <span class="status-label">Server:</span>
+          <span class="status-value" id="connectedServer"></span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Database:</span>
+          <span class="status-value" id="connectedDB"></span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">User:</span>
+          <span class="status-value" id="connectedUser"></span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-row">
+          <select id="method" class="form-control">
+            <option value="Get">Get</option>
+            <option value="Add">Add</option>
+            <option value="Set">Set</option>
+            <option value="Remove">Remove</option>
+            <option value="ExecuteMultiCall">ExecuteMultiCall</option>
+          </select>
+          <input id="typeName" class="form-control" placeholder="Type Name" value="User">
+        </div>
+        
+        <textarea id="params" class="form-control textarea" placeholder='Parameters (JSON)'>{"search":{"name":"%"}}</textarea>
+        
+        <div class="control-panel">
+          <button id="runApi" class="btn btn-success">
+            <span class="icon">🚀</span>
+            Run API Call
+          </button>
+          <button id="downloadCsv" class="btn btn-info">
+            <span class="icon">📊</span>
+            Download CSV
+          </button>
+          <button id="logout" class="btn btn-danger">
+            <span class="icon">🚪</span>
+            Logout
+          </button>
+        </div>
+      </div>
+      
+      <div id="apiResult"></div>
     </div>
 
-    <div class="category">
-      <h4>👥 Users & Groups</h4>
-      <div class="example-grid">
-        <button class="example-btn" onclick="loadExample('users')">Get All Users</button>
-        <button class="example-btn" onclick="loadExample('groups')">Get All Groups</button>
-        <button class="example-btn" onclick="loadExample('diagnostics')">Get Odometer Diagnostics</button>
-        <button class="example-btn" onclick="loadExample('driver-changes')">Get Driver Changes</button>
-        <button class="example-btn" onclick="loadExample('user-details')">Get User Details</button>
+    <!-- Group-Based Odometer Collection -->
+    <div class="card special-section">
+      <h3 class="card-title">
+        <span class="icon">🏢</span>
+        Group-Based Odometer Collection
+      </h3>
+      
+      <div class="instructions">
+        <strong>📝 Instructions:</strong><br>
+        1. First get your Group ID and Diagnostic ID using the examples below<br>
+        2. Enter them here and click "Get Group Odometer Readings"
       </div>
+
+      <div class="form-group">
+        <div class="form-row">
+          <input id="groupId" class="form-control" placeholder="Group ID (e.g., GroupCompanyId)" value="GroupCompanyId">
+          <input id="diagnosticId" class="form-control" placeholder="Diagnostic ID (e.g., DiagnosticOdometerId)" value="DiagnosticOdometerAdjustmentId">
+        </div>
+        <button id="runGroupOdometer" class="btn btn-success">
+          <span class="icon">🚗</span>
+          Get Group Odometer Readings
+        </button>
+      </div>
+      <div id="groupOdometerResult"></div>
     </div>
 
-    <div class="category">
-      <h4>🔧 Maintenance & Reports</h4>
-      <div class="example-grid">
-        <button class="example-btn" onclick="loadExample('maintenance')">Get Maintenance</button>
-        <button class="example-btn" onclick="loadExample('exceptions')">Get Exceptions</button>
-        <button class="example-btn" onclick="loadExample('dvir')">Get DVIR Logs</button>
-        <button class="example-btn" onclick="loadExample('text-messages')">Get Text Messages</button>
-      </div>
-    </div>
+    <!-- Quick API Examples -->
+    <div class="card">
+      <h3 class="card-title">
+        <span class="icon">📋</span>
+        Quick API Examples
+      </h3>
+      
+      <div class="examples-section">
+        <!-- Vehicle & Device Data -->
+        <div class="example-category">
+          <h4 class="category-title">
+            <span class="icon">🚗</span>
+            Vehicle & Device Data
+          </h4>
+          <div class="example-grid">
+            <button class="btn btn-example" onclick="loadExample('devices')">Get All Devices</button>
+            <button class="btn btn-example" onclick="loadExample('device-status')">Get Device Status</button>
+            <button class="btn btn-example" onclick="loadExample('device-odometer')">Get Device Odometer</button>
+            <button class="btn btn-example" onclick="loadExample('devices-in-group')">Get Devices in Group</button>
+            <button class="btn btn-example" onclick="loadExample('device-info')">Get Device Details</button>
+          </div>
+        </div>
 
-    <div class="category">
-      <h4>⚡ Advanced Multi-Calls</h4>
-      <div class="example-grid">
-        <button class="example-btn" onclick="loadExample('multi-odometer')">Multi-Device Odometer</button>
-        <button class="example-btn" onclick="loadExample('multi-status')">Multi-Device Status</button>
-        <button class="example-btn" onclick="loadExample('fleet-summary')">Fleet Summary</button>
+        <!-- Location & Trip Data -->
+        <div class="example-category">
+          <h4 class="category-title">
+            <span class="icon">📍</span>
+            Location & Trip Data
+          </h4>
+          <div class="example-grid">
+            <button class="btn btn-example" onclick="loadExample('gps-data')">Get GPS Data</button>
+            <button class="btn btn-example" onclick="loadExample('trips')">Get Recent Trips</button>
+            <button class="btn btn-example" onclick="loadExample('stops')">Get Stops</button>
+            <button class="btn btn-example" onclick="loadExample('zones')">Get All Zones</button>
+            <button class="btn btn-example" onclick="loadExample('zone-stops')">Get Zone Stops</button>
+          </div>
+        </div>
+
+        <!-- Fuel & Engine Data -->
+        <div class="example-category">
+          <h4 class="category-title">
+            <span class="icon">⛽</span>
+            Fuel & Engine Data
+          </h4>
+          <div class="example-grid">
+            <button class="btn btn-example" onclick="loadExample('fuel-data')">Get Fuel Data</button>
+            <button class="btn btn-example" onclick="loadExample('engine-data')">Get Engine Status</button>
+            <button class="btn btn-example" onclick="loadExample('fault-data')">Get Fault Data</button>
+            <button class="btn btn-example" onclick="loadExample('diagnostics')">Get All Diagnostics</button>
+          </div>
+        </div>
+
+        <!-- Users & Groups -->
+        <div class="example-category">
+          <h4 class="category-title">
+            <span class="icon">👥</span>
+            Users & Groups
+          </h4>
+          <div class="example-grid">
+            <button class="btn btn-example" onclick="loadExample('users')">Get All Users</button>
+            <button class="btn btn-example" onclick="loadExample('groups')">Get All Groups</button>
+            <button class="btn btn-example" onclick="loadExample('diagnostics')">Get Odometer Diagnostics</button>
+            <button class="btn btn-example" onclick="loadExample('driver-changes')">Get Driver Changes</button>
+            <button class="btn btn-example" onclick="loadExample('user-details')">Get User Details</button>
+          </div>
+        </div>
+
+        <!-- Maintenance & Reports -->
+        <div class="example-category">
+          <h4 class="category-title">
+            <span class="icon">🔧</span>
+            Maintenance & Reports
+          </h4>
+          <div class="example-grid">
+            <button class="btn btn-example" onclick="loadExample('maintenance')">Get Maintenance</button>
+            <button class="btn btn-example" onclick="loadExample('exceptions')">Get Exceptions</button>
+            <button class="btn btn-example" onclick="loadExample('dvir')">Get DVIR Logs</button>
+            <button class="btn btn-example" onclick="loadExample('text-messages')">Get Text Messages</button>
+          </div>
+        </div>
+
+        <!-- Advanced Multi-Calls -->
+        <div class="example-category">
+          <h4 class="category-title">
+            <span class="icon">⚡</span>
+            Advanced Multi-Calls
+          </h4>
+          <div class="example-grid">
+            <button class="btn btn-example" onclick="loadExample('multi-odometer')">Multi-Device Odometer</button>
+            <button class="btn btn-example" onclick="loadExample('multi-status')">Multi-Device Status</button>
+            <button class="btn btn-example" onclick="loadExample('fleet-summary')">Fleet Summary</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -150,7 +585,14 @@
 
     function showMessage(elementId, message, type = 'info') {
       const element = document.getElementById(elementId);
-      element.innerHTML = `<div class="${type}">${message}</div>`;
+      const alertClass = type === 'error' ? 'alert-error' : 
+                        type === 'success' ? 'alert-success' : 
+                        type === 'warning' ? 'alert-warning' : 'alert-info';
+      
+      element.innerHTML = `<div class="alert ${alertClass}">
+        <span class="icon">${type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️'}</span>
+        <div>${message}</div>
+      </div>`;
     }
 
     // Direct API call function
@@ -192,12 +634,12 @@
       document.getElementById('authResult').innerHTML = '';
       
       if (!server || !database || !username || !password) {
-        showMessage('authResult', '❌ Please fill in all fields', 'error');
+        showMessage('authResult', 'Please fill in all fields', 'error');
         return;
       }
       
       try {
-        showMessage('authResult', '🔍 Authenticating...', 'warning');
+        showMessage('authResult', 'Authenticating...', 'warning');
         
         serverUsed = server;
         const result = await callGeotabAPI('Authenticate', {
@@ -209,7 +651,7 @@
         // Handle server redirect
         if (result.path && result.path !== 'ThisServer') {
           serverUsed = result.path;
-          showMessage('authResult', `🔄 Redirecting to ${result.path}...`, 'warning');
+          showMessage('authResult', `Redirecting to ${result.path}...`, 'warning');
           
           const redirectResult = await callGeotabAPI('Authenticate', {
             userName: username,
@@ -222,7 +664,7 @@
           credentials = result.credentials;
         }
         
-        showMessage('authResult', '✅ Authentication successful!', 'success');
+        showMessage('authResult', 'Authentication successful!', 'success');
         
         // Get user info
         const users = await callGeotabAPI('Get', {
@@ -233,17 +675,17 @@
         document.getElementById('connectedServer').textContent = serverUsed;
         document.getElementById('connectedDB').textContent = database;
         document.getElementById('connectedUser').textContent = users.length > 0 ? users[0].name : username;
-        document.getElementById('apiSection').style.display = '';
+        document.getElementById('apiSection').classList.remove('hidden');
         
       } catch (error) {
-        showMessage('authResult', `❌ Authentication failed: ${error.message}`, 'error');
+        showMessage('authResult', `Authentication failed: ${error.message}`, 'error');
       }
     };
 
     // API call
     document.getElementById('runApi').onclick = async function() {
       if (!credentials) {
-        showMessage('apiResult', '❌ Not authenticated', 'error');
+        showMessage('apiResult', 'Not authenticated', 'error');
         return;
       }
 
@@ -256,7 +698,7 @@
         try {
           params = JSON.parse(paramsText);
         } catch (e) {
-          showMessage('apiResult', `❌ Invalid JSON: ${e.message}`, 'error');
+          showMessage('apiResult', `Invalid JSON: ${e.message}`, 'error');
           return;
         }
       }
@@ -266,13 +708,13 @@
       }
       
       try {
-        showMessage('apiResult', '🔍 Making API call...', 'warning');
+        showMessage('apiResult', 'Making API call...', 'warning');
         
         const result = await callGeotabAPI(method, params);
         
         const resultCount = Array.isArray(result) ? result.length : (result ? 1 : 0);
-        showMessage('apiResult', `✅ Success! Found ${resultCount} result(s)`, 'success');
-        document.getElementById('apiResult').innerHTML += `<div class="result">${JSON.stringify(result, null, 2)}</div>`;
+        showMessage('apiResult', `Success! Found ${resultCount} result(s)`, 'success');
+        document.getElementById('apiResult').innerHTML += `<div class="result-container">${JSON.stringify(result, null, 2)}</div>`;
         
         // Store result for CSV download
         lastApiResult = {
@@ -283,7 +725,7 @@
         };
         
       } catch (error) {
-        showMessage('apiResult', `❌ API call failed: ${error.message}`, 'error');
+        showMessage('apiResult', `API call failed: ${error.message}`, 'error');
       }
     };
 
@@ -292,7 +734,7 @@
       credentials = null;
       serverUsed = null;
       lastApiResult = null;
-      document.getElementById('apiSection').style.display = 'none';
+      document.getElementById('apiSection').classList.add('hidden');
       document.getElementById('authResult').innerHTML = '';
       document.getElementById('apiResult').innerHTML = '';
     };
@@ -372,14 +814,14 @@
 
     function downloadCSV() {
       if (!lastApiResult) {
-        showMessage('apiResult', '⚠️ No data available for download. Run an API call first!', 'warning');
+        showMessage('apiResult', 'No data available for download. Run an API call first!', 'warning');
         return;
       }
       
       const csvContent = convertToCSV(lastApiResult.data, lastApiResult.method, lastApiResult.typeName);
       
       if (!csvContent) {
-        showMessage('apiResult', '⚠️ No data to export', 'warning');
+        showMessage('apiResult', 'No data to export', 'warning');
         return;
       }
       
@@ -402,7 +844,7 @@
         link.click();
         document.body.removeChild(link);
         
-        showMessage('apiResult', `✅ CSV file "${filename}" downloaded successfully!`, 'success');
+        showMessage('apiResult', `CSV file "${filename}" downloaded successfully!`, 'success');
       } else {
         alert('CSV download not supported in this browser');
       }
@@ -414,7 +856,7 @@
     // Group-based odometer collection (following user's exact logic)
     document.getElementById('runGroupOdometer').onclick = async function() {
       if (!credentials) {
-        showMessage('groupOdometerResult', '❌ Please authenticate first', 'error');
+        showMessage('groupOdometerResult', 'Please authenticate first', 'error');
         return;
       }
 
@@ -422,12 +864,12 @@
       const diagnosticId = document.getElementById('diagnosticId').value.trim();
 
       if (!groupId || !diagnosticId) {
-        showMessage('groupOdometerResult', '❌ Please enter both Group ID and Diagnostic ID', 'error');
+        showMessage('groupOdometerResult', 'Please enter both Group ID and Diagnostic ID', 'error');
         return;
       }
 
       try {
-        showMessage('groupOdometerResult', '🔍 Getting devices from group...', 'warning');
+        showMessage('groupOdometerResult', 'Getting devices from group...', 'warning');
 
         // Step 1: Get devices from group (following user's logic)
         const devices = await callGeotabAPI('Get', {
@@ -439,11 +881,11 @@
         });
 
         if (!devices || devices.length === 0) {
-          showMessage('groupOdometerResult', '❌ No devices found in group. Check your Group ID.', 'error');
+          showMessage('groupOdometerResult', 'No devices found in group. Check your Group ID.', 'error');
           return;
         }
 
-        showMessage('groupOdometerResult', `✅ Found ${devices.length} devices. Building odometer calls...`, 'success');
+        showMessage('groupOdometerResult', `Found ${devices.length} devices. Building odometer calls...`, 'success');
 
         // Step 2: Build calls array (following user's logic)
         const results = [];
@@ -479,7 +921,7 @@
           });
         });
 
-        showMessage('groupOdometerResult', `🚀 Executing ${calls.length} odometer API calls...`, 'warning');
+        showMessage('groupOdometerResult', `Executing ${calls.length} odometer API calls...`, 'warning');
 
         // Step 3: Execute MultiCall (following user's logic)
         const callResults = await callGeotabAPI('ExecuteMultiCall', { calls: calls });
@@ -504,8 +946,8 @@
 
         // Display results
         showMessage('groupOdometerResult', 
-          `✅ Group odometer collection complete!<br>
-          📊 <strong>Summary:</strong><br>
+          `Group odometer collection complete!<br><br>
+          <strong>📊 Summary:</strong><br>
           • Total vehicles: ${results.length}<br>
           • With odometer data: ${withData}<br>
           • Zero readings: ${zeroReadings}<br>
@@ -522,10 +964,10 @@
 
         // Show detailed results
         document.getElementById('groupOdometerResult').innerHTML += 
-          `<div class="result">${JSON.stringify(results, null, 2)}</div>`;
+          `<div class="result-container">${JSON.stringify(results, null, 2)}</div>`;
 
       } catch (error) {
-        showMessage('groupOdometerResult', `❌ Error: ${error.message}`, 'error');
+        showMessage('groupOdometerResult', `Error: ${error.message}`, 'error');
       }
     };
 
