@@ -1,0 +1,22 @@
+#myaddin-menu {
+    position: absolute;
+    background-color: #99cc00;
+    padding: 10px;
+    border-radius: 4px;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+}
+#myaddin-refreshButton {
+    text-decoration: none;
+    color: #222;
+    font-weight: bold;
+    padding: 6px 18px;
+    background: #fff;
+    border-radius: 3px;
+    border: 1px solid #669900;
+    transition: background 0.2s;
+}
+#myaddin-refreshButton:hover {
+    background: #ccff66;
+}
