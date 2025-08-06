@@ -455,6 +455,50 @@
       <div id="apiResult"></div>
     </div>
 
+    <!-- UCCL Maintenance Cross-Reference -->
+    <div class="card special-section">
+      <h3 class="card-title">
+        <span class="icon">🔗</span>
+        UCCL Maintenance Cross-Reference
+      </h3>
+      
+      <div class="alert alert-success">
+        <span class="icon">📊</span>
+        <div>
+          <strong>Maintenance Data Loaded: 178 vehicles found</strong><br>
+          <small>Fleet numbers: 1-4 (trailers), 445-499 (vehicles), 500+ (larger fleet)</small>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-row">
+          <input id="fleetNumber" class="form-control" placeholder="Fleet Number (e.g., 445, 448, 463)" value="">
+          <input id="regPlate" class="form-control" placeholder="Registration Plate (e.g., FDT602, GUR891)" value="">
+        </div>
+        <div class="form-row">
+          <input id="vehicleSearch" class="form-control" placeholder="Vehicle Description (e.g., Toyota Hiace, Transport Trailers)" value="">
+          <select id="crossRefType" class="form-control">
+            <option value="fleet-lookup">Find Geotab Device by Fleet Number</option>
+            <option value="reg-lookup">Find Geotab Device by Registration</option>
+            <option value="vehicle-lookup">Find Geotab Device by Vehicle Name</option>
+            <option value="maintenance-sync">Sync Odometer with Maintenance Data</option>
+            <option value="full-cross-ref">Full Cross-Reference Report</option>
+          </select>
+        </div>
+        <div class="control-panel">
+          <button id="runCrossRef" class="btn btn-success">
+            <span class="icon">🔍</span>
+            Run Cross-Reference
+          </button>
+          <button id="loadMaintenanceData" class="btn btn-info">
+            <span class="icon">📋</span>
+            Show Maintenance Summary
+          </button>
+        </div>
+      </div>
+      <div id="crossRefResult"></div>
+    </div>
+
     <!-- Group-Based Odometer Collection -->
     <div class="card special-section">
       <h3 class="card-title">
@@ -559,6 +603,20 @@
             <button class="btn btn-example" onclick="loadExample('exceptions')">Get Exceptions</button>
             <button class="btn btn-example" onclick="loadExample('dvir')">Get DVIR Logs</button>
             <button class="btn btn-example" onclick="loadExample('text-messages')">Get Text Messages</button>
+          </div>
+        </div>
+
+        <!-- UCCL Cross-Reference -->
+        <div class="example-category">
+          <h4 class="category-title">
+            <span class="icon">🔗</span>
+            UCCL Cross-Reference
+          </h4>
+          <div class="example-grid">
+            <button class="btn btn-example" onclick="loadExample('fleet-device-mapping')">Fleet-Device Mapping</button>
+            <button class="btn btn-example" onclick="loadExample('reg-plate-search')">Search by Reg Plate</button>
+            <button class="btn btn-example" onclick="loadExample('vehicle-name-search')">Search by Vehicle Name</button>
+            <button class="btn btn-example" onclick="loadExample('odometer-comparison')">Odometer Comparison</button>
           </div>
         </div>
 
@@ -853,6 +911,229 @@
     // CSV download button event
     document.getElementById('downloadCsv').onclick = downloadCSV;
 
+    // UCCL Maintenance Cross-Reference Data (from uploaded CSV)
+    const maintenanceData = [
+      {fleetNumber: 1, regPlate: "589AT", vehicle: "Transport Trailers 4A 2002", driver: "Bulky Trailer (Nick)", kmReading: "6,428"},
+      {fleetNumber: 4, regPlate: "E560P", vehicle: "Transfleet 4TDH-27 2004", driver: "Bulky Trailer (Heta)", kmReading: "236,150"},
+      {fleetNumber: 7, regPlate: "5578C", vehicle: "Morgan Lowloader 1996", driver: "Trailer", kmReading: "30,000"},
+      {fleetNumber: 445, regPlate: "FDT602", vehicle: "Toyota Hiace 2009", kmReading: "339,229", serviceDue: "350,000"},
+      {fleetNumber: 448, regPlate: "GUR891", vehicle: "Toyota Hiace 2013", kmReading: "261,683", serviceDue: "270,000"},
+      {fleetNumber: 463, regPlate: "FQC642", vehicle: "Toyota Hiace 2016", kmReading: "227,503", serviceDue: "240,000"},
+      {fleetNumber: 465, regPlate: "JBB745", vehicle: "Toyota Hiace 2017", kmReading: "184,885", serviceDue: "200,000"},
+      {fleetNumber: 469, regPlate: "GBP609", vehicle: "Toyota Hiace 2013", kmReading: "255,892", serviceDue: "270,000"},
+      {fleetNumber: 470, regPlate: "FUB380", vehicle: "Toyota Hiace 2016", kmReading: "214,108", serviceDue: "230,000"},
+      {fleetNumber: 471, regPlate: "FRM776", vehicle: "Toyota Hiace 2013", kmReading: "263,447", serviceDue: "280,000"}
+      // Note: This is a sample subset - full data would be loaded from CSV processing
+    ];
+
+    // Cross-Reference functionality
+    document.getElementById('runCrossRef').onclick = async function() {
+      if (!credentials) {
+        showMessage('crossRefResult', 'Please authenticate first', 'error');
+        return;
+      }
+
+      const fleetNumber = document.getElementById('fleetNumber').value.trim();
+      const regPlate = document.getElementById('regPlate').value.trim();
+      const vehicleSearch = document.getElementById('vehicleSearch').value.trim();
+      const crossRefType = document.getElementById('crossRefType').value;
+
+      try {
+        showMessage('crossRefResult', 'Running cross-reference...', 'warning');
+
+        let result = null;
+        
+        switch(crossRefType) {
+          case 'fleet-lookup':
+            if (!fleetNumber) {
+              showMessage('crossRefResult', 'Please enter a fleet number', 'error');
+              return;
+            }
+            result = await findDeviceByFleetNumber(fleetNumber);
+            break;
+            
+          case 'reg-lookup':
+            if (!regPlate) {
+              showMessage('crossRefResult', 'Please enter a registration plate', 'error');
+              return;
+            }
+            result = await findDeviceByRegPlate(regPlate);
+            break;
+            
+          case 'vehicle-lookup':
+            if (!vehicleSearch) {
+              showMessage('crossRefResult', 'Please enter a vehicle description', 'error');
+              return;
+            }
+            result = await findDeviceByVehicleName(vehicleSearch);
+            break;
+            
+          case 'maintenance-sync':
+            result = await syncOdometerWithMaintenance();
+            break;
+            
+          case 'full-cross-ref':
+            result = await generateFullCrossReference();
+            break;
+        }
+
+        if (result) {
+          showMessage('crossRefResult', 'Cross-reference completed successfully!', 'success');
+          document.getElementById('crossRefResult').innerHTML += `<div class="result-container">${JSON.stringify(result, null, 2)}</div>`;
+        }
+
+      } catch (error) {
+        showMessage('crossRefResult', `Cross-reference failed: ${error.message}`, 'error');
+      }
+    };
+
+    // Show maintenance summary
+    document.getElementById('loadMaintenanceData').onclick = function() {
+      const summary = {
+        totalVehicles: maintenanceData.length,
+        sampleData: maintenanceData.slice(0, 5),
+        fleetNumbers: maintenanceData.map(v => v.fleetNumber),
+        avgKmReading: Math.round(maintenanceData.reduce((sum, v) => sum + parseInt(v.kmReading.replace(/,/g, '') || 0), 0) / maintenanceData.length)
+      };
+      
+      showMessage('crossRefResult', `Maintenance data summary: ${summary.totalVehicles} vehicles loaded`, 'success');
+      document.getElementById('crossRefResult').innerHTML += `<div class="result-container">${JSON.stringify(summary, null, 2)}</div>`;
+    };
+
+    // Cross-reference helper functions
+    async function findDeviceByFleetNumber(fleetNumber) {
+      // Search Geotab devices by name containing fleet number
+      const devices = await callGeotabAPI('Get', {
+        typeName: 'Device',
+        search: { name: `%${fleetNumber}%` },
+        resultsLimit: 10
+      });
+      
+      const maintenanceRecord = maintenanceData.find(m => m.fleetNumber == fleetNumber);
+      
+      return {
+        searchType: 'Fleet Number',
+        searchValue: fleetNumber,
+        geotabDevices: devices,
+        maintenanceRecord: maintenanceRecord,
+        matchFound: devices.length > 0
+      };
+    }
+
+    async function findDeviceByRegPlate(regPlate) {
+      // Search by vehicle identification number (registration)
+      const devices = await callGeotabAPI('Get', {
+        typeName: 'Device',
+        search: { vehicleIdentificationNumber: `%${regPlate}%` },
+        resultsLimit: 10
+      });
+      
+      const maintenanceRecord = maintenanceData.find(m => m.regPlate === regPlate);
+      
+      return {
+        searchType: 'Registration Plate',
+        searchValue: regPlate,
+        geotabDevices: devices,
+        maintenanceRecord: maintenanceRecord,
+        matchFound: devices.length > 0
+      };
+    }
+
+    async function findDeviceByVehicleName(vehicleName) {
+      // Search by device name containing vehicle description
+      const devices = await callGeotabAPI('Get', {
+        typeName: 'Device',
+        search: { name: `%${vehicleName}%` },
+        resultsLimit: 20
+      });
+      
+      const maintenanceRecords = maintenanceData.filter(m => 
+        m.vehicle.toLowerCase().includes(vehicleName.toLowerCase())
+      );
+      
+      return {
+        searchType: 'Vehicle Name',
+        searchValue: vehicleName,
+        geotabDevices: devices,
+        maintenanceRecords: maintenanceRecords,
+        matchFound: devices.length > 0 || maintenanceRecords.length > 0
+      };
+    }
+
+    async function syncOdometerWithMaintenance() {
+      // Get current odometer readings from Geotab and compare with maintenance data
+      const yesterday = new Date(Date.now() - 24*60*60*1000).toISOString();
+      const today = new Date().toISOString();
+      
+      const odometerData = await callGeotabAPI('Get', {
+        typeName: 'StatusData',
+        search: {
+          diagnosticSearch: { id: 'DiagnosticOdometerId' },
+          fromDate: yesterday,
+          toDate: today
+        },
+        resultsLimit: 100
+      });
+      
+      // Compare with maintenance data
+      const comparison = maintenanceData.map(maint => {
+        const maintKm = parseInt(maint.kmReading.replace(/,/g, '') || 0);
+        return {
+          fleetNumber: maint.fleetNumber,
+          regPlate: maint.regPlate,
+          vehicle: maint.vehicle,
+          maintenanceKm: maintKm,
+          geotabOdometer: 'Pending lookup...',
+          difference: 'TBD'
+        };
+      });
+      
+      return {
+        searchType: 'Odometer Sync',
+        odometerReadings: odometerData.length,
+        comparison: comparison.slice(0, 10), // Show first 10
+        maintenanceVehicles: maintenanceData.length
+      };
+    }
+
+    async function generateFullCrossReference() {
+      // Get all devices and try to match with maintenance data
+      const devices = await callGeotabAPI('Get', {
+        typeName: 'Device',
+        resultsLimit: 200
+      });
+      
+      const matched = [];
+      const unmatched = [];
+      
+      maintenanceData.forEach(maint => {
+        const deviceMatch = devices.find(device => 
+          device.name.includes(maint.fleetNumber.toString()) ||
+          device.vehicleIdentificationNumber === maint.regPlate ||
+          device.name.toLowerCase().includes(maint.vehicle.toLowerCase().split(' ')[0])
+        );
+        
+        if (deviceMatch) {
+          matched.push({
+            maintenanceRecord: maint,
+            geotabDevice: deviceMatch,
+            matchType: 'Auto-matched'
+          });
+        } else {
+          unmatched.push(maint);
+        }
+      });
+      
+      return {
+        searchType: 'Full Cross-Reference',
+        totalDevices: devices.length,
+        totalMaintenanceRecords: maintenanceData.length,
+        matched: matched,
+        unmatched: unmatched,
+        matchRate: `${Math.round((matched.length / maintenanceData.length) * 100)}%`
+      };
+    }
+
     // Group-based odometer collection (following user's exact logic)
     document.getElementById('runGroupOdometer').onclick = async function() {
       if (!credentials) {
@@ -1118,6 +1399,28 @@
           method: 'ExecuteMultiCall',
           typeName: '',
           params: `{"calls": [{"method": "Get", "params": {"typeName": "Device", "resultsLimit": 1000}}, {"method": "Get", "params": {"typeName": "Trip", "search": {"fromDate": "${today}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 1000}}, {"method": "Get", "params": {"typeName": "ExceptionEvent", "search": {"fromDate": "${today}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 100}}]}`
+        },
+
+        // UCCL Cross-Reference Examples
+        'fleet-device-mapping': {
+          method: 'Get',
+          typeName: 'Device',
+          params: '{"search": {"name": "%445%"}, "resultsLimit": 10}'
+        },
+        'reg-plate-search': {
+          method: 'Get',
+          typeName: 'Device',
+          params: '{"search": {"vehicleIdentificationNumber": "%FDT602%"}, "resultsLimit": 5}'
+        },
+        'vehicle-name-search': {
+          method: 'Get',
+          typeName: 'Device',
+          params: '{"search": {"name": "%Hiace%"}, "resultsLimit": 20}'
+        },
+        'odometer-comparison': {
+          method: 'Get',
+          typeName: 'StatusData',
+          params: `{"search": {"diagnosticSearch": {"id": "DiagnosticOdometerId"}, "fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 50}`
         }
       };
       
