@@ -211,25 +211,71 @@
 
   <script>
     let lastApiResult = null;
+    let isApiReady = false;
 
     function showMessage(elementId, message, type = 'info') {
       const element = document.getElementById(elementId);
       element.innerHTML = `<div class="${type}">${message}</div>`;
     }
 
+    // Wait for MyGeotab API to be ready
+    function waitForAPI() {
+      return new Promise((resolve) => {
+        if (typeof api !== 'undefined' && api.call) {
+          isApiReady = true;
+          resolve();
+        } else {
+          // Check every 100ms for API availability
+          const checkAPI = setInterval(() => {
+            if (typeof api !== 'undefined' && api.call) {
+              isApiReady = true;
+              clearInterval(checkAPI);
+              resolve();
+            }
+          }, 100);
+          
+          // Fallback after 10 seconds
+          setTimeout(() => {
+            clearInterval(checkAPI);
+            if (!isApiReady) {
+              console.warn('MyGeotab API not available after 10 seconds');
+            }
+            resolve();
+          }, 10000);
+        }
+      });
+    }
+
     // MyGeotab API call function - uses the global 'api' object
     async function callMyGeotabAPI(method, params = {}) {
+      if (!isApiReady) {
+        await waitForAPI();
+      }
+      
+      if (typeof api === 'undefined' || !api.call) {
+        throw new Error('MyGeotab API is not available. Please ensure you are running this in MyGeotab.');
+      }
+
       return new Promise((resolve, reject) => {
-        api.call(method, params, function(result) {
-          resolve(result);
-        }, function(error) {
-          reject(new Error(error.message || error.name || 'API call failed'));
-        });
+        try {
+          api.call(method, params, function(result) {
+            resolve(result);
+          }, function(error) {
+            reject(new Error(error.message || error.name || 'API call failed'));
+          });
+        } catch (e) {
+          reject(new Error('Failed to call MyGeotab API: ' + e.message));
+        }
       });
     }
 
     // API call handler
     document.getElementById('runApi').onclick = async function() {
+      if (!isApiReady) {
+        showMessage('apiResult', '❌ MyGeotab API not ready. Please wait...', 'error');
+        return;
+      }
+
       const method = document.getElementById('method').value;
       const typeName = document.getElementById('typeName').value.trim();
       let params = {};
@@ -370,6 +416,11 @@
 
     // Group-based odometer collection
     document.getElementById('runGroupOdometer').onclick = async function() {
+      if (!isApiReady) {
+        showMessage('groupOdometerResult', '❌ MyGeotab API not ready. Please wait for initialization...', 'error');
+        return;
+      }
+
       const groupId = document.getElementById('groupId').value.trim();
       const diagnosticId = document.getElementById('diagnosticId').value.trim();
 
@@ -633,8 +684,25 @@
     }
 
     // Initialize the dashboard
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
       console.log('UCCL Dashboard loaded successfully');
+      
+      // Wait for MyGeotab API to be ready
+      try {
+        await waitForAPI();
+        if (isApiReady) {
+          console.log('MyGeotab API is ready');
+          // Update UI to show API is connected
+          const statusElements = document.querySelectorAll('.status-indicator');
+          statusElements.forEach(el => el.style.background = '#10b981'); // Green
+        } else {
+          console.warn('MyGeotab API not available - some features may not work');
+          showMessage('apiResult', '⚠️ MyGeotab API not detected. Some features may not work outside of MyGeotab.', 'warning');
+        }
+      } catch (error) {
+        console.error('Error initializing API:', error);
+        showMessage('apiResult', '❌ Error initializing MyGeotab API: ' + error.message, 'error');
+      }
     });
   </script>
 </body>
