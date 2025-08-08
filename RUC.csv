@@ -1,0 +1,164 @@
+Driver,Driver Changed,Vehicle Description,Fleet #,REG Plate,WOF/COF DUE,Rego $,Purchase Date,Rego Expiry, Service Due ,odo Paid To ,odo from API,Distance Remaining
+,,Toyota Hiace 2009,445,FDT602,08.11.25,$203.67,06.01.25,20.01.26,"350,000","344,012"," 340,062 "," 3,950 "
+,08.01.25,Toyota Hiace 2013,448,GUR891,22.05.25,$203.67,13.01.25,29.01.26,"270,000","268,000"," 262,421 "," 5,579 "
+JJ Mischewski,17.02.25,Ford Ranger 2010 4x2 XLT D/C W/S,463,FQC642,15.05.26,$247.71,27.06.25,13.07.26,"270,000","273,010"," 266,730 "," 6,280 "
+Leroy Anderson,04.04.25,Ford Ranger 2015 4x2 XLT D/C W/S,465,JBB745,01.05.26,$236.52,14.04.25,29.04.26,"270,000","284,000"," 280,909 "," 3,091 "
+,26.06.25,Ford Ranger 2011 4x2 XLT D/C W/S,469,GBP609,19.10.25,$207.77,10.12.24,26.12.25,"330,000","321,000"," 318,096 "," 2,904 "
+Shane Tipene,,Ford Ranger 2011 4x2 XLT D/C W/S,470,FUB380,03.11.25,$236.52,07.04.25,24.04.26,"320,000","317,050"," 311,736 "," 5,314 "
+Temp John Munnelly,22.04.25,Ford Ranger 2010 4x2 XLT D/C W/S,471,FRM776,02.12.25,$236.52,10.02.25,28.02.26,"320,000","321,050"," 316,303 "," 4,747 "
+Temp Kymani,,Toyota Hilux 2011 4x2 D/C W/S,476,GBN844,26.08.25,$207.77,23.09.24,15.10.25,"380,000","384,036"," 383,202 ", 834 
+Nick Ashhurst,02.06.25 & 16.06.25,Ford Ranger 2018 4x2 XLT D/C W/S,486,LER932,22.02.26,$236.52,03.02.25,20.02.26,"280,000","290,001"," 279,288 "," 10,713 "
+Steve De Leeuw,04.04.25,Ford Ranger 2018 4x2 XLT D/C W/S,487,LER933,26.02.26,$236.52,03.02.25,20.02.26,"210,000","200,001"," 196,655 "," 3,346 "
+Tom Collis,,Ford Ranger 2018 4x2 XLT D/C W/S,488,LER937,03.03.26,$236.52,10.02.25,27.02.26,"200,000","205,000"," 194,101 "," 10,899 "
+Mike Walters,04.04.25,Ford Ranger 2018 4x4 XLT D/C W/S,489,LER940,01.03.26,$236.52,10.02.25,27.02.26,"250,000","245,020"," 242,557 "," 2,463 "
+Harris Crowe,,Ford Ranger 2018 4x4 XLT D/C W/S,490,LER936,08.03.26,$236.52,10.02.25,27.02.26,"230,000","230,012"," 227,814 "," 2,198 "
+Jake Moretti,,Ford Ranger 2018 4x4 XLT D/C W/S,491,LGJ618,12.04.26,$207.83,25.03.24,11.04.26,"230,000","220,000"," 215,754 "," 4,246 "
+David Matiu,18.11.24,Ford Ranger 2018 4x2 XLT D/C W/S,492,LKZ964,12.06.26,$207.83,26.05.25,14.06.26,"200,000","205,002"," 201,838 "," 3,164 "
+Rob Going,,Ford Ranger 2018 4x2 XLT D/C W/S,493,LJJ940,03.06.26,$236.52,20.05.25,07.06.26,"230,000","235,000"," 229,838 "," 5,162 "
+Temp Kiwirail Team - James / Zac,12.11.24,Ford Ranger 2013 4x2 XL D/C W/S,494,GSN851,08.05.26,$236.52,13.05.25,27.05.26,"335,000","332,010"," 330,389 "," 1,621 "
+Neil Lineses,26.06.25,Mazda BT-50 2013 4x2 GSX D/C W/S,495,GTH864,18.08.25,$207.83,03.09.24,14.09.25,"250,000","254,010"," 248,793 "," 5,217 "
+Workshop,,Ford Ranger 2015 4x4 Cabplus F/D,496,JYY52,13.08.25,$207.83,13.12.24,10.01.26,"310,000","306,766"," 303,211 "," 3,555 "
+Matt Hayes,,Ford Ranger 2018 4x4 D/C W/S,499,LNW704,12.08.25,$247.71,18.07.25,05.08.26,"220,000","215,000"," 208,937 "," 6,063 "
+Anthony Edwards,25.07.25,Mazda BT-50 2012 4x2 GLX Cabplus W/S,500,GNA826,28.10.25,$207.83,11.03.24,27.03.26,"320,000","319,010"," 312,644 "," 6,366 "
+Richard Canterbury,07.04.25,Mazda BT-50 2012 4x2 GLX D/C W/S,501,GPR852,02.11.25,$207.83,16.10.23,08.11.25,"190,000","188,002"," 183,705 "," 4,297 "
+Phil Bryers,12.11.24,Ford Ranger 2019 4x2 XLT D/C W/S,502,MBF560,16.04.26,$207.83,01.04.25,09.04.26,"220,000","220,000"," 213,518 "," 6,482 "
+Jaco van Dijk,,Ford Ranger 2014 4x2 XL D/C W/S,503,HHS395,15.06.25,$236.52,03.03.25,19.03.26,"230,000","225,000"," 223,268 "," 1,732 "
+Wi Nathan,,Toyota Hilux 2014 4x2 D/C W/S,505,HQL909,06.11.25,$207.77,10.12.24,24.12.25,"220,000","222,000"," 219,742 "," 2,258 "
+Mahesh Prasad,,Ford Ranger 2016 4x2 XL D/C W/S,508,JSC564,17.05.26,$207.77,09.09.24,20.09.25,"300,000","305,050"," 299,513 "," 5,537 "
+Carlos Manuel,,Ford Ranger 2020 4x2 XLT D/C W/S,509,MTZ279,06.06.26,$207.83,26.05.25,09.06.26,"105,000","131,000"," 125,065 "," 5,935 "
+Thomas Blaza,07.04.25,Ford Ranger 2020 4x2 XLT D/C W/S,510,MTZ278,10.06.26,$207.83,26.05.25,09.06.26,"135,000","136,000"," 133,926 "," 2,074 "
+Damien Walters  ,,Ford Ranger 2016 4x2 XL D/C W/S,511,KCU68,10.06.26,$207.83,27.08.24,09.09.25,"210,000","206,000"," 203,455 "," 2,545 "
+Billy Gibson,,Ford Ranger 2015 4x2 XL D/C W/S,512,HYN614,01.07.26,$207.77,16.09.24,30.09.25,"230,000","225,020"," 220,504 "," 4,516 "
+Cam Hinge,,Ford Ranger 2020 4x2 XLT D/C W/S,513,MWR962,21.07.26,$247.71,03.07.23,21.07.26,"175,000","171,012"," 161,133 "," 9,879 "
+Luke Ryder,,Mazda BT-50 2018 4x2 GLX Cabplus F/D,514,LFW259,02.07.26,$207.83,11.03.24,26.03.26,"160,000","150,000"," 147,429 "," 2,571 "
+Daniel Hemara,03.04.25,Ford Ranger 2020 4x4 XLT D/C W/S,515,NAJ997,14.09.25,$207.77,03.09.24,13.09.25,"135,000","136,000"," 129,332 "," 6,668 "
+Gerrie van der Linde,,Ford Ranger 2021 4x2 XLT D/C W/S,517,NNM799,05.07.26,$207.83,18.06.25,04.07.26,"90,000","93,000"," 88,258 "," 4,743 "
+Peter Hughes,,Ford Ranger 2021 4x2 XLT D/C W/S,518,NQS995,29.07.26,$247.71,13.07.25,28.07.26,"105,000","108,000"," 103,074 "," 4,926 "
+Wayne Pepperell,,Ford Ranger 2021 4x2 XLT D/C W/S,519,NQS996,29.07.26,$247.71,13.07.25,28.07.26,"135,000","143,000"," 133,018 "," 9,982 "
+Paul Mandeno,,Ford Ranger 2021 4x4 XLT D/C W/S,520,NRJ849,03.09.25,$207.83,14.08.23,03.09.25,"135,000","126,000"," 120,308 "," 5,692 "
+James McCarthy,28.07.25,Ford Ranger 2021 4x4 XLT D/C W/S,521,NRJ851,03.09.25,$207.83,14.08.23,02.09.25,"150,000","153,000"," 143,385 "," 9,615 "
+Brent Cross,,Ford Ranger 2021 4x2 XLT D/C W/S,522,NSR530,04.10.25,$207.77,23.09.24,03.10.25,"90,000","96,000"," 87,103 "," 8,898 "
+Iri Ritchie,31.03.25,Ford Ranger 2021 4x2 XLT D/C W/S,523,NSR531,04.10.25,$207.77,23.09.24,03.10.25,"90,000","86,000"," 81,570 "," 4,430 "
+Gary Annan,,Toyota Hilux 2022 4x2 SR D/C W/S,524,NZF473,11.01.26,$207.83,13.12.24,11.01.26,"85,000","91,006"," 87,242 "," 3,764 "
+Joel Teaupa,19.06.25,Toyota Hilux 2022 4x2 SR D/C W/S,525,NZW104,20.01.26,$236.52,06.01.25,20.01.26,"135,000","141,009"," 131,893 "," 9,116 "
+Mark Olsen,,Toyota Hilux 2022 4x2 SR D/C W/S,526,NZW118,27.01.26,$236.52,13.01.25,27.01.26,"90,000","86,010"," 86,092 ",-82 
+Gary Blackwood,,Toyota Hilux 2022 4x2 SR D/C W/S,527,PAP496,09.02.26,$236.52,20.01.25,08.02.26,"90,000","101,000"," 90,207 "," 10,793 "
+Berne Connelly,19.06.25,Toyota Hilux 2022 4x2 SR D/C W/S,528,PCE760,28.02.26,$236.52,10.02.25,27.02.26,"60,000","81,000"," 73,500 "," 7,500 "
+Engelbert van Schalkwyk,,Toyota Hilux 2019 4x2 SR D/C W/S,530,MAR717,24.03.26,$236.52,13.05.25,27.05.26,"140,000","144,000"," 140,478 "," 3,522 "
+Craig Butterworth,,Isuzu D-Max 2013 4X2 LS D/C W/S,531,GUJ411,07.06.26,$247.71,27.06.25,09.07.26,"320,000","317,002"," 315,304 "," 1,698 "
+Michael Polglase,,BYD Atto 3 2023 Extended Range,532,QAJ980,21.06.26,$135.84,05.06.25,20.06.26,"60,000","43,037"," 41,561 "," 1,476 "
+Renee Immers,,BYD Atto 3 2023 Extended Range,533,QAU621,20.06.26,$135.84,05.06.25,20.06.26,"60,000","25,306"," 23,153 "," 2,153 "
+Zain Kader/Tania Tipene,31.03.25,Tesla Model Y 2023,534,QFC57,20.11.26,$107.09,29.10.24,19.11.25,15.11.26,"36,965"," 28,786 "," 8,179 "
+James Dow,,Tesla Model Y 2023,535,QFC58,20.11.26,$107.09,29.10.24,19.11.25,15.11.26,"54,618"," 44,061 "," 10,557 "
+Tony Abiad,31.03.25,Tesla Model Y 2023,536,QFC71,20.11.26,$106.15,,19.11.24,15.11.26,"75,350"," 68,842 "," 6,508 "
+Arthur Ruedi,,Toyota Hilux 2024 4x2 SR D/C W/S,537,QJZ870,16.01.27,$236.52,06.01.25,16.01.26,"45,000","56,012"," 50,299 "," 5,713 "
+Josh Welch,,Toyota Hilux 2024 4x2 SR D/C W/S,538,QJZ871,17.01.27,$236.52,06.01.25,16.01.26,"45,000","56,000"," 54,649 "," 1,351 "
+Lyle McGaughey,,Toyota Hilux 2024 4x2 SR D/C W/S,539,QJZ872,17.01.27,$236.52,06.01.25,16.01.26,"45,000","41,000"," 35,745 "," 5,256 "
+Cam Wood,,Toyota Hilux 2024 4x2 SR D/C W/S,540,QJZ873,16.01.27,$236.52,06.01.25,16.01.26,"45,000","46,011"," 42,066 "," 3,945 "
+Rob Wilson,,Tesla Model Y 2024,541,QJG431,30.01.27,$135.84,20.01.25,01.02.26,"30,000","69,420"," 59,541 "," 9,879 "
+Matt Oud,,Toyota Hilux 2024 SR 2.8DT 6MT 4WD,542,QTB354,23.08.27,,,22.08.25,"30,000","36,010"," 32,684 "," 3,326 "
+Lee Clasper,,Tesla Model Y 2024,543,QMT235,07.08.27,$212.84,18.07.25,06.08.26,"20,000","26,009"," 20,161 "," 5,848 "
+Alex Fitch,,Tesla Model Y 2024,544,QMT236,07.08.27,$212.84,18.07.25,06.08.26,"40,000","46,009"," 36,451 "," 9,558 "
+Akash Nada,28.04.25,BYD Atto 3 2023 Extended Range,545,QHD437,23.01.26,$135.84,01.05.25,22.05.26,"20,000","22,319"," 16,300 "," 6,019 "
+Jacob Dunn,02.04.25,BYD Shark 6 2025 AWD D/C W/S,546,RBL829,26.02.28,,,25.02.26,"20,000","23,000"," 16,438 "," 6,562 "
+Grant Little,02.04.25,BYD Shark 6 2025 AWD D/C W/S,547,RBL830,26.02.28,,,25.02.26,"3,500","13,000"," 5,964 "," 7,036 "
+,,Tesla Model Y 2022,548,PPU192,,$212.84,18.07.25,05.08.26,,"18,900"," 16,424 "," 2,476 "
+Pat Clotworthy,26.05.25,Toyota Hilux 2025 4x2 SR D/C W/S,549,RET187,15.05.28,,,15.05.26,"15,000","11,010"," 9,321 "," 1,689 "
+Andrew Davidson,03.06.25,Toyota Hilux 2025 4x2 SR D/C W/S,550,RET188,15.05.28,,,15.05.26,"15,000","6,010"," 7,918 ","-1,908 "
+Oliver Copsey,04.08.25,Toyota Hilux 2025 4x2 SR D/C W/S,551,RET189,14.05.28,,,15.05.26,"15,000","6,010"," 2,634 "," 3,376 "
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,TOTALS,,,,"$19,704.71",,,,,,
+,,,,,,,,,,,,
+EX PLANT,,,,,,,,,,,,
+Water Cart,,Being Sold,,,,,,,,,,
+,,SOLD,,,,,,,,,,
+Jerry,,silver ute,,,,,,,,,,
+,,SOLD,,,,,,,,,,
+,,SOLD,,,,,,,,,,
+Issac Leef,,Nissan navara,,,,,,,,,,
+,,SOLD,,,,,,,,,,
+Not assisgned ,,Mitsubishi Triton Ute 2002,,,,,,,,,,
+Richard,,,,,,,,,,,,
+SOLD,,Mitsubishi L200 2.5,,,,,,,,,,
+SOLD 31.10.11,,Holden Rodeo Crewcab 4x4 2003 Black,,,,,,,,,,
+Andrew Campbell,,Holden Commodore,,,,,,,,,,
+to be sold,,Holden Rodeo Crewcab 3.0 *North,,,,,,,,,,
+Workshop (being sold),,Nissan Navara 2WD Ute 2004 *North,,,,,,,,,,
+Water Cart,,Water Cart Trailer - Domett RBF2F2,,,,,,,,,,
+Sold,,Mitsubishi L200 White Ute,,,,,,,,,,
+SOLD,,Toyota Toyace 1996,,,,,,,,,,
+,,Nissan Navara 2WD S/CAB 2001,,,,,,,,,,
+Water Cart,,ERF 6x4 Tractor 1992,,,,,,,,,,
+SOLD Sept 2013,,Leyland 2400,,,,,,,,,,
+Water Cart,,6x4 Mitsubishi 1990,,,,,,,,,,
+to be sold,,Holden Rodeo Crewcab 3.0 * North,,,,,,,,,,
+SOLD to Magic Motors 15.07.13,,Toyota Hiace 10 Seater Minibus,,,,,,,,,,
+SOLD to Steven James,,Holden Rodeo 4x2 Ute Black,,,,,,,,,,
+SOLD gone to Tonga,,Toyota Dyna 1987,,,,,,,,,,
+Lease expired,,Toyota Hiace 2013 (Lease),,,,,,,,,,
+SOLD ,,Toyota Dyna Crewcab Flat Deck,,,,,,,,,,
+SOLD AUG 2016,,Mitsubishi Triton Ute 2004 (red),,,,,,,,,,
+SOLD 17/9/16,,2009 Holden SV6 Silver,,,,,,,,,,
+Truck - SOLD 25/10/16,,1998 International TF26170 Truck - Water Cart,,,,,,,,,,
+Trailer SOLD 31/10/16,,3 Axle Flat Deck 1977 Domett,,,,,,,,,,
+Yard SOLD 16/05/17,,Ford Ranger 2007 3.0,,,,,,,,,,
+SOLD 28.7.17,,2011 Hyundai I45 2.4 Ltr Elite,,,,,,,,,,
+SOLD 23.8.17,,Toyota Hilux 2007 3.0,,,,,,,,,,
+SOLD 31.8.17,,Isuzu Elf Crewcab Ute 1997,,,,,,,,,,
+Barry Stenberg SOLD 30.09.17,,2016 Ford Territory Titanium 2.7 V6,,,,,,,,,,
+SOLD 20.2.18,,Hino Ranger Crewcab 1997,,,,,,,,,,
+SOLD 23.5.18,,Nissan Pathfinder Ti 2014 3.5 Litre,,,,,,,,,,
+SOLD 29.06.18,,2008 Ford Ranger 3.0TD XLT DC W/S 4 x 2,,,,,,,,,,
+Written off July 18,,2009 Ford Ranger XLT 2WD 3.0TD,,,,,,,,,,
+Sold 21.8.18,,Holden Rodeo 2WD Ute 2007 3.0,,,,,,,,,,
+Written off Aug 18,,2007 Isuzu Forward Tipper Truck,,,,,,,,,,
+Written off Aug 18,,2013 Mazda BT-50 2WD 3.2 Ute,,,,,,,,,,
+Sold 19.10.18,,Toyota Hiace 2008 3.0,,,,,,,,,,
+BEING SOLD,,2007 Ford Ranger  3.0,,,,,,,,,,
+SOLD 26.11.18,,2001 Isuzu N Series 4x2 (service truck) 4.8 Ltr,,,,,,,,,,
+SOLD DECEMBER 18,,Holden Rodeo LX 2007 3.0,,,,,,,,,,
+Sold 31.12.18,,2010 Holden Colorado 4x2 3.0,,,,,,,,,,
+Sold 26.2.19,,Holden Rodeo 2007 Double Cab 4x2 3.0,,,,,,,,,,
+SOLD 11.7.19,,Ford Ranger 2008 3.0,,,,,,,,,,
+SOLD 25.9.19,,2015 Polaris Ranger,,,,,,,,,,
+SOLD OCT 19,,Toyota Dyna (Hino Ranger) Crewcab 1998,,,,,,,,,,
+SOLD FEB 2020,,Mitsubishi Canter 1995,,,,,,,,,,
+SOLD JULY 2020,,2008 Holden Rodeo 3.0 4x2,,,,,,,,,,
+SOLD JULY 2020,,ERF 6x4 Tractor 1991,,,,,,,,,,
+SOLD JULY 2020,,2006 Toyota Hiace 5 Door Van 2.5 Ltr,,,,,,,,,,
+SOLD JAN 2021,,Holden Rodeo 2008 4x4 LX D/C W/S,,,,,,,,,,
+SOLD MAR 2021,,Holden Rodeo 2007 4x2 LT D/C W/S,,,,,,,,,,
+SOLD JULY 2021,,Nissan Navara 2013 4x2 RX D/C W/S,,,,,,,,,,
+SOLD OCT 2021,,Isuzu NKR275C 1997,,,,,,,,,,
+SOLD DEC 2021,,Toyota Hilux 2000 4x2 S/C F/D,,,,,,,,,,
+SOLD JUNE 2022,,Ford Territory Titanium 2014 AWD,,,,,,,,,,
+SOLD JULY 2022,,Holden Rodeo 2005 4x4 LT,,,,,,,,,,
+SOLD AUG 2022,,Isuzu Elf 2005 4x2 Crew Cab,,,,,,,,,,
+SOLD OCT 2022,,Isuzu Elf 250 1997 4x2 Crew Cab,,,,,,,,,,
+SOLD NOV 2022,,Toyota Landcruiser Prado 2019 4x4 VX,,,,,,,,,,
+SOLD DEC 2022,,Volkswagen Amarok 2020 4x4 D/C W/S,,,,,,,,,,
+SOLD DEC 2022,,Isuzu CXZ 400 Gigamax 2006,,,,,,,,,,
+SOLD JAN 2023,,Ford Ranger 2010 4x4 XL D/C W/S,,,,,,,,,,
+SOLD APRIL 2023,,Ford Courier 2004 4x4 XL Cabplus F/D,,,,,,,,,,
+SOLD APRIL 2023,,Ford Ranger 2010 4x2 XLT D/C W/S,,,,,,,,,,
+SOLD APRIL 2023,,Mazda BT-50 2010 4x2 DX D/C W/S,,,,,,,,,,
+SOLD MAY 2023,,Ford Territory Titanium 2013 AWD,,,,,,,,,,
+SOLD JUNE 2023,,Mazda BT-50 2007 4x4 DX D/C W/S,,,,,,,,,,
+SOLD SEPT 2023,,Toyota Toyoace 2008 D/C F/D,,,,,,,,,,
+SOLD SEPT 2023,,Ford Ranger 2010 4x2 XLT D/C W/S,,,,,,,,,,
+WRITTEN OFF - INSURANCE PAY OUT SEPT 2023,,Ford Ranger 2013 4x4 XLT D/C W/S,,,,,,,,,,
+SOLD OCT 2023,,Toyota Corolla 2014 GX,,,,,,,,,,
+SOLD FEB 2024,,Holden Colorado 2013 4x2 LT D/C W/S,,,,,,,,,,
+FOR SALE,,Ford Ranger 2013 4x4 XLT D/C W/S,,,,,,,,,,
+Various,,Isuzu CXZ 400 Gigamax 2004,,,,,,,,,,
+SOLD APRIL 2024,,Ford Ranger 2012 4x2 XL D/C W/S,,,,,,,,,,
+SOLD APRIL 2024,,Mazda BT-50 2007 4x2 D/C W/S,,,,,,,,,,
+SOLD APRIL 2024,,Ford Ranger 2009 4x2 XL D/C W/S,,,,,,,,,,
+FOR SALE,,Ford Ranger 2009 4x2 XL D/C W/S,,,,,,,,,,
+,,Ford Ranger 2015 4x2 XLT D/C W/S,,,,,,,,,,
+,,Holden Colorado 2013 4x2 LTZ D/C W/S,,,,,,,,,,
+SOLD NOV 2024,,Ford Ranger 2011 4x2 XLT D/C W/S,,,,,,,,,,
+SOLD NOV 2024,,Ford Ranger 2012 4x2 XL D/C W/S,,,,,,,,,,
+Being Sold,18.11.24,Ford Ranger 2013 4x2 XLT D/C W/S,,,,,,,,,,
+SOLD FEB 2025,08.01.25,Mazda BT-50 2013 4x2 GSX D/C W/S,,,,,,,,,,
