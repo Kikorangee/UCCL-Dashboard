@@ -1,16 +1,16 @@
 {
-    "name": "UCCL Fleet Dashboard",
-    "supportEmail": "francis@directt.co.nz",
-    "version": "1.0.0",
-    "items": [
-        {
-            "url": "https://kikorangee.github.io/UCCL-Dashboard/main.html",
-            "path": "ActivityLink/",
-            "menuName": {
-                "en": "UCCL Dashboard"
-            },
-            "icon": "https://kikorangee.github.io/UCCL-Dashboard/icon.svg"
-        }
-    ],
-    "isSigned": false
+  "name": "RUC Remaining",
+  "supportEmail": "Francis@directt.co.nz",
+  "version": "1.0",
+  "items": [
+    {
+      "url": "https://kikorangee.github.io/UCCL-Dashboard/mainuccl.html",
+      "menuName": {
+        "en": "RUC Remaining"
+      },
+      "icon": "https://kikorangee.github.io/UCCL-Dashboard/icons/ruc-icon.svg"
+    }
+  ],
+  "key": "RUC-REMAINING-ADDIN",
+  "isSigned": false
 }
