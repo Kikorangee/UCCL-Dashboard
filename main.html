@@ -351,6 +351,21 @@
     </div>
 
     <div class="section">
+      <h3><span class="icon">🚗</span>Group-Based Odometer Collection</h3>
+      <div class="warning">
+        <strong>📝 Instructions:</strong><br>
+        1. First get your Group ID and Diagnostic ID using the examples below<br>
+        2. Enter them here and click "Get Group Odometer Readings"
+      </div>
+      <input id="groupId" placeholder="🏢 Group ID (e.g., GroupCompanyId)" value="GroupCompanyId">
+      <input id="diagnosticId" placeholder="🔧 Diagnostic ID (e.g., DiagnosticOdometerId)" value="DiagnosticOdometerAdjustmentId">
+      <button id="runGroupOdometer" class="btn-success">
+        <span class="icon">🚗</span>Get Group Odometer Readings
+      </button>
+      <div id="groupOdometerResult"></div>
+    </div>
+
+    <div class="section">
       <h3><span class="icon">🔐</span>Authentication</h3>
       <div class="warning">
         <strong>🔒 Security Note:</strong> Credentials are not stored and remain within your browser session only.
@@ -393,6 +408,9 @@
       <div class="button-group">
         <button id="runApi" class="btn-success">
           <span class="icon">🚀</span>Run API Call
+        </button>
+        <button id="testConnection" class="btn-info">
+          <span class="icon">🔬</span>Test Connection
         </button>
         <button id="downloadCsv" class="btn-info">
           <span class="icon">📊</span>Download CSV
@@ -447,6 +465,16 @@
           <button class="example-btn" onclick="loadExample('groups')">🏢 All Groups</button>
         </div>
       </div>
+
+      <div class="category">
+        <h4><span class="icon">🔍</span>Helper Queries (for Group Odometer)</h4>
+        <div class="example-grid">
+          <button class="example-btn" onclick="loadExample('find-groups')">🏢 Find Group IDs</button>
+          <button class="example-btn" onclick="loadExample('find-diagnostics')">🔧 Find Diagnostic IDs</button>
+          <button class="example-btn" onclick="loadExample('odometer-diagnostics')">🛣️ Odometer Diagnostics</button>
+          <button class="example-btn" onclick="loadExample('group-devices')">📱 Devices in Group</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -471,10 +499,164 @@
 
     // Direct API call function
     async function callGeotabAPI(method, params = {}) {
+      console.log('callGeotabAPI called with:', { method, params, serverUsed, hasCredentials: !!credentials });
+      
+      if (!serverUsed) {
+        throw new Error('No server specified. Please authenticate first.');
+      }
+      
       const requestBody = {
         method: method,
         params: credentials ? { ...params, credentials: credentials } : params
       };
+
+    // Group-based odometer collection (restored original functionality)
+    document.getElementById('runGroupOdometer').onclick = async function() {
+      if (!credentials) {
+        showMessage('groupOdometerResult', '❌ Please authenticate first', 'error');
+        return;
+      }
+
+      const groupId = document.getElementById('groupId').value.trim();
+      const diagnosticId = document.getElementById('diagnosticId').value.trim();
+
+      if (!groupId || !diagnosticId) {
+        showMessage('groupOdometerResult', '❌ Please enter both Group ID and Diagnostic ID', 'error');
+        return;
+      }
+
+      try {
+        showMessage('groupOdometerResult', '🔍 Getting devices from group...', 'warning');
+
+        // Step 1: Get devices from group (following original logic)
+        const devices = await callGeotabAPI('Get', {
+          typeName: 'Device',
+          search: {
+            groups: [{ id: groupId }]
+          },
+          resultsLimit: 1000
+        });
+
+        if (!devices || devices.length === 0) {
+          showMessage('groupOdometerResult', '❌ No devices found in group. Check your Group ID.', 'error');
+          return;
+        }
+
+        showMessage('groupOdometerResult', `✅ Found ${devices.length} devices. Building odometer calls...`, 'success');
+
+        // Step 2: Build calls array (following original logic)
+        const results = [];
+        const calls = [];
+        const now = new Date().toISOString();
+        const yesterday = new Date(Date.now() - 24*60*60*1000).toISOString();
+
+        devices.forEach(function(device) {
+          // Build results array with device info (original logic)
+          results.push({
+            deviceId: device.id,
+            name: device.name,
+            vehicleIdentificationNumber: device.vehicleIdentificationNumber || 'N/A',
+            serialNumber: device.serialNumber || 'N/A',
+            odometer: null,
+            odometerDate: null,
+            status: 'Pending'
+          });
+
+          // Build API calls (original logic)
+          calls.push({
+            method: 'Get',
+            params: {
+              typeName: 'StatusData',
+              search: {
+                fromDate: yesterday,  // Better than same timestamp
+                toDate: now,
+                diagnosticSearch: { id: diagnosticId },
+                deviceSearch: { id: device.id }
+              },
+              resultsLimit: 1
+            }
+          });
+        });
+
+        showMessage('groupOdometerResult', `🚀 Executing ${calls.length} odometer API calls...`, 'warning');
+
+        // Step 3: Execute MultiCall (following original logic)
+        const callResults = await callGeotabAPI('ExecuteMultiCall', { calls: calls });
+
+        // Step 4: Process results (following original logic)
+        for (let i = 0; i < callResults.length; i++) {
+          const statusData = callResults[i] && callResults[i][0];
+          if (statusData && statusData.data !== undefined) {
+            results[i].odometer = statusData.data;
+            results[i].odometerDate = statusData.dateTime;
+            results[i].status = statusData.data > 0 ? 'Success' : 'Zero Reading';
+          } else {
+            results[i].odometer = 'No data';
+            results[i].status = 'No Data';
+          }
+        }
+
+        // Summary statistics
+        const withData = results.filter(r => r.odometer && r.odometer !== 'No data' && r.odometer > 0).length;
+        const zeroReadings = results.filter(r => r.odometer === 0).length;
+        const noData = results.filter(r => r.odometer === 'No data').length;
+
+        // Display results
+        showMessage('groupOdometerResult', 
+          `✅ Group odometer collection complete!<br>
+          📊 <strong>Summary:</strong><br>
+          • Total vehicles: ${results.length}<br>
+          • With odometer data: ${withData}<br>
+          • Zero readings: ${zeroReadings}<br>
+          • No data: ${noData}`, 'success');
+
+        // Store results for CSV download
+        lastApiResult = {
+          method: 'ExecuteMultiCall',
+          typeName: 'GroupOdometer',
+          data: callResults,
+          timestamp: new Date().toISOString(),
+          deviceMapping: results  // Extra data for better CSV
+        };
+
+        // Show detailed results
+        document.getElementById('groupOdometerResult').innerHTML += 
+          `<div class="result">${JSON.stringify(results, null, 2)}</div>`;
+
+      } catch (error) {
+        showMessage('groupOdometerResult', `❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    // Test Connection button
+    document.getElementById('testConnection').onclick = async function() {
+      if (!credentials) {
+        showMessage('apiResult', '❌ Not authenticated. Please authenticate first.', 'error');
+        return;
+      }
+
+      try {
+        showMessage('apiResult', '🔬 Testing connection with simple API call...', 'warning');
+        console.log('Testing connection...');
+        
+        // Simple test call to get current user
+        const result = await callGeotabAPI('Get', {
+          typeName: 'User',
+          search: { name: document.getElementById('username').value },
+          resultsLimit: 1
+        });
+        
+        showMessage('apiResult', `✅ Connection test successful! Found user data.`, 'success');
+        document.getElementById('apiResult').innerHTML += `<div class="result">Connection Test Result:\n${JSON.stringify(result, null, 2)}</div>`;
+        
+      } catch (error) {
+        console.error('Connection test failed:', error);
+        showMessage('apiResult', `❌ Connection test failed: ${error.message}`, 'error');
+      }
+    };
+      
+      console.log('Making fetch request to:', `https://${serverUsed}/apiv1`);
+      console.log('Request body:', JSON.stringify(requestBody, null, 2));
 
       const response = await fetch(`https://${serverUsed}/apiv1`, {
         method: "POST",
@@ -485,14 +667,17 @@
         body: JSON.stringify(requestBody)
       });
 
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (data.error) {
-        throw new Error(data.error.message || data.error.name);
+        throw new Error(data.error.message || data.error.name || JSON.stringify(data.error));
       }
       
       return data.result;
@@ -540,6 +725,9 @@
         
         showMessage('authResult', '✅ Authentication successful!', 'success');
         
+        console.log('Authentication successful. Credentials stored:', !!credentials);
+        console.log('Server used:', serverUsed);
+        
         // Update UI
         document.getElementById('connectedServer').textContent = serverUsed;
         document.getElementById('connectedDB').textContent = database;
@@ -559,7 +747,7 @@
     // API call execution
     document.getElementById('runApi').onclick = async function() {
       if (!credentials) {
-        showMessage('apiResult', '❌ Not authenticated', 'error');
+        showMessage('apiResult', '❌ Not authenticated. Please authenticate first.', 'error');
         return;
       }
 
@@ -572,7 +760,7 @@
         try {
           params = JSON.parse(paramsText);
         } catch (e) {
-          showMessage('apiResult', `❌ Invalid JSON: ${e.message}`, 'error');
+          showMessage('apiResult', `❌ Invalid JSON in parameters: ${e.message}`, 'error');
           return;
         }
       }
@@ -583,6 +771,7 @@
       
       try {
         showMessage('apiResult', '🔍 Making API call...', 'warning');
+        console.log('Making API call with:', { method, params, credentials: !!credentials, server: serverUsed });
         
         const result = await callGeotabAPI(method, params);
         
@@ -598,6 +787,7 @@
         };
         
       } catch (error) {
+        console.error('API call failed:', error);
         showMessage('apiResult', `❌ API call failed: ${error.message}`, 'error');
       }
     };
@@ -687,6 +877,26 @@
           method: 'Get',
           typeName: 'Group',
           params: '{"search": {"name": "%"}, "resultsLimit": 10}'
+        },
+        'find-groups': {
+          method: 'Get',
+          typeName: 'Group',
+          params: '{"search": {"name": "%"}, "resultsLimit": 50}'
+        },
+        'find-diagnostics': {
+          method: 'Get',
+          typeName: 'Diagnostic',
+          params: '{"resultsLimit": 100}'
+        },
+        'odometer-diagnostics': {
+          method: 'Get',
+          typeName: 'Diagnostic',
+          params: '{"search": {"name": "%odometer%"}, "resultsLimit": 20}'
+        },
+        'group-devices': {
+          method: 'Get',
+          typeName: 'Device',
+          params: '{"search": {"groups": [{"id": "GroupCompanyId"}]}, "resultsLimit": 20}'
         }
       };
       
@@ -700,26 +910,108 @@
       }
     }
 
-    // CSV Download (simplified)
+    // CSV Download (restored original functionality)
     document.getElementById('downloadCsv').onclick = function() {
       if (!lastApiResult) {
-        showMessage('apiResult', '⚠️ No data available for download', 'warning');
+        showMessage('apiResult', '⚠️ No data available for download. Run an API call first!', 'warning');
         return;
       }
       
-      const csvContent = JSON.stringify(lastApiResult.data, null, 2);
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `geotab_${lastApiResult.method}_${Date.now()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const csvContent = convertToCSV(lastApiResult.data, lastApiResult.method, lastApiResult.typeName);
       
-      showMessage('apiResult', '✅ Data downloaded!', 'success');
+      if (!csvContent) {
+        showMessage('apiResult', '⚠️ No data to export', 'warning');
+        return;
+      }
+      
+      // Create filename
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+      const method = lastApiResult.method || 'API';
+      const typeName = lastApiResult.typeName || 'Data';
+      const filename = `Geotab_${method}_${typeName}_${timestamp}.csv`;
+      
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showMessage('apiResult', `✅ CSV file "${filename}" downloaded successfully!`, 'success');
+      } else {
+        alert('CSV download not supported in this browser');
+      }
     };
+
+    // CSV conversion function (restored original functionality)
+    function convertToCSV(data, method, typeName) {
+      if (!data) return '';
+      
+      let csvContent = '';
+      
+      // Handle different data structures
+      if (Array.isArray(data)) {
+        if (data.length === 0) return 'No data available';
+        
+        // Check if it's Group-based odometer results
+        if (lastApiResult.typeName === 'GroupOdometer' && lastApiResult.deviceMapping) {
+          csvContent = 'Device_ID,Vehicle_Name,VIN,Serial_Number,Odometer_Reading,Date_Time,Status\n';
+          
+          lastApiResult.deviceMapping.forEach(function(device) {
+            csvContent += `"${device.deviceId}","${device.name}","${device.vehicleIdentificationNumber}","${device.serialNumber}",${device.odometer},"${device.odometerDate || ''}","${device.status}"\n`;
+          });
+        }
+        // Check if it's ExecuteMultiCall results (array of arrays)
+        else if (method === 'ExecuteMultiCall') {
+          csvContent = 'Call_Index,Result_Count,Status,Data_Preview\n';
+          
+          data.forEach((callResult, index) => {
+            if (callResult && Array.isArray(callResult)) {
+              const resultCount = callResult.length;
+              const preview = resultCount > 0 ? JSON.stringify(callResult[0]).substring(0, 100) + '...' : 'No data';
+              csvContent += `${index + 1},${resultCount},Success,"${preview.replace(/"/g, '""')}"\n`;
+            } else {
+              csvContent += `${index + 1},0,Failed,"No data available"\n`;
+            }
+          });
+        } else {
+          // Regular array of objects
+          const headers = Object.keys(data[0]);
+          csvContent = headers.map(h => `"${h}"`).join(',') + '\n';
+          
+          data.forEach(row => {
+            const values = headers.map(header => {
+              const value = row[header];
+              if (value === null || value === undefined) return '""';
+              if (typeof value === 'object') return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+              return `"${String(value).replace(/"/g, '""')}"`;
+            });
+            csvContent += values.join(',') + '\n';
+          });
+        }
+      } else if (typeof data === 'object') {
+        // Single object
+        const headers = Object.keys(data);
+        csvContent = headers.map(h => `"${h}"`).join(',') + '\n';
+        const values = headers.map(header => {
+          const value = data[header];
+          if (value === null || value === undefined) return '""';
+          if (typeof value === 'object') return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+          return `"${String(value).replace(/"/g, '""')}"`;
+        });
+        csvContent += values.join(',') + '\n';
+      } else {
+        csvContent = `"Value"\n"${data}"`;
+      }
+      
+      return csvContent;
+    }
 
     // Logout
     document.getElementById('logout').onclick = function() {
@@ -742,7 +1034,17 @@
     };
 
     // Initialize when page loads
-    window.addEventListener('load', initializeGeotabAddin);
+    window.addEventListener('load', function() {
+      initializeGeotabAddin();
+      console.log('Geotab API Runner loaded. Check console for debugging info.');
+      
+      // Check if running in Geotab iframe
+      if (window.parent !== window) {
+        console.log('Running inside Geotab iframe - this is correct for add-ins');
+      } else {
+        console.log('Running standalone - may have CORS issues');
+      }
+    });
   </script>
 </body>
 </html>
