@@ -2,577 +2,449 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Geotab API Runner - Professional Toolkit</title>
+  <title>Geotab API Runner</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+      margin: 0; 
+      padding: 15px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
-      color: #333;
     }
-
+    
     .container {
       max-width: 1200px;
       margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
       padding: 20px;
-    }
-
-    .header {
-      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
       backdrop-filter: blur(10px);
-      border-radius: 15px;
-      padding: 25px;
-      margin-bottom: 25px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.2);
     }
-
-    .header h1 {
-      color: #2d3748;
-      font-size: 2.2em;
-      font-weight: 700;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-    }
-
-    .header .subtitle {
-      color: #4a5568;
-      font-size: 1.1em;
-      font-weight: 500;
-    }
-
-    .success-banner {
-      background: linear-gradient(135deg, #48bb78, #38a169);
-      color: white;
-      padding: 15px 25px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 600;
-      box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
-    }
-
-    .card {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 15px;
-      padding: 25px;
-      margin-bottom: 25px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-    }
-
-    .card-title {
-      color: #2d3748;
-      font-size: 1.4em;
-      font-weight: 700;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      border-bottom: 2px solid #e2e8f0;
-      padding-bottom: 12px;
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 15px;
-      margin-bottom: 15px;
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 12px 16px;
-      border: 2px solid #e2e8f0;
+    
+    input, select, textarea { 
+      margin: 8px 0; 
+      padding: 12px 16px; 
+      width: 100%; 
+      box-sizing: border-box; 
+      border: 2px solid #e1e8ed;
       border-radius: 8px;
       font-size: 14px;
-      transition: all 0.2s ease;
-      background: white;
+      transition: all 0.3s ease;
+      background: #fff;
     }
-
-    .form-control:focus {
-      outline: none;
+    
+    input:focus, select:focus, textarea:focus {
       border-color: #667eea;
+      outline: none;
       box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
-
-    .form-control.textarea {
-      min-height: 120px;
-      resize: vertical;
-      font-family: 'Courier New', monospace;
-    }
-
-    .btn {
-      padding: 12px 24px;
+    
+    button { 
+      cursor: pointer; 
+      margin: 6px 3px; 
+      padding: 12px 20px;
       border: none;
       border-radius: 8px;
-      font-size: 14px;
       font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
-      margin: 4px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
     }
-
-    .btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    
+    button:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
     }
-
-    .btn:active {
-      transform: translateY(0);
+    
+    button:hover:before {
+      left: 100%;
     }
-
-    .btn-primary {
+    
+    .btn-primary { 
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
     }
-
-    .btn-success {
-      background: linear-gradient(135deg, #48bb78, #38a169);
-      color: white;
+    .btn-primary:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
     }
-
-    .btn-info {
-      background: linear-gradient(135deg, #4299e1, #3182ce);
+    
+    .btn-success { 
+      background: linear-gradient(135deg, #56ab2f, #a8e6cf);
       color: white;
+      box-shadow: 0 4px 15px rgba(86, 171, 47, 0.3);
     }
-
-    .btn-danger {
-      background: linear-gradient(135deg, #f56565, #e53e3e);
-      color: white;
+    .btn-success:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(86, 171, 47, 0.4);
     }
-
-    .btn-example {
-      background: linear-gradient(135deg, #805ad5, #6b46c1);
+    
+    .btn-info { 
+      background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
-      padding: 10px 16px;
+      box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+    }
+    .btn-info:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(23, 162, 184, 0.4);
+    }
+    
+    .btn-danger { 
+      background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+      color: white;
+      box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    }
+    .btn-danger:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+    }
+    
+    .error { 
+      color: #721c24; 
+      background: linear-gradient(135deg, #f8d7da, #f5c6cb); 
+      padding: 16px; 
+      border-radius: 8px; 
+      margin: 12px 0; 
+      border-left: 4px solid #dc3545;
+      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
+    }
+    
+    .success { 
+      color: #155724; 
+      background: linear-gradient(135deg, #d4edda, #c3e6cb); 
+      padding: 16px; 
+      border-radius: 8px; 
+      margin: 12px 0; 
+      border-left: 4px solid #28a745;
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);
+    }
+    
+    .warning { 
+      background: linear-gradient(135deg, #fff3cd, #ffeaa7); 
+      color: #856404; 
+      padding: 16px; 
+      border-radius: 8px; 
+      margin: 12px 0; 
+      border-left: 4px solid #ffc107;
+      box-shadow: 0 4px 12px rgba(255, 193, 7, 0.15);
+    }
+    
+    .result { 
+      white-space: pre-wrap; 
+      background: linear-gradient(135deg, #f8f9fa, #e9ecef); 
+      padding: 20px; 
+      margin: 12px 0; 
+      border-radius: 8px; 
+      max-height: 400px; 
+      overflow-y: auto; 
+      border: 1px solid #dee2e6;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
       font-size: 13px;
-      border-radius: 6px;
-      width: 100%;
-      justify-content: center;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.06);
     }
-
-    .status-info {
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 20px;
-      border-left: 4px solid #48bb78;
+    
+    .section { 
+      border: none; 
+      padding: 24px; 
+      margin: 16px 0; 
+      border-radius: 12px; 
+      background: linear-gradient(135deg, #ffffff, #f8f9fa);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+      position: relative;
+      overflow: hidden;
     }
-
-    .status-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
+    
+    .section:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
     }
-
-    .status-label {
-      font-weight: 600;
-      color: #4a5568;
-    }
-
-    .status-value {
-      color: #2d3748;
-      font-family: monospace;
-      background: #f7fafc;
-      padding: 4px 8px;
-      border-radius: 4px;
-    }
-
-    .alert {
-      padding: 15px 20px;
-      border-radius: 8px;
-      margin: 15px 0;
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      font-weight: 500;
-    }
-
-    .alert-success {
-      background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
-      color: #22543d;
-      border-left: 4px solid #38a169;
-    }
-
-    .alert-error {
-      background: linear-gradient(135deg, #fed7d7, #feb2b2);
-      color: #742a2a;
-      border-left: 4px solid #e53e3e;
-    }
-
-    .alert-warning {
-      background: linear-gradient(135deg, #fefcbf, #faf089);
-      color: #744210;
-      border-left: 4px solid #d69e2e;
-    }
-
-    .result-container {
-      background: #1a202c;
-      color: #e2e8f0;
-      padding: 20px;
-      border-radius: 8px;
-      margin-top: 15px;
-      max-height: 400px;
-      overflow-y: auto;
-      font-family: 'Courier New', monospace;
-      font-size: 13px;
-      line-height: 1.4;
-      border: 1px solid #4a5568;
-    }
-
-    .examples-section {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 25px;
-    }
-
-    .example-category {
-      background: rgba(255, 255, 255, 0.7);
-      border-radius: 12px;
-      padding: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-
-    .category-title {
-      color: #2d3748;
-      font-size: 1.1em;
+    
+    h3 { 
+      margin-top: 0; 
+      color: #2c3e50; 
+      font-size: 18px;
       font-weight: 700;
-      margin-bottom: 15px;
       display: flex;
       align-items: center;
       gap: 8px;
     }
-
-    .example-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px;
+    
+    .example-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+      gap: 12px; 
+      margin: 16px 0; 
     }
-
-    .control-panel {
+    
+    .example-btn { 
+      padding: 10px 16px; 
+      background: linear-gradient(135deg, #56ab2f, #a8e6cf);
+      color: white; 
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(86, 171, 47, 0.3);
+    }
+    
+    .example-btn:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(86, 171, 47, 0.4);
+    }
+    
+    .category { 
+      background: linear-gradient(135deg, #f8f9fa, #ffffff); 
+      padding: 16px; 
+      margin: 12px 0; 
+      border-radius: 8px; 
+      border: 1px solid #e9ecef;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    
+    .category h4 { 
+      margin: 0 0 12px 0; 
+      color: #495057; 
+      font-weight: 600;
       display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
       align-items: center;
-      margin-top: 20px;
+      gap: 8px;
     }
-
-    .icon {
-      font-size: 1.2em;
+    
+    .geotab-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 24px;
+      margin: -20px -20px 24px -20px;
+      border-radius: 12px 12px 0 0;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
     }
-
-    .loading {
+    
+    .geotab-header:before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: pulse 4s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.1; }
+    }
+    
+    .geotab-header h2 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: relative;
+      z-index: 1;
+    }
+    
+    .geotab-header p {
+      margin: 8px 0 0 0;
+      opacity: 0.9;
+      font-size: 16px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .status-indicator {
       display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid #ffffff;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
-      border-top-color: transparent;
-      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+      position: relative;
     }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    
+    .status-indicator:before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      border-radius: 50%;
+      animation: pulse-ring 2s ease-out infinite;
     }
-
-    .hidden {
-      display: none !important;
+    
+    @keyframes pulse-ring {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(1.3); opacity: 0; }
     }
-
-    @media (max-width: 768px) {
-      .container {
-        padding: 15px;
-      }
-      
-      .form-row {
-        grid-template-columns: 1fr;
-      }
-      
-      .examples-section {
-        grid-template-columns: 1fr;
-      }
-      
-      .control-panel {
-        justify-content: center;
-      }
+    
+    .status-connected { 
+      background: #28a745;
+      box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
     }
-
-    .special-section {
-      background: linear-gradient(135deg, #fdfcdc, #f0f4f8);
-      border: 2px solid #d6f5d6;
-      border-radius: 12px;
-      padding: 25px;
-      margin-bottom: 25px;
+    .status-connected:before { background: rgba(40, 167, 69, 0.3); }
+    
+    .status-disconnected { 
+      background: #dc3545;
+      box-shadow: 0 0 8px rgba(220, 53, 69, 0.4);
     }
-
-    .instructions {
-      background: rgba(255, 255, 255, 0.8);
+    .status-disconnected:before { background: rgba(220, 53, 69, 0.3); }
+    
+    .button-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+    
+    .button-group button {
+      flex: 1;
+      min-width: 120px;
+    }
+    
+    .icon {
+      font-size: 16px;
+      margin-right: 6px;
+    }
+    
+    .connection-info {
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+      padding: 12px 16px;
       border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 20px;
-      border-left: 4px solid #4299e1;
+      margin: 12px 0;
+      border-left: 4px solid #2196f3;
+      font-size: 14px;
     }
-
-    .instructions strong {
-      color: #2b6cb0;
+    
+    .connection-info strong {
+      color: #1565c0;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
-    <div class="header">
-      <h1>
-        <span class="icon">🚀</span>
-        Geotab API Runner
-        <span style="font-size: 0.6em; color: #718096;">Professional Toolkit</span>
-      </h1>
-      <div class="subtitle">Complete fleet management API testing environment</div>
+    <div class="geotab-header">
+      <h2>🚀 Geotab API Runner</h2>
+      <p>Professional Toolkit • Complete fleet management API testing environment</p>
+    </div>
+    
+    <div class="success">
+      <strong>✨ Enhanced API Runner with 20+ Pre-built API Calls</strong><br>
+      Click any example below to auto-fill the parameters, then hit "Run API Call"
     </div>
 
-    <div class="success-banner">
-      <span class="icon">✅</span>
-      <div>
-        <strong>Enhanced API Runner with 20+ Pre-built API Calls</strong><br>
-        <small>Click any example below to auto-fill the parameters, then hit "Run API Call"</small>
+    <div class="section">
+      <h3><span class="icon">🔐</span>Authentication</h3>
+      <div class="warning">
+        <strong>🔒 Security Note:</strong> Credentials are not stored and remain within your browser session only.
       </div>
-    </div>
-
-    <!-- Authentication Section -->
-    <div class="card">
-      <h3 class="card-title">
-        <span class="icon">🔐</span>
-        Authentication
-      </h3>
-      
-      <div class="form-group">
-        <div class="form-row">
-          <input id="server" class="form-control" placeholder="Server" value="my.geotab.com">
-          <input id="database" class="form-control" placeholder="Database" value="uccnz">
-        </div>
-        <div class="form-row">
-          <input id="username" class="form-control" placeholder="Username" value="francis@directt.co.nz">
-          <input id="password" class="form-control" type="password" placeholder="Password" value="@fr4nc1sWynn5">
-        </div>
-        <button id="authButton" class="btn btn-primary">
-          <span class="icon">🔑</span>
-          Authenticate
-        </button>
-      </div>
+      <input id="server" placeholder="🌐 Server (e.g., my.geotab.com)" value="">
+      <input id="database" placeholder="🗄️ Database" value="">
+      <input id="username" placeholder="👤 Username" value="">
+      <input id="password" placeholder="🔑 Password" type="password" value="">
+      <button id="authButton" class="btn-primary">
+        <span class="status-indicator status-disconnected"></span>
+        <span class="icon">🔑</span>Authenticate
+      </button>
       <div id="authResult"></div>
     </div>
 
-    <!-- API Testing Section -->
-    <div id="apiSection" class="card hidden">
-      <h3 class="card-title">
-        <span class="icon">🔧</span>
-        API Testing
-      </h3>
+    <div id="apiSection" style="display:none;" class="section">
+      <h3><span class="icon">🔧</span>API Testing</h3>
+      <div class="success">
+        <span class="status-indicator status-connected"></span>
+        <span class="icon">✅</span>Connected to Geotab
+      </div>
+      <div class="connection-info">
+        <p><strong>🖥️ Server:</strong> <span id="connectedServer"></span></p>
+        <p><strong>🗄️ Database:</strong> <span id="connectedDB"></span></p>
+        <p><strong>👤 User:</strong> <span id="connectedUser"></span></p>
+      </div>
       
-      <div class="alert alert-success">
-        <span class="icon">✅</span>
-        <div>
-          <strong>Authenticated Successfully!</strong><br>
-          Ready to execute API calls
-        </div>
-      </div>
-
-      <div class="status-info">
-        <div class="status-row">
-          <span class="status-label">Server:</span>
-          <span class="status-value" id="connectedServer"></span>
-        </div>
-        <div class="status-row">
-          <span class="status-label">Database:</span>
-          <span class="status-value" id="connectedDB"></span>
-        </div>
-        <div class="status-row">
-          <span class="status-label">User:</span>
-          <span class="status-value" id="connectedUser"></span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <div class="form-row">
-          <select id="method" class="form-control">
-            <option value="Get">Get</option>
-            <option value="Add">Add</option>
-            <option value="Set">Set</option>
-            <option value="Remove">Remove</option>
-            <option value="ExecuteMultiCall">ExecuteMultiCall</option>
-          </select>
-          <input id="typeName" class="form-control" placeholder="Type Name" value="User">
-        </div>
-        
-        <textarea id="params" class="form-control textarea" placeholder='Parameters (JSON)'>{"search":{"name":"%"}}</textarea>
-        
-        <div class="control-panel">
-          <button id="runApi" class="btn btn-success">
-            <span class="icon">🚀</span>
-            Run API Call
-          </button>
-          <button id="downloadCsv" class="btn btn-info">
-            <span class="icon">📊</span>
-            Download CSV
-          </button>
-          <button id="logout" class="btn btn-danger">
-            <span class="icon">🚪</span>
-            Logout
-          </button>
-        </div>
+      <select id="method">
+        <option value="Get">📥 Get</option>
+        <option value="Add">➕ Add</option>
+        <option value="Set">✏️ Set</option>
+        <option value="Remove">🗑️ Remove</option>
+        <option value="ExecuteMultiCall">🔄 ExecuteMultiCall</option>
+      </select>
+      
+      <input id="typeName" placeholder="📝 typeName" value="Device">
+      
+      <textarea id="params" placeholder='⚙️ Parameters (JSON)' rows="4">{"resultsLimit": 10}</textarea>
+      
+      <div class="button-group">
+        <button id="runApi" class="btn-success">
+          <span class="icon">🚀</span>Run API Call
+        </button>
+        <button id="downloadCsv" class="btn-info">
+          <span class="icon">📊</span>Download CSV
+        </button>
+        <button id="logout" class="btn-danger">
+          <span class="icon">🚪</span>Logout
+        </button>
       </div>
       
       <div id="apiResult"></div>
     </div>
 
-    <!-- Group-Based Odometer Collection -->
-    <div class="card special-section">
-      <h3 class="card-title">
-        <span class="icon">🏢</span>
-        Group-Based Odometer Collection
-      </h3>
+    <div class="section">
+      <h3><span class="icon">📋</span>Quick API Examples</h3>
       
-      <div class="instructions">
-        <strong>📝 Instructions:</strong><br>
-        1. First get your Group ID and Diagnostic ID using the examples below<br>
-        2. Enter them here and click "Get Group Odometer Readings"
+      <div class="category">
+        <h4><span class="icon">🚗</span>Vehicle & Device Data</h4>
+        <div class="example-grid">
+          <button class="example-btn" onclick="loadExample('devices')">📱 All Devices</button>
+          <button class="example-btn" onclick="loadExample('device-status')">📊 Device Status</button>
+          <button class="example-btn" onclick="loadExample('device-odometer')">🛣️ Odometer Data</button>
+          <button class="example-btn" onclick="loadExample('devices-in-group')">👥 Group Devices</button>
+        </div>
       </div>
 
-      <div class="form-group">
-        <div class="form-row">
-          <input id="groupId" class="form-control" placeholder="Group ID (e.g., GroupCompanyId)" value="GroupCompanyId">
-          <input id="diagnosticId" class="form-control" placeholder="Diagnostic ID (e.g., DiagnosticOdometerId)" value="DiagnosticOdometerAdjustmentId">
+      <div class="category">
+        <h4><span class="icon">📍</span>Location & Trip Data</h4>
+        <div class="example-grid">
+          <button class="example-btn" onclick="loadExample('gps-data')">🛰️ GPS Data</button>
+          <button class="example-btn" onclick="loadExample('trips')">🗺️ Recent Trips</button>
+          <button class="example-btn" onclick="loadExample('stops')">🛑 Stops</button>
+          <button class="example-btn" onclick="loadExample('zones')">🎯 All Zones</button>
         </div>
-        <button id="runGroupOdometer" class="btn btn-success">
-          <span class="icon">🚗</span>
-          Get Group Odometer Readings
-        </button>
       </div>
-      <div id="groupOdometerResult"></div>
-    </div>
 
-    <!-- Quick API Examples -->
-    <div class="card">
-      <h3 class="card-title">
-        <span class="icon">📋</span>
-        Quick API Examples
-      </h3>
-      
-      <div class="examples-section">
-        <!-- Vehicle & Device Data -->
-        <div class="example-category">
-          <h4 class="category-title">
-            <span class="icon">🚗</span>
-            Vehicle & Device Data
-          </h4>
-          <div class="example-grid">
-            <button class="btn btn-example" onclick="loadExample('devices')">Get All Devices</button>
-            <button class="btn btn-example" onclick="loadExample('device-status')">Get Device Status</button>
-            <button class="btn btn-example" onclick="loadExample('device-odometer')">Get Device Odometer</button>
-            <button class="btn btn-example" onclick="loadExample('devices-in-group')">Get Devices in Group</button>
-            <button class="btn btn-example" onclick="loadExample('device-info')">Get Device Details</button>
-          </div>
+      <div class="category">
+        <h4><span class="icon">⛽</span>Engine & Diagnostics</h4>
+        <div class="example-grid">
+          <button class="example-btn" onclick="loadExample('fuel-data')">⛽ Fuel Data</button>
+          <button class="example-btn" onclick="loadExample('engine-data')">🔧 Engine Status</button>
+          <button class="example-btn" onclick="loadExample('fault-data')">⚠️ Fault Data</button>
+          <button class="example-btn" onclick="loadExample('diagnostics')">🔍 Diagnostics</button>
         </div>
+      </div>
 
-        <!-- Location & Trip Data -->
-        <div class="example-category">
-          <h4 class="category-title">
-            <span class="icon">📍</span>
-            Location & Trip Data
-          </h4>
-          <div class="example-grid">
-            <button class="btn btn-example" onclick="loadExample('gps-data')">Get GPS Data</button>
-            <button class="btn btn-example" onclick="loadExample('trips')">Get Recent Trips</button>
-            <button class="btn btn-example" onclick="loadExample('stops')">Get Stops</button>
-            <button class="btn btn-example" onclick="loadExample('zones')">Get All Zones</button>
-            <button class="btn btn-example" onclick="loadExample('zone-stops')">Get Zone Stops</button>
-          </div>
-        </div>
-
-        <!-- Fuel & Engine Data -->
-        <div class="example-category">
-          <h4 class="category-title">
-            <span class="icon">⛽</span>
-            Fuel & Engine Data
-          </h4>
-          <div class="example-grid">
-            <button class="btn btn-example" onclick="loadExample('fuel-data')">Get Fuel Data</button>
-            <button class="btn btn-example" onclick="loadExample('engine-data')">Get Engine Status</button>
-            <button class="btn btn-example" onclick="loadExample('fault-data')">Get Fault Data</button>
-            <button class="btn btn-example" onclick="loadExample('diagnostics')">Get All Diagnostics</button>
-          </div>
-        </div>
-
-        <!-- Users & Groups -->
-        <div class="example-category">
-          <h4 class="category-title">
-            <span class="icon">👥</span>
-            Users & Groups
-          </h4>
-          <div class="example-grid">
-            <button class="btn btn-example" onclick="loadExample('users')">Get All Users</button>
-            <button class="btn btn-example" onclick="loadExample('groups')">Get All Groups</button>
-            <button class="btn btn-example" onclick="loadExample('diagnostics')">Get Odometer Diagnostics</button>
-            <button class="btn btn-example" onclick="loadExample('driver-changes')">Get Driver Changes</button>
-            <button class="btn btn-example" onclick="loadExample('user-details')">Get User Details</button>
-          </div>
-        </div>
-
-        <!-- Maintenance & Reports -->
-        <div class="example-category">
-          <h4 class="category-title">
-            <span class="icon">🔧</span>
-            Maintenance & Reports
-          </h4>
-          <div class="example-grid">
-            <button class="btn btn-example" onclick="loadExample('maintenance')">Get Maintenance</button>
-            <button class="btn btn-example" onclick="loadExample('exceptions')">Get Exceptions</button>
-            <button class="btn btn-example" onclick="loadExample('dvir')">Get DVIR Logs</button>
-            <button class="btn btn-example" onclick="loadExample('text-messages')">Get Text Messages</button>
-          </div>
-        </div>
-
-        <!-- Advanced Multi-Calls -->
-        <div class="example-category">
-          <h4 class="category-title">
-            <span class="icon">⚡</span>
-            Advanced Multi-Calls
-          </h4>
-          <div class="example-grid">
-            <button class="btn btn-example" onclick="loadExample('multi-odometer')">Multi-Device Odometer</button>
-            <button class="btn btn-example" onclick="loadExample('multi-status')">Multi-Device Status</button>
-            <button class="btn btn-example" onclick="loadExample('fleet-summary')">Fleet Summary</button>
-          </div>
+      <div class="category">
+        <h4><span class="icon">⚡</span>Advanced Operations</h4>
+        <div class="example-grid">
+          <button class="example-btn" onclick="loadExample('multi-odometer')">🔄 Multi-Odometer</button>
+          <button class="example-btn" onclick="loadExample('fleet-summary')">📈 Fleet Summary</button>
+          <button class="example-btn" onclick="loadExample('users')">👥 All Users</button>
+          <button class="example-btn" onclick="loadExample('groups')">🏢 All Groups</button>
         </div>
       </div>
     </div>
@@ -583,16 +455,18 @@
     let serverUsed = null;
     let lastApiResult = null;
 
+    // Initialize Geotab add-in integration
+    function initializeGeotabAddin() {
+      // Check if running within Geotab
+      if (window.parent && window.parent !== window) {
+        console.log('Running as Geotab Add-in');
+        // Could add Geotab-specific initialization here
+      }
+    }
+
     function showMessage(elementId, message, type = 'info') {
       const element = document.getElementById(elementId);
-      const alertClass = type === 'error' ? 'alert-error' : 
-                        type === 'success' ? 'alert-success' : 
-                        type === 'warning' ? 'alert-warning' : 'alert-info';
-      
-      element.innerHTML = `<div class="alert ${alertClass}">
-        <span class="icon">${type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️'}</span>
-        <div>${message}</div>
-      </div>`;
+      element.innerHTML = `<div class="${type}">${message}</div>`;
     }
 
     // Direct API call function
@@ -634,12 +508,12 @@
       document.getElementById('authResult').innerHTML = '';
       
       if (!server || !database || !username || !password) {
-        showMessage('authResult', 'Please fill in all fields', 'error');
+        showMessage('authResult', '❌ Please fill in all fields', 'error');
         return;
       }
       
       try {
-        showMessage('authResult', 'Authenticating...', 'warning');
+        showMessage('authResult', '🔍 Authenticating...', 'warning');
         
         serverUsed = server;
         const result = await callGeotabAPI('Authenticate', {
@@ -651,7 +525,7 @@
         // Handle server redirect
         if (result.path && result.path !== 'ThisServer') {
           serverUsed = result.path;
-          showMessage('authResult', `Redirecting to ${result.path}...`, 'warning');
+          showMessage('authResult', `🔄 Redirecting to ${result.path}...`, 'warning');
           
           const redirectResult = await callGeotabAPI('Authenticate', {
             userName: username,
@@ -664,28 +538,28 @@
           credentials = result.credentials;
         }
         
-        showMessage('authResult', 'Authentication successful!', 'success');
+        showMessage('authResult', '✅ Authentication successful!', 'success');
         
-        // Get user info
-        const users = await callGeotabAPI('Get', {
-          typeName: 'User',
-          search: { name: username }
-        });
-        
+        // Update UI
         document.getElementById('connectedServer').textContent = serverUsed;
         document.getElementById('connectedDB').textContent = database;
-        document.getElementById('connectedUser').textContent = users.length > 0 ? users[0].name : username;
-        document.getElementById('apiSection').classList.remove('hidden');
+        document.getElementById('connectedUser').textContent = username;
+        document.getElementById('apiSection').style.display = '';
+        
+        // Update button status
+        const authBtn = document.getElementById('authButton');
+        authBtn.innerHTML = '<span class="status-indicator status-connected"></span><span class="icon">✅</span>Connected';
+        authBtn.className = 'btn-success';
         
       } catch (error) {
-        showMessage('authResult', `Authentication failed: ${error.message}`, 'error');
+        showMessage('authResult', `❌ Authentication failed: ${error.message}`, 'error');
       }
     };
 
-    // API call
+    // API call execution
     document.getElementById('runApi').onclick = async function() {
       if (!credentials) {
-        showMessage('apiResult', 'Not authenticated', 'error');
+        showMessage('apiResult', '❌ Not authenticated', 'error');
         return;
       }
 
@@ -698,7 +572,7 @@
         try {
           params = JSON.parse(paramsText);
         } catch (e) {
-          showMessage('apiResult', `Invalid JSON: ${e.message}`, 'error');
+          showMessage('apiResult', `❌ Invalid JSON: ${e.message}`, 'error');
           return;
         }
       }
@@ -708,15 +582,14 @@
       }
       
       try {
-        showMessage('apiResult', 'Making API call...', 'warning');
+        showMessage('apiResult', '🔍 Making API call...', 'warning');
         
         const result = await callGeotabAPI(method, params);
         
         const resultCount = Array.isArray(result) ? result.length : (result ? 1 : 0);
-        showMessage('apiResult', `Success! Found ${resultCount} result(s)`, 'success');
-        document.getElementById('apiResult').innerHTML += `<div class="result-container">${JSON.stringify(result, null, 2)}</div>`;
+        showMessage('apiResult', `✅ Success! Found ${resultCount} result(s)`, 'success');
+        document.getElementById('apiResult').innerHTML += `<div class="result">${JSON.stringify(result, null, 2)}</div>`;
         
-        // Store result for CSV download
         lastApiResult = {
           method: method,
           typeName: typeName,
@@ -725,269 +598,25 @@
         };
         
       } catch (error) {
-        showMessage('apiResult', `API call failed: ${error.message}`, 'error');
+        showMessage('apiResult', `❌ API call failed: ${error.message}`, 'error');
       }
     };
 
-    // Logout
-    document.getElementById('logout').onclick = function() {
-      credentials = null;
-      serverUsed = null;
-      lastApiResult = null;
-      document.getElementById('apiSection').classList.add('hidden');
-      document.getElementById('authResult').innerHTML = '';
-      document.getElementById('apiResult').innerHTML = '';
-    };
-
-    // CSV Download functionality
-    function convertToCSV(data, method, typeName) {
-      if (!data) return '';
-      
-      let csvContent = '';
-      
-      // Handle different data structures
-      if (Array.isArray(data)) {
-        if (data.length === 0) return 'No data available';
-        
-        // Check if it's Group-based odometer results
-        if (lastApiResult.typeName === 'GroupOdometer' && lastApiResult.deviceMapping) {
-          csvContent = 'Device_ID,Vehicle_Name,VIN,Serial_Number,Odometer_Reading,Date_Time,Status\n';
-          
-          lastApiResult.deviceMapping.forEach(function(device) {
-            csvContent += `"${device.deviceId}","${device.name}","${device.vehicleIdentificationNumber}","${device.serialNumber}",${device.odometer},"${device.odometerDate || ''}","${device.status}"\n`;
-          });
-        }
-        // Check if it's ExecuteMultiCall results (array of arrays)
-        else if (method === 'ExecuteMultiCall') {
-          // Device IDs in the same order as the API calls - UPDATED WITH ALL 76 VEHICLES
-          const deviceIds = ["bFC","bCE","b12A","b101","b174","b17C","b113","b10D","b17D","b108","bCC","b17E","bC9","b105","b11E","bD9","b102","bD1","bD6","b187","b104","b110","b129","b180","b10F","b122","b17F","b184","b19E","b186","b18C","bD8","b195","bE3","bDA","bB2","b1C3","bE2","b182","bD2","bF9","b11A","b188","b18B","b181","bCA","b119","b189","b2","b16F","b1A1","bF3","bFD","b111","b10B","bFA","b185","bD5","bE0","bD0","b18E","b130","b131","b19A","b1A0","b198","b192","b218","bFE","bF8","b19F","b19C","b10C","b18A","bF6","bD7","b10A","b19B","b199","bFF"];
-          
-          csvContent = 'Call_Index,Device_ID,Odometer_Reading,Date_Time,Status,Actual_Reading\n';
-          
-          data.forEach((callResult, index) => {
-            const deviceId = deviceIds[index] || `Unknown_${index}`;
-            
-            if (callResult && callResult.length > 0) {
-              const statusData = callResult[0];
-              if (statusData && statusData.data !== undefined) {
-                const reading = statusData.data === 0 ? 'No recent activity' : statusData.data;
-                csvContent += `${index + 1},"${deviceId}",${statusData.data},"${statusData.dateTime || ''}",Success,"${reading}"\n`;
-              } else {
-                csvContent += `${index + 1},"${deviceId}","No data","","No Data","No odometer data available"\n`;
-              }
-            } else {
-              csvContent += `${index + 1},"${deviceId}","No data","","Failed","API call failed"\n`;
-            }
-          });
-        } else {
-          // Regular array of objects
-          const headers = Object.keys(data[0]);
-          csvContent = headers.map(h => `"${h}"`).join(',') + '\n';
-          
-          data.forEach(row => {
-            const values = headers.map(header => {
-              const value = row[header];
-              if (value === null || value === undefined) return '""';
-              if (typeof value === 'object') return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
-              return `"${String(value).replace(/"/g, '""')}"`;
-            });
-            csvContent += values.join(',') + '\n';
-          });
-        }
-      } else if (typeof data === 'object') {
-        // Single object
-        const headers = Object.keys(data);
-        csvContent = headers.map(h => `"${h}"`).join(',') + '\n';
-        const values = headers.map(header => {
-          const value = data[header];
-          if (value === null || value === undefined) return '""';
-          if (typeof value === 'object') return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
-          return `"${String(value).replace(/"/g, '""')}"`;
-        });
-        csvContent += values.join(',') + '\n';
-      } else {
-        csvContent = `"Value"\n"${data}"`;
-      }
-      
-      return csvContent;
-    }
-
-    function downloadCSV() {
-      if (!lastApiResult) {
-        showMessage('apiResult', 'No data available for download. Run an API call first!', 'warning');
-        return;
-      }
-      
-      const csvContent = convertToCSV(lastApiResult.data, lastApiResult.method, lastApiResult.typeName);
-      
-      if (!csvContent) {
-        showMessage('apiResult', 'No data to export', 'warning');
-        return;
-      }
-      
-      // Create filename
-      const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
-      const method = lastApiResult.method || 'API';
-      const typeName = lastApiResult.typeName || 'Data';
-      const filename = `Geotab_${method}_${typeName}_${timestamp}.csv`;
-      
-      // Create and download file
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      
-      if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', filename);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showMessage('apiResult', `CSV file "${filename}" downloaded successfully!`, 'success');
-      } else {
-        alert('CSV download not supported in this browser');
-      }
-    }
-
-    // CSV download button event
-    document.getElementById('downloadCsv').onclick = downloadCSV;
-
-    // Group-based odometer collection (following user's exact logic)
-    document.getElementById('runGroupOdometer').onclick = async function() {
-      if (!credentials) {
-        showMessage('groupOdometerResult', 'Please authenticate first', 'error');
-        return;
-      }
-
-      const groupId = document.getElementById('groupId').value.trim();
-      const diagnosticId = document.getElementById('diagnosticId').value.trim();
-
-      if (!groupId || !diagnosticId) {
-        showMessage('groupOdometerResult', 'Please enter both Group ID and Diagnostic ID', 'error');
-        return;
-      }
-
-      try {
-        showMessage('groupOdometerResult', 'Getting devices from group...', 'warning');
-
-        // Step 1: Get devices from group (following user's logic)
-        const devices = await callGeotabAPI('Get', {
-          typeName: 'Device',
-          search: {
-            groups: [{ id: groupId }]
-          },
-          resultsLimit: 1000
-        });
-
-        if (!devices || devices.length === 0) {
-          showMessage('groupOdometerResult', 'No devices found in group. Check your Group ID.', 'error');
-          return;
-        }
-
-        showMessage('groupOdometerResult', `Found ${devices.length} devices. Building odometer calls...`, 'success');
-
-        // Step 2: Build calls array (following user's logic)
-        const results = [];
-        const calls = [];
-        const now = new Date().toISOString();
-        const yesterday = new Date(Date.now() - 24*60*60*1000).toISOString();
-
-        devices.forEach(function(device) {
-          // Build results array with device info (user's logic)
-          results.push({
-            deviceId: device.id,
-            name: device.name,
-            vehicleIdentificationNumber: device.vehicleIdentificationNumber || 'N/A',
-            serialNumber: device.serialNumber || 'N/A',
-            odometer: null,
-            odometerDate: null,
-            status: 'Pending'
-          });
-
-          // Build API calls (user's logic)
-          calls.push({
-            method: 'Get',
-            params: {
-              typeName: 'StatusData',
-              search: {
-                fromDate: yesterday,  // Better than same timestamp
-                toDate: now,
-                diagnosticSearch: { id: diagnosticId },
-                deviceSearch: { id: device.id }
-              },
-              resultsLimit: 1
-            }
-          });
-        });
-
-        showMessage('groupOdometerResult', `Executing ${calls.length} odometer API calls...`, 'warning');
-
-        // Step 3: Execute MultiCall (following user's logic)
-        const callResults = await callGeotabAPI('ExecuteMultiCall', { calls: calls });
-
-        // Step 4: Process results (following user's logic)
-        for (let i = 0; i < callResults.length; i++) {
-          const statusData = callResults[i] && callResults[i][0];
-          if (statusData && statusData.data !== undefined) {
-            results[i].odometer = statusData.data;
-            results[i].odometerDate = statusData.dateTime;
-            results[i].status = statusData.data > 0 ? 'Success' : 'Zero Reading';
-          } else {
-            results[i].odometer = 'No data';
-            results[i].status = 'No Data';
-          }
-        }
-
-        // Summary statistics
-        const withData = results.filter(r => r.odometer && r.odometer !== 'No data' && r.odometer > 0).length;
-        const zeroReadings = results.filter(r => r.odometer === 0).length;
-        const noData = results.filter(r => r.odometer === 'No data').length;
-
-        // Display results
-        showMessage('groupOdometerResult', 
-          `Group odometer collection complete!<br><br>
-          <strong>📊 Summary:</strong><br>
-          • Total vehicles: ${results.length}<br>
-          • With odometer data: ${withData}<br>
-          • Zero readings: ${zeroReadings}<br>
-          • No data: ${noData}`, 'success');
-
-        // Store results for CSV download
-        lastApiResult = {
-          method: 'ExecuteMultiCall',
-          typeName: 'GroupOdometer',
-          data: callResults,
-          timestamp: new Date().toISOString(),
-          deviceMapping: results  // Extra data for better CSV
-        };
-
-        // Show detailed results
-        document.getElementById('groupOdometerResult').innerHTML += 
-          `<div class="result-container">${JSON.stringify(results, null, 2)}</div>`;
-
-      } catch (error) {
-        showMessage('groupOdometerResult', `Error: ${error.message}`, 'error');
-      }
-    };
-
-    // Load examples
+    // Load API examples
     function loadExample(type) {
       const today = new Date().toISOString().split('T')[0];
       const yesterday = new Date(Date.now() - 24*60*60*1000).toISOString().split('T')[0];
-      const lastWeek = new Date(Date.now() - 7*24*60*60*1000).toISOString().split('T')[0];
       
       const examples = {
-        // Vehicle & Device Data
         'devices': {
           method: 'Get',
           typeName: 'Device',
-          params: '{"resultsLimit": 50}'
+          params: '{"resultsLimit": 20}'
         },
         'device-status': {
           method: 'Get',
           typeName: 'DeviceStatusInfo',
-          params: '{"resultsLimit": 20}'
+          params: '{"resultsLimit": 10}'
         },
         'device-odometer': {
           method: 'Get',
@@ -999,125 +628,65 @@
           typeName: 'Device',
           params: '{"search": {"groups": [{"id": "GroupCompanyId"}]}, "resultsLimit": 10}'
         },
-        'device-info': {
-          method: 'Get',
-          typeName: 'Device',
-          params: '{"search": {"id": "b1"}}'
-        },
-
-        // Location & Trip Data
         'gps-data': {
           method: 'Get',
           typeName: 'LogRecord',
-          params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 100}`
+          params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 50}`
         },
         'trips': {
           method: 'Get',
           typeName: 'Trip',
-          params: `{"search": {"fromDate": "${lastWeek}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 20}`
+          params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 10}`
         },
         'stops': {
           method: 'Get',
           typeName: 'Stop',
-          params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 50}`
+          params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 20}`
         },
         'zones': {
           method: 'Get',
           typeName: 'Zone',
-          params: '{"resultsLimit": 50}'
+          params: '{"resultsLimit": 20}'
         },
-        'zone-stops': {
-          method: 'Get',
-          typeName: 'ZoneStop',
-          params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 20}`
-        },
-
-        // Fuel & Engine Data
         'fuel-data': {
           method: 'Get',
           typeName: 'StatusData',
-          params: `{"search": {"diagnosticSearch": {"id": "DiagnosticFuelLevelId"}, "fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 50}`
+          params: `{"search": {"diagnosticSearch": {"id": "DiagnosticFuelLevelId"}, "fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 20}`
         },
         'engine-data': {
           method: 'Get',
           typeName: 'StatusData',
-          params: `{"search": {"diagnosticSearch": {"id": "DiagnosticIgnitionId"}, "fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 50}`
+          params: `{"search": {"diagnosticSearch": {"id": "DiagnosticIgnitionId"}, "fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 20}`
         },
         'fault-data': {
           method: 'Get',
           typeName: 'FaultData',
-          params: `{"search": {"fromDate": "${lastWeek}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 20}`
+          params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 10}`
         },
         'diagnostics': {
           method: 'Get',
           typeName: 'Diagnostic',
-          params: '{"resultsLimit": 100}'
+          params: '{"resultsLimit": 50}'
         },
-
-        // Users & Groups
-        'users': {
-          method: 'Get',
-          typeName: 'User',
-          params: '{"search": {"name": "%"}}'
-        },
-        'groups': {
-          method: 'Get',
-          typeName: 'Group',
-          params: '{"search":{"name":"%"}}'
-        },
-        'diagnostics': {
-          method: 'Get',
-          typeName: 'Diagnostic',
-          params: '{"search":{"name":"%odometer%"}}'
-        },
-        'driver-changes': {
-          method: 'Get',
-          typeName: 'DriverChange',
-          params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 50}`
-        },
-        'user-details': {
-          method: 'Get',
-          typeName: 'User',
-          params: `{"search": {"name": "${document.getElementById('username').value}"}}`
-        },
-
-        // Maintenance & Reports
-        'maintenance': {
-          method: 'Get',
-          typeName: 'MaintenanceReminder',
-          params: '{"resultsLimit": 20}'
-        },
-        'exceptions': {
-          method: 'Get',
-          typeName: 'ExceptionEvent',
-          params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 20}`
-        },
-        'dvir': {
-          method: 'Get',
-          typeName: 'DVIRLog',
-          params: `{"search": {"fromDate": "${lastWeek}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 10}`
-        },
-        'text-messages': {
-          method: 'Get',
-          typeName: 'TextMessage',
-          params: `{"search": {"fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 20}`
-        },
-
-        // Advanced Multi-Calls
         'multi-odometer': {
           method: 'ExecuteMultiCall',
           typeName: '',
-          params: `{"calls": [{"method": "Get", "params": {"typeName": "StatusData", "search": {"diagnosticSearch": {"id": "DiagnosticOdometerId"}, "deviceSearch": {"id": "b1"}, "fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 1}}, {"method": "Get", "params": {"typeName": "StatusData", "search": {"diagnosticSearch": {"id": "DiagnosticOdometerId"}, "deviceSearch": {"id": "b2"}, "fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 1}}]}`
-        },
-        'multi-status': {
-          method: 'ExecuteMultiCall',
-          typeName: '',
-          params: '{"calls": [{"method": "Get", "params": {"typeName": "Device", "resultsLimit": 5}}, {"method": "Get", "params": {"typeName": "User", "resultsLimit": 5}}, {"method": "Get", "params": {"typeName": "Zone", "resultsLimit": 5}}]}'
+          params: `{"calls": [{"method": "Get", "params": {"typeName": "StatusData", "search": {"diagnosticSearch": {"id": "DiagnosticOdometerId"}, "fromDate": "${yesterday}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 5}}]}`
         },
         'fleet-summary': {
           method: 'ExecuteMultiCall',
           typeName: '',
-          params: `{"calls": [{"method": "Get", "params": {"typeName": "Device", "resultsLimit": 1000}}, {"method": "Get", "params": {"typeName": "Trip", "search": {"fromDate": "${today}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 1000}}, {"method": "Get", "params": {"typeName": "ExceptionEvent", "search": {"fromDate": "${today}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 100}}]}`
+          params: `{"calls": [{"method": "Get", "params": {"typeName": "Device", "resultsLimit": 10}}, {"method": "Get", "params": {"typeName": "Trip", "search": {"fromDate": "${today}T00:00:00.000Z", "toDate": "${today}T23:59:59.000Z"}, "resultsLimit": 10}}]}`
+        },
+        'users': {
+          method: 'Get',
+          typeName: 'User',
+          params: '{"search": {"name": "%"}, "resultsLimit": 10}'
+        },
+        'groups': {
+          method: 'Get',
+          typeName: 'Group',
+          params: '{"search": {"name": "%"}, "resultsLimit": 10}'
         }
       };
       
@@ -1127,10 +696,53 @@
         document.getElementById('typeName').value = example.typeName;
         document.getElementById('params').value = example.params;
         
-        // Scroll to API section
         document.getElementById('apiSection').scrollIntoView({ behavior: 'smooth' });
       }
     }
+
+    // CSV Download (simplified)
+    document.getElementById('downloadCsv').onclick = function() {
+      if (!lastApiResult) {
+        showMessage('apiResult', '⚠️ No data available for download', 'warning');
+        return;
+      }
+      
+      const csvContent = JSON.stringify(lastApiResult.data, null, 2);
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `geotab_${lastApiResult.method}_${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showMessage('apiResult', '✅ Data downloaded!', 'success');
+    };
+
+    // Logout
+    document.getElementById('logout').onclick = function() {
+      credentials = null;
+      serverUsed = null;
+      lastApiResult = null;
+      document.getElementById('apiSection').style.display = 'none';
+      document.getElementById('authResult').innerHTML = '';
+      document.getElementById('apiResult').innerHTML = '';
+      
+      const authBtn = document.getElementById('authButton');
+      authBtn.innerHTML = '<span class="status-indicator status-disconnected"></span><span class="icon">🔑</span>Authenticate';
+      authBtn.className = 'btn-primary';
+      
+      // Clear form
+      document.getElementById('server').value = '';
+      document.getElementById('database').value = '';
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+    };
+
+    // Initialize when page loads
+    window.addEventListener('load', initializeGeotabAddin);
   </script>
 </body>
 </html>
