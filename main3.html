@@ -1,5 +1,11 @@
 <div class="section">
       <h3><span class="icon">📅</span>Date Range & Settings</h3>
+      <div class="success">
+        <strong>✅ Current Data Fix Applied:</strong><br>
+        📊 <strong>Group Odometer:</strong> Now uses fromDate=now, toDate=now for CURRENT data<br>
+        📡 <strong>StatusData examples:</strong> Use date ranges for historical analysis<br>
+        🔥 <strong>Best of both:</strong> Current data + historical analysis options
+      </div>
       <div class="category" style="margin: 16px 0;">
         <h4><span class="icon">📅</span>Date Range Selection</h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -77,7 +83,7 @@
       } else {
         alert('CSV download not supported in this browser');
       }
-    });
+    }
 
     // CSV conversion function
     function convertToCSV(data, method, typeName) {
@@ -85,19 +91,19 @@
       
       let csvContent = '';
       
-      // Handle different data structures
       if (Array.isArray(data)) {
         if (data.length === 0) return 'No data available';
         
-        // Check if it's Group-based odometer results
         if (lastApiResult.typeName === 'GroupOdometer' && lastApiResult.deviceMapping) {
           csvContent = 'Device_ID,Vehicle_Name,VIN,Serial_Number,Odometer_Reading,Date_Time,Status\n';
           
           lastApiResult.deviceMapping.forEach(function(device) {
             csvContent += `"${device.deviceId}","${device.name}","${device.vehicleIdentificationNumber}","${device.serialNumber}",${device.odometer},"${device.odometerDate || ''}","${device.status}"\n`;
           });
+  </script>
+</body>
+</html>
         }
-        // Check if it's ExecuteMultiCall results (array of arrays)
         else if (method === 'ExecuteMultiCall') {
           csvContent = 'Call_Index,Result_Count,Status,Data_Preview\n';
           
@@ -111,7 +117,6 @@
             }
           });
         } else {
-          // Regular array of objects
           const headers = Object.keys(data[0]);
           csvContent = headers.map(h => `"${h}"`).join(',') + '\n';
           
@@ -126,7 +131,6 @@
           });
         }
       } else if (typeof data === 'object') {
-        // Single object
         const headers = Object.keys(data);
         csvContent = headers.map(h => `"${h}"`).join(',') + '\n';
         const values = headers.map(header => {
@@ -141,7 +145,7 @@
       }
       
       return csvContent;
-    }
+    });
 
     // Logout
     document.getElementById('logout').addEventListener('click', function() {
@@ -511,8 +515,8 @@
     </div>
     
     <div class="success">
-      <strong>✨ Enhanced API Runner with 22+ Pre-built API Calls + Date/Time Controls</strong><br>
-      Set your date range and vehicle limit, then click any example to auto-fill parameters and run API calls
+      <strong>✅ Enhanced API Runner with CURRENT DATA FIX + 22+ Pre-built API Calls</strong><br>
+      🔥 Group Odometer now uses fromDate=now, toDate=now for fresh data + Date/Time controls for historical analysis
     </div>
 
     <div class="section">
@@ -544,6 +548,12 @@
 
     <div class="section">
       <h3><span class="icon">🚗</span>Group-Based Odometer Collection</h3>
+      <div class="success">
+        <strong>✅ FIXED - Now Gets Current Data!</strong><br>
+        🔥 <strong>Uses CURRENT data</strong> via fromDate=now, toDate=now trick<br>
+        📡 <strong>Same logic</strong> as working Geotab API examples<br>
+        ⚡ <strong>Fresh data:</strong> Latest odometer values from devices
+      </div>
       <div class="warning">
         <strong>📝 Instructions:</strong><br>
         1. First get your Group ID and Diagnostic ID using the examples below<br>
@@ -552,7 +562,10 @@
       <input id="groupId" placeholder="🏢 Group ID (e.g., GroupCompanyId)" value="GroupCompanyId">
       <input id="diagnosticId" placeholder="🔧 Diagnostic ID (e.g., DiagnosticOdometerId)" value="DiagnosticOdometerAdjustmentId">
       <button id="runGroupOdometer" class="btn-success">
-        <span class="icon">🚗</span>Get Group Odometer Readings
+        <span class="icon">🚗</span>Get Group Odometer Readings (CURRENT DATA)
+      </button>
+      <button id="runCurrentOdometer" class="btn-info">
+        <span class="icon">📡</span>Get Current Device Status (Alternative Method)
       </button>
       <div id="groupOdometerResult"></div>
     </div>
@@ -622,8 +635,9 @@
         <h4><span class="icon">🚗</span>Vehicle & Device Data</h4>
         <div class="example-grid">
           <button class="example-btn" onclick="loadExample('devices')">📱 All Devices</button>
-          <button class="example-btn" onclick="loadExample('device-status')">📊 Device Status</button>
-          <button class="example-btn" onclick="loadExample('device-odometer')">🛣️ Odometer Data</button>
+          <button class="example-btn" onclick="loadExample('current-device-status')">📊 Current Device Status</button>
+          <button class="example-btn" onclick="loadExample('device-status')">📊 Device Status Info</button>
+          <button class="example-btn" onclick="loadExample('device-odometer')">🛣️ Recent Odometer</button>
           <button class="example-btn" onclick="loadExample('devices-in-group')">👥 Group Devices</button>
         </div>
       </div>
@@ -800,7 +814,9 @@
           });
         });
 
-        showMessage('groupOdometerResult', `🚀 Executing ${calls.length} odometer API calls...`, 'warning');
+        showMessage('groupOdometerResult', `🚀 Executing ${calls.length} CURRENT odometer API calls...`, 'warning');
+        console.log('🔥 FIXED: Using fromDate=now, toDate=now for CURRENT data');
+        console.log('Sample API call:', calls[0]);
 
         // Step 3: Execute MultiCall (following original logic)
         const callResults = await callGeotabAPI('ExecuteMultiCall', { calls: calls });
@@ -839,6 +855,90 @@
           data: callResults,
           timestamp: new Date().toISOString(),
           deviceMapping: results  // Extra data for better CSV
+        };
+
+        // Show detailed results
+        document.getElementById('groupOdometerResult').innerHTML += 
+          `<div class="result">${JSON.stringify(results, null, 2)}</div>`;
+
+      } catch (error) {
+        showMessage('groupOdometerResult', `❌ Error: ${error.message}`, 'error');
+      }
+    }
+
+    // Current odometer handler (uses DeviceStatusInfo for more current data)
+    async function handleCurrentOdometer() {
+      if (!credentials) {
+        showMessage('groupOdometerResult', '❌ Please authenticate first', 'error');
+        return;
+      }
+
+      const groupId = document.getElementById('groupId').value.trim();
+
+      if (!groupId) {
+        showMessage('groupOdometerResult', '❌ Please enter Group ID', 'error');
+        return;
+      }
+
+      try {
+        showMessage('groupOdometerResult', '📡 Getting current device status (more recent data)...', 'warning');
+
+        const vehicleLimit = parseInt(document.getElementById('vehicleLimit').value) || 50;
+        
+        // Use DeviceStatusInfo for more current data
+        const deviceStatusData = await callGeotabAPI('Get', {
+          typeName: 'DeviceStatusInfo',
+          search: {
+            groups: [{ id: groupId }]
+          },
+          resultsLimit: vehicleLimit
+        });
+
+        if (!deviceStatusData || deviceStatusData.length === 0) {
+          showMessage('groupOdometerResult', '❌ No devices found in group. Check your Group ID.', 'error');
+          return;
+        }
+
+        showMessage('groupOdometerResult', `✅ Found ${deviceStatusData.length} devices with current status...`, 'success');
+
+        const results = deviceStatusData.map(device => {
+          // DeviceStatusInfo contains current device state
+          const lastContactTime = device.dateTime || 'Unknown';
+          const currentOdometer = device.currentOdometer !== undefined ? device.currentOdometer : 'No data';
+          const currentLocation = device.currentLocation || 'Unknown';
+          
+          return {
+            deviceId: device.device?.id || 'Unknown',
+            deviceName: device.device?.name || 'Unknown',
+            currentOdometer: currentOdometer,
+            lastContactTime: lastContactTime,
+            currentSpeed: device.currentSpeed || 0,
+            ignitionState: device.ignitionState || 'Unknown',
+            location: `${currentLocation.x || 0}, ${currentLocation.y || 0}`,
+            status: currentOdometer !== 'No data' ? 'Current Data' : 'No Odometer Data'
+          };
+        });
+
+        // Summary statistics
+        const withOdometer = results.filter(r => r.currentOdometer !== 'No data').length;
+        const noOdometer = results.filter(r => r.currentOdometer === 'No data').length;
+
+        // Display results
+        showMessage('groupOdometerResult', 
+          `✅ Current device status collection complete!<br>
+          📡 <strong>Data Type:</strong> DeviceStatusInfo (More Current)<br>
+          📊 <strong>Summary:</strong><br>
+          • Total devices: ${results.length}<br>
+          • With current odometer: ${withOdometer}<br>
+          • No odometer data: ${noOdometer}`, 'success');
+
+        // Store results for CSV download
+        lastApiResult = {
+          method: 'Get',
+          typeName: 'CurrentDeviceStatus',
+          data: deviceStatusData,
+          timestamp: new Date().toISOString(),
+          deviceMapping: results
         };
 
         // Show detailed results
@@ -1226,6 +1326,11 @@
           typeName: 'DeviceStatusInfo',
           params: `{"resultsLimit": ${Math.min(vehicleLimit, 10)}}`
         },
+        'current-device-status': {
+          method: 'Get',
+          typeName: 'DeviceStatusInfo',
+          params: `{"search": {"groups": [{"id": "GroupCompanyId"}]}, "resultsLimit": ${vehicleLimit}}`
+        },
         'device-odometer': {
           method: 'Get',
           typeName: 'StatusData',
@@ -1509,6 +1614,14 @@
           
           lastApiResult.deviceMapping.forEach(function(device) {
             csvContent += `"${device.deviceId}","${device.name}","${device.vehicleIdentificationNumber}","${device.serialNumber}",${device.odometer},"${device.odometerDate || ''}","${device.status}"\n`;
+          });
+        }
+        // Check if it's Current Device Status results
+        else if (lastApiResult.typeName === 'CurrentDeviceStatus' && lastApiResult.deviceMapping) {
+          csvContent = 'Device_ID,Device_Name,Current_Odometer,Last_Contact_Time,Current_Speed,Ignition_State,Location,Status\n';
+          
+          lastApiResult.deviceMapping.forEach(function(device) {
+            csvContent += `"${device.deviceId}","${device.deviceName}",${device.currentOdometer},"${device.lastContactTime}",${device.currentSpeed},"${device.ignitionState}","${device.location}","${device.status}"\n`;
           });
         }
         // Check if it's ExecuteMultiCall results (array of arrays)
