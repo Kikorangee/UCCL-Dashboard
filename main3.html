@@ -40,8 +40,8 @@
       padding: 15px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
-    // CSV Download (restored original functionality)
-    document.getElementById('downloadCsv').onclick = function() {
+    // CSV Download
+    document.getElementById('downloadCsv').addEventListener('click', function() {
       if (!lastApiResult) {
         showMessage('apiResult', '⚠️ No data available for download. Run an API call first!', 'warning');
         return;
@@ -77,9 +77,9 @@
       } else {
         alert('CSV download not supported in this browser');
       }
-    };
+    });
 
-    // CSV conversion function (restored original functionality)
+    // CSV conversion function
     function convertToCSV(data, method, typeName) {
       if (!data) return '';
       
@@ -144,7 +144,7 @@
     }
 
     // Logout
-    document.getElementById('logout').onclick = function() {
+    document.getElementById('logout').addEventListener('click', function() {
       credentials = null;
       serverUsed = null;
       lastApiResult = null;
@@ -161,7 +161,7 @@
       document.getElementById('database').value = '';
       document.getElementById('username').value = '';
       document.getElementById('password').value = '';
-    };
+    });
 
     // Initialize when page loads
     window.addEventListener('load', function() {
@@ -991,7 +991,7 @@
     }
 
     // API call execution
-    document.getElementById('runApi').onclick = async function() {
+    document.getElementById('runApi').addEventListener('click', async function() {
       if (!credentials) {
         showMessage('apiResult', '❌ Not authenticated. Please authenticate first.', 'error');
         return;
@@ -1036,10 +1036,10 @@
         console.error('API call failed:', error);
         showMessage('apiResult', `❌ API call failed: ${error.message}`, 'error');
       }
-    };
+    });
 
     // Test Connection button
-    document.getElementById('testConnection').onclick = async function() {
+    document.getElementById('testConnection').addEventListener('click', async function() {
       if (!credentials) {
         showMessage('apiResult', '❌ Not authenticated. Please authenticate first.', 'error');
         return;
@@ -1063,7 +1063,7 @@
         console.error('Connection test failed:', error);
         showMessage('apiResult', `❌ Connection test failed: ${error.message}`, 'error');
       }
-    };
+    });
 
     // Initialize date pickers
     function initializeDatePickers() {
