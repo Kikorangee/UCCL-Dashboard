@@ -1,0 +1,2049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RUC Distance Updater - United Civil Construction Ltd</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+			color: #2d3748;
+			font-size: 2.2em;
+			font-weight: 700;
+			margin-bottom: 10px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 15px;
+		}
+		.logo {
+			height: 35px;
+			width: auto;
+			object-fit: contain;
+			border-radius: 6px;
+			filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1));
+		}
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            background: white;
+        }
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .geotab-banner {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .updated {
+            background: #d4edda !important;
+        }
+        .negative-distance {
+            background: #f8d7da !important;
+            color: #721c24 !important;
+            font-weight: bold !important;
+        }
+        .editable-value {
+            transition: all 0.2s ease;
+        }
+        .editable-value:hover {
+            background: #fff3cd !important;
+        }
+        .manually-edited {
+            background: #e2f8f5 !important;
+            border-left: 3px solid #48bb78 !important;
+        }
+        .file-upload {
+            border: 2px dashed #ddd;
+            padding: 30px;
+            text-align: center;
+            border-radius: 5px;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #007bff;
+            transition: width 0.3s ease;
+        }
+        .device-mapping {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .mapping-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 15px;
+        }
+        .mapping-row select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .auth-section {
+            display: none;
+        }
+        .standalone-mode .auth-section {
+            display: block;
+        }
+        .standalone-mode .geotab-banner {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card header">
+            <h1><img src="https://raw.githubusercontent.com/Kikorangee/GEOSDK/master/black.png" class="logo">RUC Distance Updater</h1>
+            <p>Update RUC PAID TO KM'S with current odometer readings - including negative distances for overdue RUC</p>
+        </div>
+
+        <!-- Geotab Add-In Banner -->
+        <div class="geotab-banner" id="geotabBanner">
+            <span>✅</span>
+            <div>
+                <strong>Calculates Distance Remaining (Including Negative)</strong><br>
+                <small>Shows negative km when odometer exceeds RUC paid to</small>
+            </div>
+        </div>
+
+        <!-- Standalone Authentication (only shown when not in Geotab) -->
+        <div class="card auth-section" id="authSection">
+            <h3>📡 Connect to Geotab</h3>
+            <div>
+                <input type="text" id="server" class="form-control" placeholder="Server" value="my.geotab.com">
+                <input type="text" id="database" class="form-control" placeholder="Database" value="uccnz">
+                <input type="text" id="username" class="form-control" placeholder="Username" value="francis@directt.co.nz">
+                <input type="password" id="password" class="form-control" placeholder="Password" value="@fr4nc1sWynn5">
+                <button onclick="authenticateGeotab()" id="authBtn" class="btn btn-primary">🔐 Connect to Geotab</button>
+            </div>
+            <div id="authStatus"></div>
+        </div>
+
+        <!-- Step 1: Load CSV or Use Hardcoded Data -->
+        <div class="card">
+            <h3>📄 Step 1: Load Your RUC Data</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <button onclick="loadHardcodedData()" class="btn btn-success" id="hardcodedBtn">
+                    ⚡ Load Hardcoded Data (79 Records)
+                </button>
+                <button onclick="refreshData()" class="btn btn-primary" id="refreshBtn">
+                    🔄 Refresh All Data
+                </button>
+            </div>
+            
+            <div style="text-align: center; margin: 15px 0; color: #666; font-weight: bold;">
+                OR
+            </div>
+            
+            <div class="file-upload" onclick="document.getElementById('csvFile').click()">
+                <p>📁 Click to select your own RUC file</p>
+                <p><small>Supports: CSV, Excel (.xlsx, .xls)</small></p>
+                <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" style="display: none;" onchange="loadDataFile(event)">
+            </div>
+            
+            <div style="margin: 15px 0; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+                <h4>📊 Hardcoded Data Info:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                        <strong style="color: #1976d2;">79</strong><br>
+                        <small>Total Vehicles</small>
+                    </div>
+                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                        <strong style="color: #388e3c;">58</strong><br>
+                        <small>With Valid Emails</small>
+                    </div>
+                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                        <strong style="color: #f57c00;">Fleet 1-3414</strong><br>
+                        <small>Vehicle Range</small>
+                    </div>
+                    <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                        <strong style="color: #7b1fa2;">@unitedcivil.co.nz</strong><br>
+                        <small>Email Domain</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="csvStatus"></div>
+            <div id="dataPreview" style="display: none;">
+                <h4>📋 Data Preview</h4>
+                <div id="previewTable"></div>
+            </div>
+        </div>
+
+        <!-- Step 2: Get Devices and Map -->
+        <div class="card" id="deviceSection" style="display: none;">
+            <h3>🚗 Step 2: Get Fleet Devices and Map to RUC Records</h3>
+            <button onclick="getGeotabDevices()" id="devicesBtn" class="btn btn-success">📡 Get All Fleet Devices</button>
+            <div id="deviceStatus"></div>
+            <div id="deviceMapping"></div>
+        </div>
+
+        <!-- Step 3: Update Distances -->
+        <div class="card" id="updateSection" style="display: none;">
+            <h3>⚡ Step 3: Update Distances with Real Odometer Data</h3>
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <h4>ℹ️ Important Note:</h4>
+                <p><strong>Negative distances:</strong> When odometer exceeds RUC paid to, the system will show negative km (indicating RUC overdue)</p>
+                <p><strong>Mapping:</strong> Device mapping is optional - you can proceed even with unmapped vehicles</p>
+            </div>
+            <button onclick="updateDistancesFromGeotab()" id="updateBtn" class="btn btn-success">🔄 Update All Distances</button>
+            <div id="updateStatus"></div>
+            <div id="progressContainer" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+                <p id="progressText">Processing...</p>
+            </div>
+        </div>
+
+        <!-- Step 4: Email Notifications -->
+        <div class="card" id="emailSection" style="display: none;">
+            <h3>📧 Step 4: RUC License Renewal Alerts</h3>
+            <p><strong>🚨 URGENT MONITORING:</strong> Vehicles requiring immediate RUC license attention</p>
+            
+            <div style="margin: 15px 0; padding: 20px; background: #fff3cd; border-radius: 8px; border-left: 5px solid #f59e0b;">
+                <h4 style="color: #92400e; margin-top: 0;">⚠️ Critical Alert Settings</h4>
+                <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 15px; align-items: center; margin-bottom: 15px;">
+                    <label style="font-weight: bold; color: #92400e;">Alert Threshold (km):</label>
+                    <input type="number" id="alertThreshold" value="2000" style="width: 120px; padding: 8px; font-size: 16px; font-weight: bold; border: 2px solid #f59e0b; border-radius: 5px;">
+                    <button onclick="checkRUCDue()" class="btn btn-success" id="checkRUCBtn" style="padding: 10px 20px; font-size: 16px;">🚨 CHECK URGENT VEHICLES</button>
+                </div>
+                <div style="background: #fef3c7; padding: 10px; border-radius: 5px; font-size: 14px;">
+                    <strong>Alert Rules:</strong>
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                        <li><strong>OVERDUE (Negative km):</strong> Immediate action required</li>
+                        <li><strong>Under 500 km:</strong> Critical - renew within days</li>
+                        <li><strong>Under 2000 km:</strong> Urgent - plan renewal soon</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px; margin-bottom: 20px;">
+                <button onclick="showUrgentSummary()" class="btn" style="background: #dc2626; color: white; padding: 15px; font-size: 16px;">📋 URGENT SUMMARY REPORT</button>
+                <button onclick="sendRUCEmails()" class="btn" style="background: #f59e0b; color: white; padding: 15px; display: none;" id="sendEmailBtn">📧 SEND ALERTS</button>
+            </div>
+            
+            <div id="emailStatus"></div>
+            <div id="urgentSummary" style="display: none;"></div>
+            <div id="dueVehiclesList"></div>
+        </div>
+
+        <!-- Step 5: Download Updated CSV -->
+        <div class="card" id="downloadSection" style="display: none;">
+            <h3>💾 Step 5: Download Updated CSV</h3>
+            <button onclick="downloadUpdatedCSV()" class="btn btn-success">📥 Download Updated RUC CSV</button>
+            <div id="tableContainer"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        // HARDCODED RUC DATA WITH CORRECTED HUBO PAID TO VALUES
+        const hardcodedRUCData = [
+          { fleetNumber: "545", huboPaidTo: "22,319", huboOdoReading: "15,476", distanceRemaining: "", driverName: "Akash Nada", driverEmail: "akash.nada@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "544", huboPaidTo: "46,009", huboOdoReading: "33,670", distanceRemaining: "", driverName: "Alex Fitch", driverEmail: "alex.fitch@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "550", huboPaidTo: "6,010", huboOdoReading: "6,097", distanceRemaining: "", driverName: "Andrew Davidson", driverEmail: "andrew.davidson@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "500", huboPaidTo: "319,010", huboOdoReading: "312,538", distanceRemaining: "", driverName: "Anthony Edwards", driverEmail: "anthony.edwards", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "537", huboPaidTo: "56,012", huboOdoReading: "49,096", distanceRemaining: "", driverName: "Arthur Ruedi", driverEmail: "arthur.ruedi@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "528", huboPaidTo: "81,000", huboOdoReading: "71,741", distanceRemaining: "", driverName: "Berne Connelly", driverEmail: "berne.connelly", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "512", huboPaidTo: "225,020", huboOdoReading: "219,852", distanceRemaining: "", driverName: "Billy Gibson", driverEmail: "brent.cross@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "522", huboPaidTo: "96,000", huboOdoReading: "85,583", distanceRemaining: "", driverName: "Brent Cross", driverEmail: "brett.halvorson@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "513", huboPaidTo: "171,012", huboOdoReading: "160,784", distanceRemaining: "", driverName: "Cam Hinge", driverEmail: "cameron.hinge@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "540", huboPaidTo: "46,011", huboOdoReading: "40,044", distanceRemaining: "", driverName: "Cam Wood", driverEmail: "cameron.wood@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "509", huboPaidTo: "131,000", huboOdoReading: "123,120", distanceRemaining: "", driverName: "Carlos Manuel", driverEmail: "carlos.manuel@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "615", huboPaidTo: "74,200", huboOdoReading: "68,142", distanceRemaining: "", driverName: "Channel Infrastructure", driverEmail: "casey.wallace", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "502", huboPaidTo: "220,000", huboOdoReading: "113,632", distanceRemaining: "", driverName: "Chris Holden", driverEmail: "chris.holden@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "518", huboPaidTo: "108,000", huboOdoReading: "103,693", distanceRemaining: "", driverName: "Clinton Livesey", driverEmail: "clinton.livesey@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "543", huboPaidTo: "26,009", huboOdoReading: "27,659", distanceRemaining: "", driverName: "Coby Edwards", driverEmail: "coby.edwards", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "549", huboPaidTo: "11,010", huboOdoReading: "28,011", distanceRemaining: "", driverName: "Cole Connelly", driverEmail: "cole.connelly@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "535", huboPaidTo: "54,618", huboOdoReading: "27,651", distanceRemaining: "", driverName: "Damien Nathan", driverEmail: "damien.nathan@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "519", huboPaidTo: "143,000", huboOdoReading: "67,642", distanceRemaining: "", driverName: "Darcy", driverEmail: "darcy.ruedi", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "533", huboPaidTo: "25,306", huboOdoReading: "37,729", distanceRemaining: "", driverName: "Darren Gurnick", driverEmail: "darren.gurnick@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "503", huboPaidTo: "225,000", huboOdoReading: "243,155", distanceRemaining: "", driverName: "David Carr", driverEmail: "david.carr@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "532", huboPaidTo: "43,037", huboOdoReading: "27,722", distanceRemaining: "", driverName: "David Craig", driverEmail: "david.craig@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "501", huboPaidTo: "188,002", huboOdoReading: "147,636", distanceRemaining: "", driverName: "Duane Phillips", driverEmail: "duane.phillips@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "551", huboPaidTo: "6,010", huboOdoReading: "7,738", distanceRemaining: "", driverName: "Dylan Wichman", driverEmail: "dylan.wichman@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "514", huboPaidTo: "150,000", huboOdoReading: "127,740", distanceRemaining: "", driverName: "Elliott Phillips", driverEmail: "elliott.phillips@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "505", huboPaidTo: "222,000", huboOdoReading: "197,697", distanceRemaining: "", driverName: "Evan Wilson", driverEmail: "evan.wilson@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "547", huboPaidTo: "13,000", huboOdoReading: "17,746", distanceRemaining: "", driverName: "Finn Craig", driverEmail: "finn.craig@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "523", huboPaidTo: "86,000", huboOdoReading: "112,751", distanceRemaining: "", driverName: "Gareth Atkinson", driverEmail: "gareth.atkinson@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "524", huboPaidTo: "91,006", huboOdoReading: "117,767", distanceRemaining: "", driverName: "Hayden Faulkner", driverEmail: "hayden.faulkner@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "516", huboPaidTo: "111,000", huboOdoReading: "102,769", distanceRemaining: "", driverName: "Jake Edwards", driverEmail: "jake.edwards@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "521", huboPaidTo: "153,000", huboOdoReading: "92,788", distanceRemaining: "", driverName: "Jamie Hinge", driverEmail: "jamie.hinge@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "538", huboPaidTo: "56,000", huboOdoReading: "27,801", distanceRemaining: "", driverName: "Jason Wilson", driverEmail: "jason.wilson@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "546", huboPaidTo: "23,000", huboOdoReading: "27,807", distanceRemaining: "", driverName: "Jaxon Craig", driverEmail: "jaxon.craig@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "525", huboPaidTo: "141,009", huboOdoReading: "162,829", distanceRemaining: "", driverName: "Jeremy Hinge", driverEmail: "jeremy.hinge@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "541", huboPaidTo: "69,420", huboOdoReading: "27,844", distanceRemaining: "", driverName: "Joe Nathan", driverEmail: "joe.nathan@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "508", huboPaidTo: "305,050", huboOdoReading: "182,850", distanceRemaining: "", driverName: "John Puru", driverEmail: "john.puru@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "530", huboPaidTo: "144,000", huboOdoReading: "67,876", distanceRemaining: "", driverName: "Josh Faulkner", driverEmail: "josh.faulkner@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "517", huboPaidTo: "93,000", huboOdoReading: "127,907", distanceRemaining: "", driverName: "Josh Holden", driverEmail: "josh.holden@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "511", huboPaidTo: "206,000", huboOdoReading: "187,913", distanceRemaining: "", driverName: "Josh Phillips", driverEmail: "josh.phillips@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "515", huboPaidTo: "136,000", huboOdoReading: "162,919", distanceRemaining: "", driverName: "Josh Wichman", driverEmail: "josh.wichman@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "520", huboPaidTo: "126,000", huboOdoReading: "147,925", distanceRemaining: "", driverName: "Kurt Atkinson", driverEmail: "kurt.atkinson@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "542", huboPaidTo: "36,010", huboOdoReading: "27,931", distanceRemaining: "", driverName: "Lachlan Craig", driverEmail: "lachlan.craig@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "506", huboPaidTo: "201,010", huboOdoReading: "192,937", distanceRemaining: "", driverName: "Leyton Hinge", driverEmail: "leyton.hinge@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "510", huboPaidTo: "136,000", huboOdoReading: "222,962", distanceRemaining: "", driverName: "Luke Ruedi", driverEmail: "luke.ruedi@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "531", huboPaidTo: "317,002", huboOdoReading: "67,975", distanceRemaining: "", driverName: "Mason Craig", driverEmail: "mason.craig@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "526", huboPaidTo: "86,010", huboOdoReading: "132,981", distanceRemaining: "", driverName: "Mathew Hinge", driverEmail: "mathew.hinge@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "548", huboPaidTo: "18,900", huboOdoReading: "17,987", distanceRemaining: "", driverName: "Matt Davidson", driverEmail: "matt.davidson@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "527", huboPaidTo: "101,000", huboOdoReading: "97,993", distanceRemaining: "", driverName: "Max Wichman", driverEmail: "max.wichman@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "504", huboPaidTo: "256,010", huboOdoReading: "248,006", distanceRemaining: "", driverName: "Mike Carr", driverEmail: "mike.carr@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "539", huboPaidTo: "41,000", huboOdoReading: "28,012", distanceRemaining: "", driverName: "Oscar Craig", driverEmail: "oscar.craig@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "536", huboPaidTo: "75,350", huboOdoReading: "28,018", distanceRemaining: "", driverName: "Ryan Nathan", driverEmail: "ryan.nathan@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "489", huboPaidTo: "245,020", huboOdoReading: "242,124", distanceRemaining: "", driverName: "simon.craig", driverEmail: "simon.craig", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "490", huboPaidTo: "230,012", huboOdoReading: "226,466", distanceRemaining: "", driverName: "simon.natham", driverEmail: "simon.natham", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "491", huboPaidTo: "220,000", huboOdoReading: "216,807", distanceRemaining: "", driverName: "Simon Phillips", driverEmail: "simon.phillips@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "487", huboPaidTo: "200,001", huboOdoReading: "196,001", distanceRemaining: "", driverName: "Simone", driverEmail: "simon.craig", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "488", huboPaidTo: "205,000", huboOdoReading: "193,116", distanceRemaining: "", driverName: "steve.carracher", driverEmail: "steve.carracher", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "486", huboPaidTo: "290,001", huboOdoReading: "278,525", distanceRemaining: "", driverName: "Takerei Nathan", driverEmail: "takerei.nathan@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "476", huboPaidTo: "384,036", huboOdoReading: "381,810", distanceRemaining: "", driverName: "tawhiri.nathan", driverEmail: "tawhiri.nathan", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "471", huboPaidTo: "321,050", huboOdoReading: "314,437", distanceRemaining: "", driverName: "Thomas Ruedi", driverEmail: "thomas.ruedi@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "470", huboPaidTo: "317,050", huboOdoReading: "310,660", distanceRemaining: "", driverName: "Tim Ruedi", driverEmail: "tim.ruedi@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "469", huboPaidTo: "321,000", huboOdoReading: "318,096", distanceRemaining: "", driverName: "Tim Tipene", driverEmail: "tim.tipene@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "465", huboPaidTo: "284,000", huboOdoReading: "280,222", distanceRemaining: "", driverName: "Trent Wilson", driverEmail: "trent.wilson@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "463", huboPaidTo: "273,010", huboOdoReading: "266,367", distanceRemaining: "", driverName: "Tyler Carr", driverEmail: "tyler.carr@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "7", huboPaidTo: "32,670", huboOdoReading: "30,000", distanceRemaining: "", driverName: "wes.nathan", driverEmail: "wes.nathan", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "1", huboPaidTo: "13,002", huboOdoReading: "6,428", distanceRemaining: "", driverName: "Wesley Nathan", driverEmail: "wesley.nathan@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "4", huboPaidTo: "237,005", huboOdoReading: "236,150", distanceRemaining: "", driverName: "Witapeta Nathan", driverEmail: "witapeta.nathan@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "534", huboPaidTo: "36,965", huboOdoReading: "28,363", distanceRemaining: "", driverName: "Zain Kader/Tania Tipene", driverEmail: "witapeta.nathan", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "445", huboPaidTo: "344,012", huboOdoReading: "339,229", distanceRemaining: "", driverName: "zac.johnstone", driverEmail: "zac.johnstone", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "448", huboPaidTo: "268,000", huboOdoReading: "261,683", distanceRemaining: "", driverName: "zain.kader", driverEmail: "zain.kader@unitedcivil.co.nz", rucAdminEmail: "francis@directt.co.nz" },
+          
+          // Additional vehicles from the corrected data
+          { fleetNumber: "601", huboPaidTo: "347,700", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "602", huboPaidTo: "69,400", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "603", huboPaidTo: "16,900", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "607", huboPaidTo: "277,400", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "608", huboPaidTo: "25,800", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "609", huboPaidTo: "10,001", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "610", huboPaidTo: "57,700", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "611", huboPaidTo: "30,200", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "612", huboPaidTo: "40,100", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "613", huboPaidTo: "71,300", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "615", huboPaidTo: "74,200", huboOdoReading: "", distanceRemaining: "", driverName: "Nick Stewart", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "616", huboPaidTo: "10,003", huboOdoReading: "", distanceRemaining: "", driverName: "Heta Te Nana", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "3414", huboPaidTo: "19,000", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          
+          // Missing fleet numbers from the corrected data that weren't in original
+          { fleetNumber: "492", huboPaidTo: "205,002", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "493", huboPaidTo: "235,000", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "494", huboPaidTo: "332,010", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "495", huboPaidTo: "254,010", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "496", huboPaidTo: "306,766", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "499", huboPaidTo: "215,000", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" },
+          { fleetNumber: "529", huboPaidTo: "142,700", huboOdoReading: "", distanceRemaining: "", driverName: "", driverEmail: "", rucAdminEmail: "francis@directt.co.nz" }
+        ];
+
+        let credentials = null;
+        let csvData = [];
+        let geotabDevices = [];
+        let deviceMapping = {};
+        let isGeotabAddIn = false;
+
+        // Auto-detect if we're inside Geotab and initialize with error handling
+        window.addEventListener('load', function() {
+            initializeAddIn();
+        });
+
+        // Initialize Add-In with comprehensive error handling
+        function initializeAddIn() {
+            console.log('🔍 Checking Geotab Add-In environment...');
+            
+            // Check for Geotab context
+            if (window.geotab || window.api || window.location.host.includes('geotab.com')) {
+                console.log('🎯 Geotab environment detected');
+                
+                // Wait for Geotab API to be ready
+                waitForGeotabAPI()
+                    .then(() => {
+                        console.log('✅ Geotab Add-In initialized successfully');
+                        isGeotabAddIn = true;
+                        
+                        // Hide auth section and show Geotab banner
+                        document.getElementById('geotabBanner').style.display = 'flex';
+                        document.getElementById('authSection').style.display = 'none';
+                        
+                        // Set dummy credentials for compatibility
+                        credentials = { internal: true };
+                        
+                        // Show success message
+                        showStatus('csvStatus', 
+                            '✅ Geotab Add-In loaded successfully! You can now upload your RUC CSV file.', 
+                            'success');
+                    })
+                    .catch((error) => {
+                        console.error('❌ Geotab Add-In initialization failed:', error);
+                        handleGeotabMenuError(error);
+                    });
+            } else {
+                console.log('🌐 Standalone mode detected');
+                document.body.classList.add('standalone-mode');
+                showStatus('csvStatus', 
+                    'ℹ️ Running in standalone mode. Please authenticate with Geotab first.', 
+                    'info');
+            }
+        }
+
+        // Wait for Geotab API to be available with timeout
+        function waitForGeotabAPI(timeout = 10000) {
+            return new Promise((resolve, reject) => {
+                const startTime = Date.now();
+                
+                function checkAPI() {
+                    // Check if Geotab API is available
+                    if (window.geotab && typeof window.geotab.call === 'function') {
+                        resolve(window.geotab);
+                        return;
+                    }
+                    
+                    if (window.api && typeof window.api.call === 'function') {
+                        resolve(window.api);
+                        return;
+                    }
+                    
+                    // Check timeout
+                    if (Date.now() - startTime > timeout) {
+                        reject(new Error('Geotab API not available after timeout'));
+                        return;
+                    }
+                    
+                    // Try again in 100ms
+                    setTimeout(checkAPI, 100);
+                }
+                
+                checkAPI();
+            });
+        }
+
+        // Handle Geotab menu/loading errors
+        function handleGeotabMenuError(error) {
+            console.error('Geotab menu error:', error);
+            
+            // Show error banner
+            document.getElementById('geotabBanner').innerHTML = `
+                <span>⚠️</span>
+                <div>
+                    <strong>Geotab Add-In Loading Issue</strong><br>
+                    <small>${error.message || 'Unable to connect to Geotab API'}</small>
+                </div>
+            `;
+            document.getElementById('geotabBanner').style.background = 'linear-gradient(135deg, #f56565, #e53e3e)';
+            document.getElementById('geotabBanner').style.display = 'flex';
+            
+            // Show fallback options
+            showGeotabErrorFallback();
+        }
+
+        // Show fallback options when Geotab menu has issues
+        function showGeotabErrorFallback() {
+            const fallbackHtml = `
+                <div class="card" style="border: 2px solid #f56565;">
+                    <h3 style="color: #e53e3e;">⚠️ Geotab Add-In Error - Fallback Options</h3>
+                    
+                    <div style="background: #fed7d7; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4>🔧 Troubleshooting Steps:</h4>
+                        <ol>
+                            <li><strong>Refresh the page</strong> - Simple reload often fixes loading issues</li>
+                            <li><strong>Check Add-In permissions</strong> - Ensure the Add-In has proper access</li>
+                            <li><strong>Try different browser</strong> - Some browsers have stricter security</li>
+                            <li><strong>Contact administrator</strong> - Add-In may need reinstallation</li>
+                        </ol>
+                    </div>
+                    
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4>🌐 Fallback: Use Standalone Mode</h4>
+                        <p>If the Add-In continues to have issues, you can use this tool in standalone mode:</p>
+                        <button onclick="enableStandaloneMode()" class="btn btn-primary">
+                            🔄 Switch to Standalone Mode
+                        </button>
+                    </div>
+                    
+                    <div style="background: #d1ecf1; padding: 15px; border-radius: 8px;">
+                        <h4>🔧 Need Help?</h4>
+                        <p>Contact: <strong>francis@directt.co.nz</strong></p>
+                        <p>Include this error info: <code>${navigator.userAgent}</code></p>
+                    </div>
+                </div>
+            `;
+            
+            // Insert after the header
+            const header = document.querySelector('.header');
+            const fallbackDiv = document.createElement('div');
+            fallbackDiv.innerHTML = fallbackHtml;
+            header.parentNode.insertBefore(fallbackDiv, header.nextSibling);
+        }
+
+        // Enable standalone mode as fallback
+        function enableStandaloneMode() {
+            console.log('🔄 Switching to standalone mode...');
+            isGeotabAddIn = false;
+            credentials = null;
+            
+            // Show auth section and hide Geotab banner
+            document.getElementById('authSection').style.display = 'block';
+            document.getElementById('geotabBanner').style.display = 'none';
+            document.body.classList.add('standalone-mode');
+            
+            showStatus('authStatus', 
+                'ℹ️ Switched to standalone mode. Please enter your Geotab credentials below.', 
+                'info');
+        }
+
+        // Status display function
+        function showStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.className = `status ${type}`;
+            element.innerHTML = message;
+            element.style.display = 'block';
+        }
+
+        // Progress bar functions
+        function showProgress(percent, text) {
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressText').textContent = text;
+        }
+
+        function hideProgress() {
+            document.getElementById('progressContainer').style.display = 'none';
+        }
+
+        // Enhanced API call function for both Add-In and standalone modes
+        async function callGeotabAPI(method, params = {}) {
+            // If inside Geotab Add-In, use internal API
+            if (isGeotabAddIn) {
+                if (window.geotab && typeof window.geotab.call === 'function') {
+                    console.log(`🔗 Using Geotab Add-In API: ${method}`);
+                    return new Promise((resolve, reject) => {
+                        window.geotab.call(method, params, resolve, reject);
+                    });
+                } else if (window.api && typeof window.api.call === 'function') {
+                    console.log(`🔗 Using window.api: ${method}`);
+                    return new Promise((resolve, reject) => {
+                        window.api.call(method, params, resolve, reject);
+                    });
+                }
+            }
+            
+            // Fallback to external API for standalone mode
+            console.log(`🌐 Using external API: ${method}`);
+            const requestBody = {
+                method: method,
+                params: credentials ? { ...params, credentials: credentials } : params
+            };
+
+            const response = await fetch(`https://${document.getElementById('server').value}/apiv1`, {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error.message || data.error.name);
+            }
+            
+            return data.result;
+        }
+
+        // Authentication (only for standalone mode)
+        async function authenticateGeotab() {
+            const server = document.getElementById('server').value.trim();
+            const database = document.getElementById('database').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!server || !database || !username || !password) {
+                showStatus('authStatus', 'Please fill in all authentication fields', 'error');
+                return;
+            }
+
+            document.getElementById('authBtn').disabled = true;
+            showStatus('authStatus', 'Connecting to Geotab...', 'info');
+
+            try {
+                const result = await callGeotabAPI('Authenticate', {
+                    userName: username,
+                    password: password,
+                    database: database
+                });
+
+                credentials = result.credentials;
+                showStatus('authStatus', '✅ Successfully connected to Geotab!', 'success');
+                document.getElementById('authBtn').textContent = 'Connected ✅';
+
+            } catch (error) {
+                showStatus('authStatus', '❌ Failed to connect: ' + error.message, 'error');
+                document.getElementById('authBtn').disabled = false;
+            }
+        }
+
+        // Load hardcoded RUC data instantly
+        function loadHardcodedData() {
+            console.log('⚡ Loading hardcoded RUC data...');
+            
+            // Show loading state
+            document.getElementById('hardcodedBtn').disabled = true;
+            document.getElementById('hardcodedBtn').innerHTML = '⏳ Loading...';
+            
+            // Clear any existing data
+            csvData = [];
+            
+            // Load hardcoded data with proper structure
+            hardcodedRUCData.forEach(record => {
+                csvData.push({
+                    fleetNumber: parseInt(record.fleetNumber) || record.fleetNumber,
+                    huboPaidTo: record.huboPaidTo,
+                    huboOdoReading: record.huboOdoReading,
+                    distanceRemaining: record.distanceRemaining,
+                    driverName: record.driverName,
+                    driverEmail: record.driverEmail,
+                    rucAdminEmail: record.rucAdminEmail || 'francis@directt.co.nz',
+                    calculatedDistance: null,
+                    geotabDeviceId: null
+                });
+            });
+            
+            setTimeout(() => {
+                document.getElementById('hardcodedBtn').disabled = false;
+                document.getElementById('hardcodedBtn').innerHTML = '⚡ Load Hardcoded Data (79 Records)';
+                
+                const emailCount = csvData.filter(row => row.driverEmail && row.driverEmail.includes('@')).length;
+                showStatus('csvStatus', 
+                    `✅ Successfully loaded ${csvData.length} hardcoded RUC records (${emailCount} with valid email addresses)`, 
+                    'success');
+                
+                showDataPreview();
+                document.getElementById('deviceSection').style.display = 'block';
+            }, 500);
+        }
+
+        // Refresh all data and restart the process
+        function refreshData() {
+            console.log('🔄 Refreshing all data...');
+            
+            // Show loading state
+            document.getElementById('refreshBtn').disabled = true;
+            document.getElementById('refreshBtn').innerHTML = '⏳ Refreshing...';
+            
+            // Clear all existing data
+            csvData = [];
+            geotabDevices = [];
+            deviceMapping = {};
+            
+            // Reset all sections
+            document.getElementById('deviceSection').style.display = 'none';
+            document.getElementById('updateSection').style.display = 'none';
+            document.getElementById('emailSection').style.display = 'none';
+            document.getElementById('downloadSection').style.display = 'none';
+            document.getElementById('dataPreview').style.display = 'none';
+            
+            // Clear all status messages
+            document.getElementById('csvStatus').innerHTML = '';
+            document.getElementById('deviceStatus').innerHTML = '';
+            document.getElementById('updateStatus').innerHTML = '';
+            document.getElementById('emailStatus').innerHTML = '';
+            document.getElementById('tableContainer').innerHTML = '';
+            document.getElementById('deviceMapping').innerHTML = '';
+            document.getElementById('dueVehiclesList').innerHTML = '';
+            
+            // Reset file input
+            document.getElementById('csvFile').value = '';
+            
+            // Re-enable buttons
+            const buttonsToReset = ['devicesBtn', 'updateBtn', 'checkRUCBtn', 'hardcodedBtn'];
+            buttonsToReset.forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    btn.disabled = false;
+                    // Reset button text if needed
+                    if (btnId === 'devicesBtn') btn.textContent = '📡 Get All Fleet Devices';
+                    if (btnId === 'updateBtn') btn.textContent = '🔄 Update All Distances';
+                    if (btnId === 'hardcodedBtn') btn.innerHTML = '⚡ Load Hardcoded Data (79 Records)';
+                }
+            });
+            
+            setTimeout(() => {
+                document.getElementById('refreshBtn').disabled = false;
+                document.getElementById('refreshBtn').innerHTML = '🔄 Refresh All Data';
+                showStatus('csvStatus', '🔄 Data refreshed. Load hardcoded data or upload a file.', 'info');
+            }, 1000);
+        }
+
+        // Enhanced file loading that supports CSV and Excel
+        function loadDataFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const fileName = file.name.toLowerCase();
+            const fileExtension = fileName.split('.').pop();
+
+            showStatus('csvStatus', `📖 Reading ${fileExtension.toUpperCase()} file: ${file.name}...`, 'info');
+
+            if (fileExtension === 'csv') {
+                loadCSVFile(file);
+            } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+                loadExcelFile(file);
+            } else {
+                showStatus('csvStatus', '❌ Unsupported file format. Please use CSV, XLSX, or XLS files.', 'error');
+            }
+        }
+
+        // Load CSV file
+        function loadCSVFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    parseCSV(e.target.result);
+                } catch (error) {
+                    showStatus('csvStatus', 'Error reading CSV file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Load Excel file using SheetJS
+        function loadExcelFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    // Use SheetJS to parse Excel file
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Get the first worksheet
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // Convert to CSV format
+                    const csvText = XLSX.utils.sheet_to_csv(worksheet);
+                    
+                    showStatus('csvStatus', `✅ Excel file converted. Processing data from sheet: ${firstSheetName}`, 'info');
+                    parseCSV(csvText);
+                    
+                } catch (error) {
+                    showStatus('csvStatus', 'Error reading Excel file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Enhanced CSV parsing with better validation and preview
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n');
+            csvData = [];
+            let headerRowIndex = -1;
+            
+            // Find the header row (look for "Fleet" or similar indicators)
+            for (let i = 0; i < Math.min(5, lines.length); i++) {
+                const line = lines[i].toLowerCase();
+                if (line.includes('fleet') || line.includes('hubo') || line.includes('driver')) {
+                    headerRowIndex = i;
+                    break;
+                }
+            }
+            
+            if (headerRowIndex === -1) {
+                // Default to row 1 if no clear header found
+                headerRowIndex = 1;
+            }
+            
+            // Parse data starting from the row after headers
+            for (let i = headerRowIndex + 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line) {
+                    const cols = parseCSVLine(line);
+                    if (cols.length >= 3 && cols[0] && cols[0] !== 'Fleet #') {
+                        // Enhanced parsing with validation
+                        const fleetNumber = cols[0];
+                        const huboPaidTo = cols[1] ? cols[1].replace(/[",]/g, '') : '';
+                        const huboOdoReading = cols[2] ? cols[2].replace(/[",]/g, '') : '';
+                        const distanceRemaining = cols[3] || '';
+                        const driverName = cols[4] ? cols[4].trim() : '';
+                        const driverEmail = cols[5] ? cols[5].trim() : '';
+                        const rucAdminEmail = cols[6] ? cols[6].trim() : 'francis@directt.co.nz';
+
+                        // Validate essential fields
+                        if (fleetNumber && huboPaidTo) {
+                            csvData.push({
+                                fleetNumber: parseInt(fleetNumber) || fleetNumber,
+                                huboPaidTo: huboPaidTo,
+                                huboOdoReading: huboOdoReading,
+                                distanceRemaining: distanceRemaining,
+                                driverName: driverName,
+                                driverEmail: driverEmail,
+                                rucAdminEmail: rucAdminEmail,
+                                calculatedDistance: null,
+                                geotabDeviceId: null
+                            });
+                        }
+                    }
+                }
+            }
+
+            if (csvData.length > 0) {
+                const emailCount = csvData.filter(row => row.driverEmail).length;
+                showStatus('csvStatus', 
+                    `✅ Successfully loaded ${csvData.length} RUC records (${emailCount} with email addresses)`, 
+                    'success');
+                
+                showDataPreview();
+                document.getElementById('deviceSection').style.display = 'block';
+            } else {
+                showStatus('csvStatus', 
+                    '❌ No valid data found. Please check your file format and ensure it contains Fleet #, Hubo Paid To, and Hubo/Odo Reading columns.', 
+                    'error');
+            }
+        }
+
+        // Show preview of loaded data
+        function showDataPreview() {
+            let html = `
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h4 style="margin: 0;">📊 Data Summary</h4>
+                        <button onclick="togglePreview()" class="btn btn-primary" id="previewToggle">👁️ Show Details</button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                        <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong style="color: #1976d2;">${csvData.length}</strong><br>
+                            <small>Total Vehicles</small>
+                        </div>
+                        <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong style="color: #388e3c;">${csvData.filter(r => r.driverEmail).length}</strong><br>
+                            <small>With Email</small>
+                        </div>
+                        <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong style="color: #f57c00;">${csvData.filter(r => r.driverName).length}</strong><br>
+                            <small>With Driver</small>
+                        </div>
+                        <div style="background: white; padding: 10px; border-radius: 5px; text-align: center;">
+                            <strong style="color: #7b1fa2;">${csvData.filter(r => r.huboPaidTo && parseInt(r.huboPaidTo.replace(/,/g, '')) > 0).length}</strong><br>
+                            <small>Valid RUC Data</small>
+                        </div>
+                    </div>
+                    
+                    <div id="detailedPreview" style="display: none;">
+                        <table style="width: 100%; font-size: 12px;">
+                            <thead>
+                                <tr style="background: #1976d2; color: white;">
+                                    <th>Fleet #</th>
+                                    <th>Hubo Paid To</th>
+                                    <th>Hubo Reading</th>
+                                    <th>Driver</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            // Show first 5 rows as preview
+            csvData.slice(0, 5).forEach(row => {
+                const emailStatus = row.driverEmail ? '✅' : '❌';
+                const driverStatus = row.driverName ? '✅' : '❌';
+                
+                html += `
+                    <tr style="background: white;">
+                        <td><strong>${row.fleetNumber}</strong></td>
+                        <td>${row.huboPaidTo}</td>
+                        <td>${row.huboOdoReading}</td>
+                        <td>${row.driverName || 'No name'}</td>
+                        <td style="font-size: 10px;">${row.driverEmail || 'No email'}</td>
+                        <td>${emailStatus} ${driverStatus}</td>
+                    </tr>
+                `;
+            });
+
+            if (csvData.length > 5) {
+                html += `
+                    <tr style="background: #e3f2fd;">
+                        <td colspan="6" style="text-align: center; font-style: italic;">
+                            ... and ${csvData.length - 5} more records
+                        </td>
+                    </tr>
+                `;
+            }
+
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('previewTable').innerHTML = html;
+            document.getElementById('dataPreview').style.display = 'block';
+        }
+
+        // Toggle detailed preview
+        function togglePreview() {
+            const detailedPreview = document.getElementById('detailedPreview');
+            const toggleBtn = document.getElementById('previewToggle');
+            
+            if (detailedPreview.style.display === 'none') {
+                detailedPreview.style.display = 'block';
+                toggleBtn.textContent = '👁️ Hide Details';
+            } else {
+                detailedPreview.style.display = 'none';
+                toggleBtn.textContent = '👁️ Show Details';
+            }
+        }
+
+        // Simple CSV line parser
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        // Get Geotab devices
+        async function getGeotabDevices() {
+            if (!isGeotabAddIn && !credentials) {
+                showStatus('deviceStatus', 'Please authenticate first', 'error');
+                return;
+            }
+
+            document.getElementById('devicesBtn').disabled = true;
+            showStatus('deviceStatus', 'Fetching all fleet devices...', 'info');
+
+            try {
+                geotabDevices = await callGeotabAPI('Get', {
+                    typeName: 'Device',
+                    resultsLimit: 1000
+                });
+
+                showStatus('deviceStatus', `✅ Found ${geotabDevices.length} fleet devices`, 'success');
+                createDeviceMapping();
+
+            } catch (error) {
+                showStatus('deviceStatus', '❌ Failed to get devices: ' + error.message, 'error');
+                document.getElementById('devicesBtn').disabled = false;
+            }
+        }
+
+        // Create device mapping interface with automatic next step
+        function createDeviceMapping() {
+            let html = `
+                <div class="device-mapping">
+                    <h4>🔗 Map Fleet Numbers to Geotab Devices (Optional)</h4>
+                    <p>Match each fleet number from your CSV to the corresponding Geotab device. Mapping is optional - you can proceed even with unmapped vehicles.</p>
+                    
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <h5>ℹ️ Mapping Information:</h5>
+                        <p>• <strong>Mapped vehicles:</strong> Will get live odometer readings from Geotab</p>
+                        <p>• <strong>Unmapped vehicles:</strong> Will use CSV odometer readings for calculations</p>
+                        <p>• <strong>Negative distances:</strong> When current odometer exceeds RUC paid to, negative km will be shown</p>
+                    </div>
+            `;
+
+            csvData.forEach((row, index) => {
+                html += `
+                    <div class="mapping-row">
+                        <span style="min-width: 100px;"><strong>Fleet ${row.fleetNumber}:</strong></span>
+                        <select id="device_${index}" onchange="updateMapping(${index}, this.value)">
+                            <option value="">Select Geotab Device (Optional)...</option>
+                `;
+
+                geotabDevices.forEach(device => {
+                    const deviceName = device.name || `Device ${device.id}`;
+                    const selected = deviceName.includes(row.fleetNumber) ? 'selected' : '';
+                    html += `<option value="${device.id}" ${selected}>${deviceName} (${device.id})</option>`;
+                });
+
+                html += `
+                        </select>
+                    </div>
+                `;
+            });
+
+            html += `
+                    <div style="margin-top: 20px;">
+                        <button onclick="validateMapping()" class="btn btn-primary" style="margin-right: 10px;">✅ Review Mapping (Optional)</button>
+                        <button onclick="proceedToUpdate()" class="btn btn-success">⚡ Proceed to Update</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('deviceMapping').innerHTML = html;
+
+            // Auto-match where possible
+            csvData.forEach((row, index) => {
+                const matchingDevice = geotabDevices.find(device => 
+                    device.name && device.name.includes(row.fleetNumber.toString())
+                );
+                if (matchingDevice) {
+                    deviceMapping[index] = matchingDevice.id;
+                    row.geotabDeviceId = matchingDevice.id;
+                }
+            });
+
+            // Automatically show the update section
+            document.getElementById('updateSection').style.display = 'block';
+        }
+
+        // Update device mapping
+        function updateMapping(csvIndex, deviceId) {
+            if (deviceId) {
+                deviceMapping[csvIndex] = deviceId;
+                csvData[csvIndex].geotabDeviceId = deviceId;
+            } else {
+                delete deviceMapping[csvIndex];
+                csvData[csvIndex].geotabDeviceId = null;
+            }
+        }
+
+        // Optional validate mapping (no longer mandatory)
+        function validateMapping() {
+            const mapped = Object.keys(deviceMapping).length;
+            const total = csvData.length;
+
+            if (mapped === 0) {
+                showStatus('deviceStatus', 'ℹ️ No devices mapped - all vehicles will use CSV odometer readings', 'info');
+            } else {
+                showStatus('deviceStatus', `✅ Mapped ${mapped} of ${total} fleet vehicles to Geotab devices`, 'success');
+            }
+        }
+
+        // Proceed to update step without mandatory validation
+        function proceedToUpdate() {
+            const mapped = Object.keys(deviceMapping).length;
+            const total = csvData.length;
+
+            if (mapped === 0) {
+                showStatus('deviceStatus', 
+                    `ℹ️ No devices mapped - all ${total} vehicles will use CSV odometer readings for distance calculation`, 
+                    'info');
+            } else {
+                showStatus('deviceStatus', 
+                    `✅ Ready to update! ${mapped} vehicles mapped to Geotab, ${total - mapped} will use CSV readings`, 
+                    'success');
+            }
+
+            // Make sure update section is visible
+            document.getElementById('updateSection').style.display = 'block';
+        }
+
+        // Update distances with real odometer data (MODIFIED to allow negative distances)
+        async function updateDistancesFromGeotab() {
+            if (!isGeotabAddIn && !credentials) {
+                showStatus('updateStatus', 'Please authenticate first', 'error');
+                return;
+            }
+
+            const mappedDevices = csvData.filter(row => row.geotabDeviceId);
+            const unmappedDevices = csvData.filter(row => !row.geotabDeviceId);
+
+            document.getElementById('updateBtn').disabled = true;
+            showStatus('updateStatus', `Fetching real odometer readings from Geotab (${mappedDevices.length} mapped, ${unmappedDevices.length} using CSV)...`, 'info');
+
+            try {
+                if (mappedDevices.length > 0) {
+                    // Build API calls for ExecuteMultiCall
+                    const calls = [];
+                    const now = new Date().toISOString();
+
+                    mappedDevices.forEach(row => {
+                        calls.push({
+                            method: 'Get',
+                            params: {
+                                typeName: 'StatusData',
+                                search: {
+                                    deviceSearch: { id: row.geotabDeviceId },
+                                    diagnosticSearch: { id: 'DiagnosticOdometerAdjustmentId' },
+                                    fromDate: now,
+                                    toDate: now
+                                },
+                                resultsLimit: 1
+                            }
+                        });
+                    });
+
+                    showProgress(25, 'Executing odometer API calls...');
+
+                    // Execute all calls at once
+                    const results = await callGeotabAPI('ExecuteMultiCall', { calls: calls });
+
+                    showProgress(50, 'Converting meters to kilometers and calculating distances...');
+
+                    // Process results for mapped devices
+                    let successCount = 0;
+                    mappedDevices.forEach((row, index) => {
+                        const odometerData = results[index];
+                        if (odometerData && odometerData.length > 0 && odometerData[0].data !== undefined) {
+                            // Geotab odometer is in METERS - convert to kilometers
+                            const odometerMeters = odometerData[0].data;
+                            const odometerKilometers = Math.round(odometerMeters / 1000); // Round to nearest km
+                            
+                            // Update huboOdoReading with current Geotab odometer reading
+                            row.huboOdoReading = odometerKilometers.toString();
+                            
+                            // Calculate distance remaining: Hubo Paid To - Hubo/Odo Reading (ALLOW NEGATIVE)
+                            const huboPaidKm = parseInt(row.huboPaidTo.replace(/,/g, '')) || 0;
+                            row.calculatedDistance = huboPaidKm - odometerKilometers; // REMOVED Math.max(0, ...)
+                            successCount++;
+                        } else {
+                            row.calculatedDistance = 'Unable to calculate';
+                        }
+                    });
+
+                    showProgress(75, 'Processing unmapped vehicles with CSV data...');
+                }
+
+                // Process unmapped devices using CSV readings
+                let csvProcessedCount = 0;
+                unmappedDevices.forEach(row => {
+                    if (row.huboOdoReading && row.huboOdoReading.trim() !== '') {
+                        const huboPaidKm = parseInt(row.huboPaidTo.replace(/,/g, '')) || 0;
+                        const huboOdoKm = parseInt(row.huboOdoReading.replace(/,/g, '')) || 0;
+                        
+                        // Calculate distance remaining (ALLOW NEGATIVE)
+                        row.calculatedDistance = huboPaidKm - huboOdoKm; // REMOVED Math.max(0, ...)
+                        csvProcessedCount++;
+                    } else {
+                        row.calculatedDistance = 'No odometer reading';
+                    }
+                });
+
+                hideProgress();
+                
+                const mappedCount = mappedDevices.length;
+                const successCount = mappedDevices.filter(row => typeof row.calculatedDistance === 'number').length;
+                
+                showStatus('updateStatus', 
+                    `✅ Distance calculation complete!<br>
+                    • <strong>Geotab mapped:</strong> ${successCount} of ${mappedCount} updated<br>
+                    • <strong>CSV readings:</strong> ${csvProcessedCount} processed<br>
+                    • <strong>Note:</strong> Negative distances indicate RUC overdue<br>
+                    <small>Geotab odometer readings converted from meters to kilometers for accurate RUC calculation.</small>`, 
+                    'success');
+
+                displayUpdatedData();
+                document.getElementById('downloadSection').style.display = 'block';
+                document.getElementById('emailSection').style.display = 'block';
+
+            } catch (error) {
+                hideProgress();
+                showStatus('updateStatus', '❌ Error fetching odometer data: ' + error.message, 'error');
+                document.getElementById('updateBtn').disabled = false;
+            }
+        }
+
+        // Global variable to track sorting
+        let currentSort = { column: null, direction: 'asc' };
+
+        // Display updated data with negative distance highlighting AND SORTABLE COLUMNS
+        function displayUpdatedData() {
+            let html = `
+                <h4>📊 Updated RUC Data</h4>
+                <p><strong>Note:</strong> Geotab odometer readings converted from meters to kilometers for RUC calculation</p>
+                <p><strong>✏️ Manual Override:</strong> Click the "Edit" buttons to modify values</p>
+                <p><strong>🚨 Negative distances:</strong> Highlighted in red - indicates RUC overdue</p>
+                <p><strong>🔄 Sortable:</strong> Click column headers to sort data</p>
+                
+                <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <button onclick="recalculateAll()" class="btn btn-success" id="recalcAllBtn">🔄 Recalculate All</button>
+                    <button onclick="resetToOriginal()" class="btn" style="background: #f56565; color: white;" id="resetBtn">↩️ Reset to Original</button>
+                    <button onclick="sortByUrgency()" class="btn btn-primary" style="margin-left: 10px;">🚨 Sort by Urgency</button>
+                </div>
+                
+                <div style="overflow-x: auto;">
+                    <table id="dataTable" style="width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <thead>
+                            <tr style="background: #2d3748; color: white;">
+                                <th onclick="sortTable('fleetNumber')" style="cursor: pointer; padding: 15px; user-select: none;" title="Click to sort">
+                                    Fleet # <span id="sort-fleetNumber">⚭</span>
+                                </th>
+                                <th onclick="sortTable('huboPaidTo')" style="cursor: pointer; padding: 15px; user-select: none;" title="Click to sort">
+                                    Hubo Paid To (km) <span id="sort-huboPaidTo">⚭</span>
+                                </th>
+                                <th style="padding: 15px;">Edit</th>
+                                <th onclick="sortTable('huboOdoReading')" style="cursor: pointer; padding: 15px; user-select: none;" title="Click to sort">
+                                    Hubo/Odo Reading (km) <span id="sort-huboOdoReading">⚭</span>
+                                </th>
+                                <th style="padding: 15px;">Edit</th>
+                                <th onclick="sortTable('distanceRemaining')" style="cursor: pointer; padding: 15px; user-select: none;" title="Click to sort">
+                                    Distance Remaining (km) <span id="sort-distanceRemaining">⚭</span>
+                                </th>
+                                <th onclick="sortTable('urgency')" style="cursor: pointer; padding: 15px; user-select: none;" title="Click to sort">
+                                    Urgency Level <span id="sort-urgency">⚭</span>
+                                </th>
+                                <th onclick="sortTable('status')" style="cursor: pointer; padding: 15px; user-select: none;" title="Click to sort">
+                                    Status <span id="sort-status">⚭</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+            `;
+
+            // Add data to table body
+            html += generateTableRows();
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+                    <h5 style="color: #1976d2; margin-top: 0;">💡 Sorting Tips:</h5>
+                    <ul style="color: #1565c0; margin: 0;">
+                        <li><strong>📊 Distance Remaining:</strong> Sort to see most/least urgent vehicles</li>
+                        <li><strong>🚨 Urgency Level:</strong> Groups overdue vehicles at top/bottom</li>
+                        <li><strong>🚗 Fleet #:</strong> Organize by vehicle number</li>
+                        <li><strong>🔄 Multiple clicks:</strong> Toggles between ascending/descending order</li>
+                    </ul>
+                </div>
+            `;
+
+            document.getElementById('tableContainer').innerHTML = html;
+        }
+
+        // Generate table rows (separated for reuse in sorting)
+        function generateTableRows() {
+            let html = '';
+            
+            csvData.forEach((row, index) => {
+                const statusClass = row.calculatedDistance !== null && typeof row.calculatedDistance === 'number' ? 'updated' : '';
+                const status = row.geotabDeviceId ? 
+                    (typeof row.calculatedDistance === 'number' ? '✅ Geotab' : '⚠️ No data') : 
+                    '⏸️ CSV data';
+
+                // Store original values if not already stored
+                if (!row.originalHuboPaidTo) {
+                    row.originalHuboPaidTo = row.huboPaidTo;
+                    row.originalHuboOdoReading = row.huboOdoReading;
+                }
+
+                // Determine if distance is negative and apply styling
+                const distanceValue = row.calculatedDistance !== null ? row.calculatedDistance : row.distanceRemaining;
+                const isNegative = typeof distanceValue === 'number' && distanceValue < 0;
+                const distanceClass = isNegative ? 'negative-distance' : '';
+
+                // Determine urgency level for sorting
+                let urgencyLevel, urgencyText, urgencyOrder;
+                if (typeof distanceValue === 'number') {
+                    if (distanceValue < 0) {
+                        urgencyLevel = 'OVERDUE';
+                        urgencyText = '🔴 OVERDUE';
+                        urgencyOrder = 1;
+                    } else if (distanceValue <= 200) {
+                        urgencyLevel = 'CRITICAL';
+                        urgencyText = '🟠 CRITICAL';
+                        urgencyOrder = 2;
+                    } else if (distanceValue <= 500) {
+                        urgencyLevel = 'URGENT';
+                        urgencyText = '🟡 URGENT';
+                        urgencyOrder = 3;
+                    } else if (distanceValue <= 1000) {
+                        urgencyLevel = 'HIGH';
+                        urgencyText = '🔵 HIGH';
+                        urgencyOrder = 4;
+                    } else if (distanceValue <= 2000) {
+                        urgencyLevel = 'MEDIUM';
+                        urgencyText = '⚪ MEDIUM';
+                        urgencyOrder = 5;
+                    } else {
+                        urgencyLevel = 'LOW';
+                        urgencyText = '🟢 LOW';
+                        urgencyOrder = 6;
+                    }
+                } else {
+                    urgencyLevel = 'UNKNOWN';
+                    urgencyText = '❓ UNKNOWN';
+                    urgencyOrder = 7;
+                }
+
+                // Store urgency data on row for sorting
+                row.urgencyLevel = urgencyLevel;
+                row.urgencyOrder = urgencyOrder;
+
+                html += `
+                    <tr class="${statusClass}" data-index="${index}">
+                        <td style="padding: 12px; font-weight: bold; font-size: 16px;">${row.fleetNumber}</td>
+                        <td id="huboPaidTo_${index}" style="padding: 8px; min-width: 100px;">${row.huboPaidTo}</td>
+                        <td style="padding: 8px;">
+                            <button onclick="editField(${index}, 'huboPaidTo')" class="btn" 
+                                    style="background: #667eea; color: white; padding: 4px 8px; font-size: 12px;">
+                                ✏️ Edit
+                            </button>
+                        </td>
+                        <td id="huboOdoReading_${index}" style="padding: 8px; min-width: 100px;">${row.huboOdoReading}</td>
+                        <td style="padding: 8px;">
+                            <button onclick="editField(${index}, 'huboOdoReading')" class="btn" 
+                                    style="background: #667eea; color: white; padding: 4px 8px; font-size: 12px;">
+                                ✏️ Edit
+                            </button>
+                        </td>
+                        <td id="distance_${index}" class="${distanceClass}" style="padding: 12px; font-weight: bold; font-size: 16px;">
+                            ${distanceValue}${isNegative ? ' (OVERDUE)' : ''}
+                        </td>
+                        <td style="padding: 12px; font-weight: bold;">${urgencyText}</td>
+                        <td style="padding: 12px;">${status}</td>
+                    </tr>
+                `;
+            });
+
+            return html;
+        }
+
+        // Sort table by column
+        function sortTable(column) {
+            // Clear all sort indicators first
+            document.querySelectorAll('[id^="sort-"]').forEach(el => {
+                el.textContent = '⚭';
+            });
+
+            // Determine sort direction
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+
+            // Update sort indicator
+            const indicator = document.getElementById(`sort-${column}`);
+            if (indicator) {
+                indicator.textContent = currentSort.direction === 'asc' ? '↑' : '↓';
+                indicator.style.color = '#4ade80';
+            }
+
+            // Sort the data
+            csvData.sort((a, b) => {
+                let aVal, bVal;
+
+                switch (column) {
+                    case 'fleetNumber':
+                        aVal = parseInt(a.fleetNumber) || 0;
+                        bVal = parseInt(b.fleetNumber) || 0;
+                        break;
+                    case 'huboPaidTo':
+                        aVal = parseInt(a.huboPaidTo.replace(/[,\s]/g, '')) || 0;
+                        bVal = parseInt(b.huboPaidTo.replace(/[,\s]/g, '')) || 0;
+                        break;
+                    case 'huboOdoReading':
+                        aVal = parseInt(a.huboOdoReading.replace(/[,\s]/g, '')) || 0;
+                        bVal = parseInt(b.huboOdoReading.replace(/[,\s]/g, '')) || 0;
+                        break;
+                    case 'distanceRemaining':
+                        aVal = typeof a.calculatedDistance === 'number' ? a.calculatedDistance : 
+                               (a.distanceRemaining !== '' ? parseInt(a.distanceRemaining) || 0 : 999999);
+                        bVal = typeof b.calculatedDistance === 'number' ? b.calculatedDistance : 
+                               (b.distanceRemaining !== '' ? parseInt(b.distanceRemaining) || 0 : 999999);
+                        break;
+                    case 'urgency':
+                        aVal = a.urgencyOrder || 7;
+                        bVal = b.urgencyOrder || 7;
+                        break;
+                    case 'status':
+                        aVal = a.geotabDeviceId ? (typeof a.calculatedDistance === 'number' ? 1 : 2) : 3;
+                        bVal = b.geotabDeviceId ? (typeof b.calculatedDistance === 'number' ? 1 : 2) : 3;
+                        break;
+                    default:
+                        return 0;
+                }
+
+                if (currentSort.direction === 'asc') {
+                    return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+                } else {
+                    return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+                }
+            });
+
+            // Refresh table body
+            document.getElementById('dataTableBody').innerHTML = generateTableRows();
+            
+            // Show sorting feedback
+            showStatus('updateStatus', 
+                `✅ Table sorted by ${column} (${currentSort.direction === 'asc' ? 'ascending' : 'descending'})`, 
+                'success');
+        }
+
+        // Quick sort by urgency (most urgent first)
+        function sortByUrgency() {
+            currentSort = { column: 'urgency', direction: 'asc' };
+            sortTable('urgency');
+        }
+
+        // Simple edit field function using prompt
+        function editField(rowIndex, field) {
+            console.log(`editField called: rowIndex=${rowIndex}, field=${field}`);
+            
+            if (rowIndex >= csvData.length) {
+                alert(`Error: Invalid row index ${rowIndex}`);
+                return;
+            }
+
+            const currentValue = csvData[rowIndex][field];
+            const fieldName = field === 'huboPaidTo' ? 'Hubo Paid To' : 'Hubo/Odo Reading';
+            const fleetNumber = csvData[rowIndex].fleetNumber;
+            
+            // Use prompt for simple, reliable input
+            const newValue = prompt(`Edit ${fieldName} for Fleet ${fleetNumber}:\n(Current value: ${currentValue})`, currentValue);
+            
+            if (newValue !== null && newValue.trim() !== '' && newValue !== currentValue) {
+                // Update the data
+                csvData[rowIndex][field] = newValue.trim();
+                
+                // Update the display
+                const cellElement = document.getElementById(`${field}_${rowIndex}`);
+                if (cellElement) {
+                    cellElement.textContent = newValue.trim();
+                    cellElement.style.background = '#d4edda'; // Green to show it was changed
+                    cellElement.style.border = '2px solid #48bb78';
+                    cellElement.style.fontWeight = 'bold';
+                }
+                
+                // Auto-recalculate this row
+                recalculateRow(rowIndex);
+                
+                showStatus('updateStatus', `✅ Updated ${fieldName} for Fleet ${fleetNumber} from "${currentValue}" to "${newValue.trim()}"`, 'success');
+            } else if (newValue === '') {
+                alert('Value cannot be empty. Edit cancelled.');
+            }
+        }
+
+        // Recalculate all distances (MODIFIED to allow negative distances)
+        function recalculateAll() {
+            console.log('🔄 recalculateAll() called');
+            
+            try {
+                if (!csvData || csvData.length === 0) {
+                    console.error('No csvData available');
+                    showStatus('updateStatus', '⚠️ No data available to recalculate. Please load CSV data first.', 'error');
+                    return;
+                }
+
+                console.log(`Processing ${csvData.length} rows for recalculation`);
+                let updatedCount = 0;
+                let manualEditCount = 0;
+                let csvFallbackCount = 0;
+                let errorCount = 0;
+                
+                csvData.forEach((row, index) => {
+                    try {
+                        console.log(`Processing row ${index}: Fleet ${row.fleetNumber}`);
+                        
+                        const oldDistance = row.calculatedDistance;
+                        
+                        // Clean and parse Hubo Paid To value
+                        const huboPaidStr = String(row.huboPaidTo || '0').replace(/[,\s]/g, '');
+                        const huboPaidKm = parseInt(huboPaidStr) || 0;
+                        
+                        console.log(`Row ${index}: Hubo Paid To = ${huboPaidKm}`);
+                        
+                        // Check if huboOdoReading was manually edited
+                        const currentHuboReading = String(row.huboOdoReading || '0').replace(/[,\s]/g, '');
+                        const originalHuboReading = String(row.originalHuboOdoReading || '0').replace(/[,\s]/g, '');
+                        const wasHuboManuallyEdited = currentHuboReading !== originalHuboReading;
+                        
+                        let newDistance;
+                        let dataSource;
+                        
+                        if (wasHuboManuallyEdited) {
+                            // PRIORITY 1: Use manually edited huboOdoReading
+                            const huboReading = parseInt(currentHuboReading) || 0;
+                            newDistance = huboPaidKm - huboReading; // REMOVED Math.max(0, ...)
+                            dataSource = `Manual Edit (${huboReading} km)`;
+                            manualEditCount++;
+                            console.log(`Row ${index}: Using MANUAL EDIT ${huboReading}, distance = ${newDistance}`);
+                        } else {
+                            // PRIORITY 2: Use current CSV reading
+                            const huboReading = parseInt(currentHuboReading) || 0;
+                            newDistance = huboPaidKm - huboReading; // REMOVED Math.max(0, ...)
+                            dataSource = `CSV Reading (${huboReading} km)`;
+                            csvFallbackCount++;
+                            console.log(`Row ${index}: Using CSV reading ${huboReading}, distance = ${newDistance}`);
+                        }
+                        
+                        // Update the data
+                        row.calculatedDistance = newDistance;
+                        row.dataSource = dataSource; // Track what data was used
+                        
+                        // Update the distance cell in the table
+                        const distanceCell = document.getElementById(`distance_${index}`);
+                        if (distanceCell) {
+                            // Add OVERDUE indicator for negative distances
+                            const displayText = newDistance < 0 ? `${newDistance} (OVERDUE)` : newDistance.toString();
+                            distanceCell.textContent = displayText;
+                            
+                            // Color-code based on data source and negative values
+                            if (newDistance < 0) {
+                                distanceCell.className = 'negative-distance'; // Red for negative/overdue
+                                distanceCell.title = `RUC OVERDUE by ${Math.abs(newDistance)} km!`;
+                            } else if (wasHuboManuallyEdited) {
+                                distanceCell.style.background = '#e2f8f5'; // Teal for manual edits
+                                distanceCell.style.border = '2px solid #48bb78';
+                                distanceCell.style.color = '#2d3748';
+                                distanceCell.title = 'Manual Edit';
+                            } else {
+                                distanceCell.style.background = '#fff3cd'; // Yellow for CSV data
+                                distanceCell.style.border = '2px solid #d69e2e';
+                                distanceCell.style.color = '#2d3748';
+                                distanceCell.title = 'CSV Data';
+                            }
+                            
+                            distanceCell.style.fontWeight = 'bold';
+                            console.log(`Updated cell distance_${index} with value ${newDistance} from ${dataSource}`);
+                        } else {
+                            console.warn(`Could not find distance cell: distance_${index}`);
+                        }
+                        
+                        if (oldDistance !== newDistance) {
+                            updatedCount++;
+                        }
+                        
+                    } catch (rowError) {
+                        console.error(`Error processing row ${index}:`, rowError);
+                        errorCount++;
+                    }
+                });
+                
+                const negativeCount = csvData.filter(row => typeof row.calculatedDistance === 'number' && row.calculatedDistance < 0).length;
+                
+                const message = `✅ Recalculation complete! 
+                    <br>• Total rows: ${csvData.length}
+                    <br>• Values changed: ${updatedCount}
+                    <br>• <span style="color: #48bb78;">Manual edits: ${manualEditCount}</span>
+                    <br>• <span style="color: #d69e2e;">CSV data: ${csvFallbackCount}</span>
+                    ${negativeCount > 0 ? `<br>• <span style="color: #721c24;">⚠️ Overdue RUC: ${negativeCount}</span>` : ''}
+                    ${errorCount > 0 ? `<br>• Errors: ${errorCount}` : ''}
+                    <br><small>💡 Hover over distance values to see data source</small>`;
+                
+                showStatus('updateStatus', message, negativeCount > 0 ? 'error' : 'success');
+                console.log(`Recalculation complete: ${updatedCount} changed, ${manualEditCount} manual, ${csvFallbackCount} CSV, ${errorCount} errors, ${negativeCount} negative`);
+                
+            } catch (error) {
+                console.error('Error in recalculateAll:', error);
+                showStatus('updateStatus', `❌ Error during recalculation: ${error.message}`, 'error');
+            }
+        }
+
+        // Recalculate distance for a specific row (MODIFIED to allow negative distances)
+        function recalculateRow(rowIndex) {
+            try {
+                if (rowIndex >= csvData.length || rowIndex < 0) {
+                    console.error(`Invalid row index for recalculation: ${rowIndex}`);
+                    return;
+                }
+
+                console.log(`Recalculating single row ${rowIndex}`);
+                const row = csvData[rowIndex];
+                
+                // Clean and parse values
+                const huboPaidStr = String(row.huboPaidTo || '0').replace(/[,\s]/g, '');
+                const huboPaidKm = parseInt(huboPaidStr) || 0;
+                
+                // Check if huboOdoReading was manually edited
+                const currentHuboReading = String(row.huboOdoReading || '0').replace(/[,\s]/g, '');
+                const originalHuboReading = String(row.originalHuboOdoReading || '0').replace(/[,\s]/g, '');
+                const wasHuboManuallyEdited = currentHuboReading !== originalHuboReading;
+                
+                let newDistance;
+                if (wasHuboManuallyEdited) {
+                    // Use manually edited huboOdoReading
+                    const huboReading = parseInt(currentHuboReading) || 0;
+                    newDistance = huboPaidKm - huboReading; // REMOVED Math.max(0, ...)
+                    console.log(`Row ${rowIndex}: Using MANUAL EDIT ${huboReading}`);
+                } else {
+                    // Use current CSV reading
+                    const huboReading = parseInt(currentHuboReading) || 0;
+                    newDistance = huboPaidKm - huboReading; // REMOVED Math.max(0, ...)
+                    console.log(`Row ${rowIndex}: Using CSV ${huboReading}`);
+                }
+                
+                row.calculatedDistance = newDistance;
+                
+                // Update the distance cell with appropriate color
+                const distanceCell = document.getElementById(`distance_${rowIndex}`);
+                if (distanceCell) {
+                    // Add OVERDUE indicator for negative distances
+                    const displayText = newDistance < 0 ? `${newDistance} (OVERDUE)` : newDistance.toString();
+                    distanceCell.textContent = displayText;
+                    
+                    // Color-code based on negative values and data source
+                    if (newDistance < 0) {
+                        distanceCell.className = 'negative-distance'; // Red for negative/overdue
+                        distanceCell.title = `RUC OVERDUE by ${Math.abs(newDistance)} km!`;
+                    } else if (wasHuboManuallyEdited) {
+                        distanceCell.style.background = '#e2f8f5'; // Teal for manual
+                        distanceCell.style.border = '2px solid #48bb78';
+                        distanceCell.style.color = '#2d3748';
+                        distanceCell.title = 'Manual Edit';
+                    } else {
+                        distanceCell.style.background = '#fff3cd'; // Yellow for CSV
+                        distanceCell.style.border = '2px solid #d69e2e';
+                        distanceCell.style.color = '#2d3748';
+                        distanceCell.title = 'CSV Data';
+                    }
+                    distanceCell.style.fontWeight = 'bold';
+                }
+                
+                console.log(`Recalculated row ${rowIndex}: Fleet ${row.fleetNumber}, Distance: ${newDistance}`);
+                
+            } catch (error) {
+                console.error(`Error recalculating row ${rowIndex}:`, error);
+            }
+        }
+
+        // Reset to original values
+        function resetToOriginal() {
+            if (!confirm('Are you sure you want to reset all values to original? This will undo all manual edits.')) {
+                return;
+            }
+
+            csvData.forEach((row, index) => {
+                if (row.originalHuboPaidTo) {
+                    row.huboPaidTo = row.originalHuboPaidTo;
+                    row.huboOdoReading = row.originalHuboOdoReading;
+                    
+                    // Update display
+                    const huboPaidCell = document.getElementById(`huboPaidTo_${index}`);
+                    const huboReadingCell = document.getElementById(`huboOdoReading_${index}`);
+                    
+                    if (huboPaidCell) {
+                        huboPaidCell.textContent = row.huboPaidTo;
+                        huboPaidCell.style.background = '';
+                        huboPaidCell.style.border = '';
+                        huboPaidCell.style.fontWeight = '';
+                    }
+                    
+                    if (huboReadingCell) {
+                        huboReadingCell.textContent = row.huboOdoReading;
+                        huboReadingCell.style.background = '';
+                        huboReadingCell.style.border = '';
+                        huboReadingCell.style.fontWeight = '';
+                    }
+                }
+            });
+
+            recalculateAll();
+            showStatus('updateStatus', '✅ All values reset to original data', 'success');
+        }
+
+        // Check for RUC licenses due soon (MODIFIED to prioritize urgent vehicles at top)
+        function checkRUCDue() {
+            const threshold = parseInt(document.getElementById('alertThreshold').value) || 2000;
+            
+            if (!csvData || csvData.length === 0) {
+                showStatus('emailStatus', '⚠️ No data available. Please complete the update process first.', 'error');
+                return;
+            }
+
+            // Find vehicles with RUC due soon OR overdue (negative distances)
+            const dueVehicles = [];
+            csvData.forEach((row, index) => {
+                const distanceRemaining = row.calculatedDistance !== null ? row.calculatedDistance : 
+                    (row.distanceRemaining && row.distanceRemaining !== '' ? parseInt(row.distanceRemaining) : null);
+                
+                if (distanceRemaining !== null && typeof distanceRemaining === 'number') {
+                    // Include vehicles that are overdue (negative) OR within threshold
+                    if (distanceRemaining < 0 || distanceRemaining <= threshold) {
+                        dueVehicles.push({
+                            ...row,
+                            distanceRemaining: distanceRemaining,
+                            urgency: distanceRemaining < 0 ? 'OVERDUE' : 
+                                    distanceRemaining <= 200 ? 'CRITICAL' :
+                                    distanceRemaining <= 500 ? 'URGENT' : 
+                                    distanceRemaining <= 1000 ? 'HIGH' :
+                                    distanceRemaining <= 2000 ? 'MEDIUM' : 'LOW',
+                            urgencyOrder: distanceRemaining < 0 ? 1 :
+                                         distanceRemaining <= 200 ? 2 :
+                                         distanceRemaining <= 500 ? 3 :
+                                         distanceRemaining <= 1000 ? 4 :
+                                         distanceRemaining <= 2000 ? 5 : 6
+                        });
+                    }
+                }
+            });
+
+            // Sort by urgency (most urgent first, then by distance remaining)
+            dueVehicles.sort((a, b) => {
+                // First sort by urgency order (1 = most urgent)
+                if (a.urgencyOrder !== b.urgencyOrder) {
+                    return a.urgencyOrder - b.urgencyOrder;
+                }
+                // Then sort by distance (lowest/most negative first)
+                return a.distanceRemaining - b.distanceRemaining;
+            });
+
+            if (dueVehicles.length === 0) {
+                showStatus('emailStatus', `✅ Excellent! No vehicles have RUC due within ${threshold.toLocaleString()}km and none are overdue`, 'success');
+                document.getElementById('dueVehiclesList').innerHTML = '';
+                document.getElementById('urgentSummary').style.display = 'none';
+                return;
+            }
+
+            const overdueCount = dueVehicles.filter(v => v.distanceRemaining < 0).length;
+            const criticalCount = dueVehicles.filter(v => v.distanceRemaining >= 0 && v.distanceRemaining <= 200).length;
+            const urgentCount = dueVehicles.filter(v => v.distanceRemaining > 200 && v.distanceRemaining <= 500).length;
+            const dueCount = dueVehicles.filter(v => v.distanceRemaining > 500).length;
+
+            // Display status message
+            let statusMessage = `🚨 FOUND ${dueVehicles.length} VEHICLES REQUIRING ATTENTION`;
+            if (overdueCount > 0 || criticalCount > 0) {
+                statusMessage += ` - ${overdueCount + criticalCount} NEED IMMEDIATE ACTION!`;
+            }
+
+            showStatus('emailStatus', statusMessage, 'error');
+            displayDueVehicles(dueVehicles);
+            
+            // Show send email button if there are due vehicles
+            document.getElementById('sendEmailBtn').style.display = dueVehicles.length > 0 ? 'block' : 'none';
+        }
+
+        // Show urgent summary report
+        function showUrgentSummary() {
+            if (!csvData || csvData.length === 0) {
+                showStatus('emailStatus', '⚠️ No data available. Please complete the update process first.', 'error');
+                return;
+            }
+
+            const threshold = parseInt(document.getElementById('alertThreshold').value) || 2000;
+            
+            // Get all vehicles needing attention
+            const allVehicles = csvData.map(row => {
+                const distanceRemaining = row.calculatedDistance !== null ? row.calculatedDistance : 
+                    (row.distanceRemaining && row.distanceRemaining !== '' ? parseInt(row.distanceRemaining) : null);
+                return { ...row, distanceRemaining };
+            }).filter(v => v.distanceRemaining !== null && typeof v.distanceRemaining === 'number');
+
+            // Count by urgency levels
+            const overdue = allVehicles.filter(v => v.distanceRemaining < 0);
+            const critical = allVehicles.filter(v => v.distanceRemaining >= 0 && v.distanceRemaining <= 200);
+            const urgent = allVehicles.filter(v => v.distanceRemaining > 200 && v.distanceRemaining <= 500);
+            const high = allVehicles.filter(v => v.distanceRemaining > 500 && v.distanceRemaining <= 1000);
+            const medium = allVehicles.filter(v => v.distanceRemaining > 1000 && v.distanceRemaining <= 2000);
+
+            let summaryHtml = `
+                <div style="background: #fee2e2; border: 2px solid #dc2626; border-radius: 10px; padding: 20px; margin: 20px 0;">
+                    <h3 style="color: #991b1b; margin-top: 0;">🚨 URGENT RUC LICENSE RENEWAL SUMMARY</h3>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div style="background: #7f1d1d; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 2em; font-weight: bold;">${overdue.length}</div>
+                            <div>OVERDUE (Negative km)</div>
+                            <small>Immediate Action Required</small>
+                        </div>
+                        <div style="background: #dc2626; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 2em; font-weight: bold;">${critical.length}</div>
+                            <div>CRITICAL (≤200km)</div>
+                            <small>Renew This Week</small>
+                        </div>
+                        <div style="background: #ea580c; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 2em; font-weight: bold;">${urgent.length}</div>
+                            <div>URGENT (≤500km)</div>
+                            <small>Renew Soon</small>
+                        </div>
+                        <div style="background: #d97706; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 2em; font-weight: bold;">${high.length}</div>
+                            <div>HIGH (≤1000km)</div>
+                            <small>Plan Renewal</small>
+                        </div>
+                        <div style="background: #7c2d12; color: white; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 2em; font-weight: bold;">${medium.length}</div>
+                            <div>MEDIUM (≤2000km)</div>
+                            <small>Monitor</small>
+                        </div>
+                    </div>
+
+                    <div style="background: white; padding: 15px; border-radius: 8px; border-left: 5px solid #dc2626;">
+                        <h4 style="color: #dc2626; margin-top: 0;">📋 ACTION REQUIRED:</h4>
+                        <ul style="color: #7f1d1d; font-weight: bold;">
+                            ${overdue.length > 0 ? `<li>🔴 ${overdue.length} vehicles are OVERDUE - Stop operations until RUC renewed</li>` : ''}
+                            ${critical.length > 0 ? `<li>🟠 ${critical.length} vehicles need RUC renewal THIS WEEK</li>` : ''}
+                            ${urgent.length > 0 ? `<li>🟡 ${urgent.length} vehicles need RUC renewal SOON</li>` : ''}
+                        </ul>
+                        <button onclick="checkRUCDue(); scrollToVehicleList();" class="btn" style="background: #dc2626; color: white; margin-top: 10px;">
+                            📋 VIEW DETAILED LIST
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('urgentSummary').innerHTML = summaryHtml;
+            document.getElementById('urgentSummary').style.display = 'block';
+        }
+
+        // Scroll to vehicle list
+        function scrollToVehicleList() {
+            setTimeout(() => {
+                const vehicleList = document.getElementById('dueVehiclesList');
+                if (vehicleList) {
+                    vehicleList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        }
+
+        // Display due vehicles in a table (MODIFIED to show most urgent first with clear hierarchy)
+        function displayDueVehicles(dueVehicles) {
+            let html = `
+                <div style="background: linear-gradient(135deg, #fee2e2, #fecaca); border: 3px solid #dc2626; border-radius: 15px; padding: 20px; margin-top: 15px;">
+                    <h4 style="color: #7f1d1d; margin-top: 0; font-size: 1.5em;">🚨 VEHICLES REQUIRING RUC LICENSE RENEWAL (${dueVehicles.length})</h4>
+                    <p style="color: #991b1b; font-weight: bold; margin-bottom: 20px;">⚡ SORTED BY URGENCY - MOST CRITICAL FIRST ⚡</p>
+                    
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; margin-top: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <thead>
+                                <tr style="background: #7f1d1d; color: white; font-size: 14px;">
+                                    <th style="padding: 15px;">🚨 URGENCY</th>
+                                    <th style="padding: 15px;">Fleet #</th>
+                                    <th style="padding: 15px;">Driver</th>
+                                    <th style="padding: 15px;">Distance Remaining</th>
+                                    <th style="padding: 15px;">Action Required</th>
+                                    <th style="padding: 15px;">Email Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            dueVehicles.forEach((vehicle, index) => {
+                let urgencyStyle, urgencyText, actionText;
+                
+                if (vehicle.distanceRemaining < 0) {
+                    urgencyStyle = 'background: #7f1d1d; color: white;';
+                    urgencyText = '🔴 OVERDUE';
+                    actionText = 'STOP OPERATIONS';
+                } else if (vehicle.distanceRemaining <= 200) {
+                    urgencyStyle = 'background: #dc2626; color: white;';
+                    urgencyText = '🟠 CRITICAL';
+                    actionText = 'RENEW THIS WEEK';
+                } else if (vehicle.distanceRemaining <= 500) {
+                    urgencyStyle = 'background: #ea580c; color: white;';
+                    urgencyText = '🟡 URGENT';
+                    actionText = 'RENEW SOON';
+                } else if (vehicle.distanceRemaining <= 1000) {
+                    urgencyStyle = 'background: #d97706; color: white;';
+                    urgencyText = '🔵 HIGH';
+                    actionText = 'PLAN RENEWAL';
+                } else {
+                    urgencyStyle = 'background: #7c2d12; color: white;';
+                    urgencyText = '⚪ MEDIUM';
+                    actionText = 'MONITOR';
+                }
+                
+                const distanceDisplay = vehicle.distanceRemaining < 0 ? 
+                    `${vehicle.distanceRemaining}km (OVERDUE!)` : 
+                    `${vehicle.distanceRemaining.toLocaleString()}km`;
+                
+                html += `
+                    <tr style="background: white; border-bottom: 2px solid #fee2e2;">
+                        <td style="padding: 12px; ${urgencyStyle} font-weight: bold; text-align: center;">${urgencyText}</td>
+                        <td style="padding: 12px; font-weight: bold; font-size: 16px;">${vehicle.fleetNumber}</td>
+                        <td style="padding: 12px;">
+                            <strong>${vehicle.driverName || 'No Driver'}</strong><br>
+                            <small style="color: #666;">${vehicle.driverEmail || 'No email'}</small>
+                        </td>
+                        <td style="padding: 12px; font-weight: bold; font-size: 16px; ${vehicle.distanceRemaining < 0 ? 'color: #dc2626;' : ''}">${distanceDisplay}</td>
+                        <td style="padding: 12px; font-weight: bold; color: #7f1d1d;">${actionText}</td>
+                        <td style="padding: 12px;" id="email-status-${index}">📤 Pending</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 5px solid #dc2626;">
+                        <h5 style="color: #dc2626; margin-top: 0;">📋 Next Steps:</h5>
+                        <ol style="color: #7f1d1d;">
+                            <li><strong>OVERDUE vehicles:</strong> Must stop operations immediately until RUC renewed</li>
+                            <li><strong>CRITICAL vehicles:</strong> Schedule RUC renewal within 7 days</li>
+                            <li><strong>URGENT vehicles:</strong> Plan RUC renewal within 2-3 weeks</li>
+                            <li><strong>Contact drivers:</strong> Use email addresses provided for quick notification</li>
+                        </ol>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('dueVehiclesList').innerHTML = html;
+        }
+
+        // Send RUC emails (placeholder function)
+        function sendRUCEmails() {
+            showStatus('emailStatus', 'ℹ️ Email functionality is a placeholder. In a real implementation, this would send notifications to drivers and administrators.', 'info');
+        }
+
+        // Download updated CSV with driver information and manual override tracking (MODIFIED to include negative distances)
+        function downloadUpdatedCSV() {
+            let csvContent = ', ROAD USER (RUC) ,,, ,,\n';
+            csvContent += 'Fleet #, Hubo Paid To , Hubo/Odo Reading ,distance remaining,Driver,Driver Email,RUC Admin\n';
+
+            let manualEditCount = 0;
+            let negativeDistanceCount = 0;
+            
+            csvData.forEach(row => {
+                // Check if values were manually edited
+                if (row.originalHuboPaidTo && 
+                    (row.huboPaidTo !== row.originalHuboPaidTo || row.huboOdoReading !== row.originalHuboOdoReading)) {
+                    manualEditCount++;
+                }
+                
+                const distanceRemaining = row.calculatedDistance !== null ? row.calculatedDistance : row.distanceRemaining;
+                
+                // Count negative distances
+                if (typeof distanceRemaining === 'number' && distanceRemaining < 0) {
+                    negativeDistanceCount++;
+                }
+                
+                csvContent += `${row.fleetNumber},"${row.huboPaidTo}","${row.huboOdoReading}","${distanceRemaining}","${row.driverName || ''}","${row.driverEmail || ''}","${row.rucAdminEmail || ''}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `updated_ruc_data_with_emails_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            const editInfo = manualEditCount > 0 ? ` (${manualEditCount} manual edits included)` : '';
+            const negativeInfo = negativeDistanceCount > 0 ? ` - ${negativeDistanceCount} vehicles with negative distances (overdue RUC)` : '';
+            showStatus('updateStatus', `✅ Updated CSV file with driver emails downloaded successfully!${editInfo}${negativeInfo}`, 'success');
+        }
+    </script>
+</body>
+</html>
