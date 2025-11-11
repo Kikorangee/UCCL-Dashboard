@@ -92,7 +92,7 @@
             <label for="zoneFilter">Filter by Zone:</label>
             <select id="zoneFilter" class="form-control">
               <option value="">All Zones</option>
-              <option value="no-zone">No Zone Assigned</option>
+              <option value="Un-matched">No Zone Assigned</option>
             </select>
           </div>
           <div>
@@ -170,6 +170,30 @@ let credentials = null;
 let serverUsed = null;
 let mappedDvirData = [];
 let ignitionData = {};
+let geotabZones = []; // Store zone definitions with boundaries
+
+// Predefined zone list from Advanced_Zone_List spreadsheet
+const PREDEFINED_ZONES = [
+  "Channel Infrastructure",
+  "Donald Road",
+  "Gillingham Road",
+  "Kaikohe",
+  "Kaikohe Work Area",
+  "Kaitaia Wastewater",
+  "Kiwirail",
+  "Mangawhai",
+  "Matauri Bay",
+  "Maungaturoto Solar Farm",
+  "Ngawha",
+  "Northpower Dargaville",
+  "Port Road Site Office",
+  "Rocket Lab",
+  "Ruakaka BESS",
+  "Ruakaka Solar Farm Site 1",
+  "Ruakaka Solar Farm Site 2",
+  "Ruakaka Solar Farm Site 3",
+  "Te Mihi"
+];
 
 function setDefaultDates(){
   const today = new Date();
@@ -243,6 +267,85 @@ function extractLocation(loc){
   return {latitude:null, longitude:null};
 }
 
+// Point-in-polygon algorithm (ray casting method)
+function isPointInPolygon(point, polygon) {
+  if (!polygon || polygon.length < 3) return false;
+  
+  const x = point.longitude;
+  const y = point.latitude;
+  let inside = false;
+  
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x;
+    const yi = polygon[i].y;
+    const xj = polygon[j].x;
+    const yj = polygon[j].y;
+    
+    const intersect = ((yi > y) !== (yj > y))
+        && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  
+  return inside;
+}
+
+// Fetch zone definitions from Geotab
+async function fetchGeotabZones() {
+  try {
+    showMessage('infoBanner', '📍 Fetching zone definitions from Geotab...', 'info');
+    
+    const zones = await callGeotabAPI('Get', {
+      typeName: 'Zone',
+      resultsLimit: 5000
+    });
+    
+    if (zones && zones.length > 0) {
+      // Filter to only include zones from our predefined list
+      geotabZones = zones.filter(zone => {
+        const zoneName = zone.name || zone.Name || '';
+        return PREDEFINED_ZONES.includes(zoneName);
+      }).map(zone => ({
+        id: zone.id,
+        name: zone.name || zone.Name,
+        points: zone.points || zone.Points || [],
+        // Convert points to usable format
+        polygon: (zone.points || zone.Points || []).map(p => ({
+          x: p.x || p.X || 0,
+          y: p.y || p.Y || 0
+        }))
+      }));
+      
+      console.log(`Loaded ${geotabZones.length} zone definitions from Geotab:`, geotabZones.map(z => z.name));
+      return geotabZones;
+    }
+  } catch (error) {
+    console.error('Error fetching zones from Geotab:', error);
+    showMessage('infoBanner', '⚠️ Could not fetch zone definitions. Zones may not be assigned correctly.', 'warning');
+  }
+  
+  return [];
+}
+
+// Match inspection coordinates to zones
+function matchCoordinatesToZones(latitude, longitude) {
+  if (!latitude || !longitude || !geotabZones.length) {
+    return [];
+  }
+  
+  const matchedZones = [];
+  const point = { latitude, longitude };
+  
+  for (const zone of geotabZones) {
+    if (zone.polygon && zone.polygon.length >= 3) {
+      if (isPointInPolygon(point, zone.polygon)) {
+        matchedZones.push(zone.name);
+      }
+    }
+  }
+  
+  return matchedZones;
+}
+
 // Use Geotab's GetAddresses method
 async function getGeotabAddresses(coordinates) {
   if (!coordinates.length) return [];
@@ -268,24 +371,6 @@ async function getGeotabAddresses(coordinates) {
     console.log('GetAddresses API error:', error);
     return coordinates.map(() => ({ formattedAddress: '', zones: [] }));
   }
-}
-
-// Try to get zones from Geotab directly
-async function getGeotabZones() {
-  try {
-    const zones = await callGeotabAPI('Get', {
-      typeName: 'Zone',
-      resultsLimit: 1000
-    });
-    
-    if (zones && zones.length > 0) {
-      return zones.map(zone => zone.name || zone.Name || '').filter(name => name);
-    }
-  } catch (error) {
-    console.log('Could not fetch zones from Geotab:', error);
-  }
-  
-  return [];
 }
 
 async function resolveAllAddresses(rows) {
@@ -319,12 +404,25 @@ async function resolveAllAddresses(rows) {
         if (addr.formattedAddress && addr.formattedAddress.trim()) {
           row.resolvedAddress = addr.formattedAddress.trim();
         }
-        // Always set zones from the API response, even if empty
-        row.zones = addr.zones || [];
+        
+        // Try to get zones from API first
+        let zones = addr.zones || [];
+        
+        // If no zones from API, try matching by coordinates
+        if (zones.length === 0 && geotabZones.length > 0) {
+          zones = matchCoordinatesToZones(row.latitude, row.longitude);
+          if (zones.length > 0) {
+            console.log(`Matched coordinates (${row.latitude}, ${row.longitude}) to zones:`, zones);
+          }
+        }
+        
+        row.zones = zones;
       });
       
       // Re-render table with current progress
-      renderTable(rows);
+      const selectedZone = document.getElementById('zoneFilter').value;
+      const filteredData = filterDataByZone(rows, selectedZone);
+      renderTable(filteredData);
       
     } catch (error) {
       // Continue processing other batches
@@ -833,44 +931,38 @@ async function sendDefectEmail(defectRow) {
   }
 }
 
-// Update zone dropdown with real data from inspections
-function updateZoneDropdown(rows) {
+// Update zone dropdown with predefined zones from spreadsheet
+function updateZoneDropdown() {
   const zoneFilter = document.getElementById('zoneFilter');
   
-  // Get all unique zones from the actual data
-  const allZonesFromData = new Set();
-  rows.forEach(row => {
-    if (row.zones && row.zones.length > 0) {
-      row.zones.forEach(zone => allZonesFromData.add(zone));
-    }
-  });
-  
-  // Convert to array and sort
-  const zonesArray = Array.from(allZonesFromData).sort();
-  
-  // Update dropdown with only real data
+  // Clear existing options except "All Zones" and "No Zone Assigned"
   zoneFilter.innerHTML = '<option value="">All Zones</option><option value="no-zone">No Zone Assigned</option>';
   
-  zonesArray.forEach(zone => {
+  // Add predefined zones from the spreadsheet
+  PREDEFINED_ZONES.forEach(zone => {
     const option = document.createElement('option');
     option.value = zone;
     option.textContent = zone;
     zoneFilter.appendChild(option);
   });
   
-  console.log('Updated zone dropdown with real zones:', zonesArray);
+  console.log('Updated zone dropdown with predefined zones:', PREDEFINED_ZONES);
 }
 
 // Filter data by selected zone
 function filterDataByZone(data, selectedZone) {
-  if (!selectedZone) return data;
+  if (!selectedZone || selectedZone === '') {
+    return data;
+  }
   
   if (selectedZone === 'no-zone') {
+    // Return rows with no zones or empty zones array
     return data.filter(row => !row.zones || row.zones.length === 0);
   }
   
+  // Return rows that have the selected zone in their zones array
   return data.filter(row => {
-    return row.zones && row.zones.includes(selectedZone);
+    return row.zones && Array.isArray(row.zones) && row.zones.includes(selectedZone);
   });
 }
 
@@ -893,6 +985,10 @@ document.getElementById('authButton').onclick = async function(){
     }
     showMessage('authResult','Authentication successful!','success');
     document.getElementById('dvirSection').style.display = '';
+    // Initialize zone dropdown with predefined zones after authentication
+    updateZoneDropdown();
+    // Fetch zone definitions from Geotab for coordinate matching
+    await fetchGeotabZones();
   }catch(e){
     showMessage('authResult',`Authentication failed: ${e.message}`,'error');
   }
@@ -910,6 +1006,11 @@ document.getElementById('getDvir').onclick = async function(){
   document.getElementById('downloadReport').disabled = true;
 
   try{
+    // Fetch zone definitions if not already loaded
+    if (geotabZones.length === 0) {
+      await fetchGeotabZones();
+    }
+    
     await getIgnitionData(fromDate, toDate);
     
     const dvirLogs = await callGeotabAPI('Get', {
@@ -963,29 +1064,49 @@ document.getElementById('getDvir').onclick = async function(){
     });
 
     mappedDvirData = checkOverdueInspections(mappedDvirData);
-    renderTable(mappedDvirData);
+    
+    // Apply current filter before rendering
+    const selectedZone = document.getElementById('zoneFilter').value;
+    const filteredData = filterDataByZone(mappedDvirData, selectedZone);
+    renderTable(filteredData);
 
     const locationsToResolve = mappedDvirData.filter(r => r.latitude != null && r.longitude != null);
 
     if (locationsToResolve.length > 0) {
-      showMessage('infoBanner', `🌍 Resolving ${locationsToResolve.length} addresses using Geotab GetAddresses...`, 'info');
+      showMessage('infoBanner', `🌍 Resolving ${locationsToResolve.length} addresses and matching zones...`, 'info');
       
       await resolveAllAddresses(mappedDvirData);
       
-      updateZoneDropdown(mappedDvirData);
       renderZoneStatistics(mappedDvirData);
       
       const successCount = mappedDvirData.filter(r => r.resolvedAddress && r.resolvedAddress.trim()).length;
+      const zoneCount = mappedDvirData.filter(r => r.zones && r.zones.length > 0).length;
       const failCount = locationsToResolve.length - successCount;
       
+      // Log zone distribution for debugging
+      console.log('=== ZONE MATCHING RESULTS ===');
+      console.log(`Total inspections: ${mappedDvirData.length}`);
+      console.log(`Inspections with zones: ${zoneCount}`);
+      console.log(`Inspections without zones: ${mappedDvirData.length - zoneCount}`);
+      
+      // Show zone breakdown
+      const zoneBreakdown = {};
+      mappedDvirData.forEach(r => {
+        if (r.zones && r.zones.length > 0) {
+          r.zones.forEach(z => {
+            zoneBreakdown[z] = (zoneBreakdown[z] || 0) + 1;
+          });
+        }
+      });
+      console.log('Zone breakdown:', zoneBreakdown);
+      
       if (successCount > 0) {
-        showMessage('infoBanner', `✅ SUCCESS! ${successCount}/${locationsToResolve.length} addresses resolved using Geotab!${failCount > 0 ? ` ${failCount} failed.` : ''}`, 'success');
+        showMessage('infoBanner', `✅ SUCCESS! ${successCount}/${locationsToResolve.length} addresses resolved. ${zoneCount}/${mappedDvirData.length} inspections matched to zones.${failCount > 0 ? ` ${failCount} addresses failed.` : ''}`, 'success');
       } else {
-        showMessage('infoBanner', '❌ No addresses could be resolved using Geotab GetAddresses', 'error');
+        showMessage('infoBanner', `⚠️ Address resolution completed. ${zoneCount}/${mappedDvirData.length} inspections matched to zones.`, 'warning');
       }
     } else {
       showMessage('infoBanner', '✅ DVIR loaded! No locations to resolve.', 'success');
-      updateZoneDropdown(mappedDvirData);
       renderZoneStatistics(mappedDvirData);
     }
     
@@ -999,6 +1120,11 @@ document.getElementById('getDvir').onclick = async function(){
 
 document.getElementById('downloadCsv').onclick = function(){
   if(!mappedDvirData || mappedDvirData.length===0){ showMessage('infoBanner','No DVIR data to export','warning'); return; }
+  
+  // Log zone info before download
+  const withZones = mappedDvirData.filter(r => r.zones && r.zones.length > 0).length;
+  console.log(`Downloading CSV with ${mappedDvirData.length} inspections (${withZones} with zones, ${mappedDvirData.length - withZones} without zones)`);
+  
   const headers = ['DateTime','Driver_Name','Vehicle_Name','Safe_To_Operate','Driver_Inspected','Has_Defects','Defect_Count','Address','Zones','Latitude','Longitude','Odometer_km','Engine_Hours','Hubbometer','Ignition_Time','Time_To_Inspection_Min','Is_Overdue','Driver_Remarks'];
   let csv = headers.map(h=>`"${h}"`).join(',') + '\n';
   mappedDvirData.forEach(r=>{
@@ -1007,13 +1133,14 @@ document.getElementById('downloadCsv').onclick = function(){
       try{ const d = JSON.parse(r.defects); if(Array.isArray(d)&&d.length>0){ hasDefects='YES'; defectCount=String(d.length); } }
       catch(e){ if(r.defects.length>10){ hasDefects='YES'; defectCount='Unknown'; } }
     }
+    const zonesText = (r.zones||[]).join(' | ') |'Un-matched';
     const row = [
       r.dateTime, r.driverName, r.vehicleName,
       r.isSafeToOperate===true?'SAFE':r.isSafeToOperate===false?'UNSAFE':'UNKNOWN',
       r.isInspectedByDriver===true?'YES':'NO',
       hasDefects, defectCount,
       r.resolvedAddress || `${r.latitude || ''}, ${r.longitude || ''}`,
-      (r.zones||[]).join(' | '),
+      zonesText,
       r.latitude || '', r.longitude || '',
       r.odometer ? Math.round(r.odometer/1000*100)/100 : '', 
       r.engineHours ? Math.round(r.engineHours/3600*100)/100 : '', 
@@ -1032,11 +1159,57 @@ document.getElementById('downloadCsv').onclick = function(){
   const url = URL.createObjectURL(blob);
   a.href = url; a.download = filename; a.style.display='none';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  showMessage('infoBanner', `📊 CSV "${filename}" downloaded`, 'success');
+  showMessage('infoBanner', `📊 CSV "${filename}" downloaded with ${withZones} inspections containing zone data`, 'success');
 };
 
 document.getElementById('downloadReport').onclick = function(){
   if(!mappedDvirData || mappedDvirData.length===0){ showMessage('infoBanner','No DVIR data to report','warning'); return; }
+  
+  // Calculate zone statistics for the report
+  const totalInspections = mappedDvirData.length;
+  const withZones = mappedDvirData.filter(r => r.zones && r.zones.length > 0).length;
+  const withoutZones = totalInspections - withZones;
+  
+  const zoneBreakdown = {};
+  mappedDvirData.forEach(r => {
+    if (r.zones && r.zones.length > 0) {
+      r.zones.forEach(z => {
+        zoneBreakdown[z] = (zoneBreakdown[z] || 0) + 1;
+      });
+    }
+  });
+  
+  const zoneSummaryHtml = `
+    <div style="background:#f8f9fa;padding:20px;margin:20px 0;border-radius:8px;border:2px solid #e2e8f0;">
+      <h2 style="margin:0 0 15px 0;color:#2d3748;">Zone Distribution Summary</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:15px;">
+        <div style="background:white;padding:15px;border-radius:8px;text-align:center;">
+          <div style="font-size:2em;font-weight:700;color:#667eea;">${totalInspections}</div>
+          <div style="color:#666;font-size:0.9em;">Total Inspections</div>
+        </div>
+        <div style="background:white;padding:15px;border-radius:8px;text-align:center;">
+          <div style="font-size:2em;font-weight:700;color:#48bb78;">${withZones}</div>
+          <div style="color:#666;font-size:0.9em;">With Zones</div>
+        </div>
+        <div style="background:white;padding:15px;border-radius:8px;text-align:center;">
+          <div style="font-size:2em;font-weight:700;color:#f56565;">${withoutZones}</div>
+          <div style="color:#666;font-size:0.9em;">Without Zones</div>
+        </div>
+      </div>
+      ${Object.keys(zoneBreakdown).length > 0 ? `
+        <h3 style="margin:15px 0 10px 0;color:#2d3748;">Inspections per Zone:</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;">
+          ${Object.entries(zoneBreakdown).sort((a,b) => b[1] - a[1]).map(([zone, count]) => `
+            <div style="background:white;padding:10px 15px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-weight:600;">${zone}</span>
+              <span style="background:#667eea;color:white;padding:4px 12px;border-radius:12px;font-weight:600;">${count}</span>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+  
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>DVIR Report (Working Addresses)</title>
   <style>
     body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin:25px;color:#333;font-size:16px;line-height:1.5}
@@ -1057,6 +1230,7 @@ document.getElementById('downloadReport').onclick = function(){
   </style></head><body>
   <h1>UCCL Asset Inspection Report</h1>
   <div class="muted">Generated on ${new Date().toLocaleString()}</div>
+  ${zoneSummaryHtml}
   <table>
     <thead><tr>
       <th>Date/Time</th><th>Driver</th><th>Vehicle</th><th>Status</th><th>Driver Inspected</th>
@@ -1081,7 +1255,7 @@ document.getElementById('downloadReport').onclick = function(){
           locationDisplay = `<span class="coord-only">${coords}</span>`;
         }
       }
-      const zones = (r.zones||[]).map(z=>`<span class="zone-pill">${z}</span>`).join('');
+      const zones = (r.zones||[]).map(z=>`<span class="zone-pill">${z}</span>`).join('') || '<em class="muted">No zone</em>';
       
       let ignitionInfo = '';
       if (r.ignitionTime) {
@@ -1113,7 +1287,7 @@ document.getElementById('downloadReport').onclick = function(){
   const url = URL.createObjectURL(blob);
   a.href = url; a.download = filename; a.style.display='none';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  showMessage('infoBanner', `📄 HTML Report "${filename}" downloaded`, 'success');
+  showMessage('infoBanner', `📄 HTML Report "${filename}" downloaded with zone distribution summary (${withZones}/${totalInspections} inspections with zones)`, 'success');
 };
 
 document.getElementById('logout').onclick = function(){
@@ -1121,6 +1295,7 @@ document.getElementById('logout').onclick = function(){
   serverUsed = null;
   mappedDvirData = [];
   ignitionData = {};
+  geotabZones = [];
   document.getElementById('dvirSection').style.display = 'none';
   document.getElementById('dvirResult').innerHTML = '';
   document.getElementById('authResult').innerHTML = '';
@@ -1143,24 +1318,32 @@ document.getElementById('zoneFilter').addEventListener('change', function() {
 document.getElementById('alertWindow').addEventListener('change', function() {
   if (!mappedDvirData.length) return;
   mappedDvirData = checkOverdueInspections(mappedDvirData);
-  renderTable(mappedDvirData);
+  const selectedZone = document.getElementById('zoneFilter').value;
+  const filteredData = filterDataByZone(mappedDvirData, selectedZone);
+  renderTable(filteredData);
 });
 
 document.getElementById('assetType').addEventListener('change', function() {
   if (!mappedDvirData.length) return;
   mappedDvirData = checkOverdueInspections(mappedDvirData);
-  renderTable(mappedDvirData);
+  const selectedZone = document.getElementById('zoneFilter').value;
+  const filteredData = filterDataByZone(mappedDvirData, selectedZone);
+  renderTable(filteredData);
 });
 
 document.getElementById('enableOverdueAlerts').addEventListener('change', function() {
   if (!mappedDvirData.length) return;
   mappedDvirData = checkOverdueInspections(mappedDvirData);
-  renderTable(mappedDvirData);
+  const selectedZone = document.getElementById('zoneFilter').value;
+  const filteredData = filterDataByZone(mappedDvirData, selectedZone);
+  renderTable(filteredData);
 });
 
 document.getElementById('groupByZone').addEventListener('change', function() {
   if (!mappedDvirData.length) return;
-  renderTable(mappedDvirData);
+  const selectedZone = document.getElementById('zoneFilter').value;
+  const filteredData = filterDataByZone(mappedDvirData, selectedZone);
+  renderTable(filteredData);
 });
 
 // Simulate defect detection and auto-email
@@ -1174,6 +1357,8 @@ document.addEventListener('click', function(e) {
 
 if (window.geotab || window.api || (window.location && /geotab\.com/i.test(window.location.host))) {
   document.getElementById('dvirSection').style.display='';
+  // Initialize zone dropdown with predefined zones on page load
+  updateZoneDropdown();
 }
 </script>
 </body>
