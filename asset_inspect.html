@@ -795,14 +795,20 @@ function renderTable(rows){
         const d = JSON.parse(r.defects);
         if(Array.isArray(d)&&d.length>0) {
           const defectList = d.map(def => {
-            const defectName = def.defectName || def.name || 'Unknown defect';
-            const severity = def.defectSeverity || def.severity || '';
+            // Try various field names that Geotab might use
+            const defectName = def.defectName || def.name || def.defectRemark || def.remark ||
+                              def.defectListName || def.defectListAsPartName ||
+                              (typeof def === 'string' ? def : 'Unknown defect');
+            const severity = def.defectSeverity || def.severity || def.Severity || '';
             return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
           }).join(', ');
           defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
         }
       }
-      catch(e){ if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>'; }
+      catch(e){
+        console.error('Error parsing defects:', e, 'Raw defects:', r.defects);
+        if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>';
+      }
     }
 
     let locationDisplay = '<em class="muted">No location</em>';
@@ -897,14 +903,20 @@ function renderTableGroupedByZone(rows) {
           const d = JSON.parse(r.defects);
           if(Array.isArray(d)&&d.length>0) {
             const defectList = d.map(def => {
-              const defectName = def.defectName || def.name || 'Unknown defect';
-              const severity = def.defectSeverity || def.severity || '';
+              // Try various field names that Geotab might use
+              const defectName = def.defectName || def.name || def.defectRemark || def.remark ||
+                                def.defectListName || def.defectListAsPartName ||
+                                (typeof def === 'string' ? def : 'Unknown defect');
+              const severity = def.defectSeverity || def.severity || def.Severity || '';
               return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
             }).join(', ');
             defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
           }
         }
-        catch(e){ if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>'; }
+        catch(e){
+          console.error('Error parsing defects:', e, 'Raw defects:', r.defects);
+          if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>';
+        }
       }
 
       let locationDisplay = '<em class="muted">No location</em>';
@@ -965,14 +977,20 @@ function renderTableGroupedByZone(rows) {
           const d = JSON.parse(r.defects);
           if(Array.isArray(d)&&d.length>0) {
             const defectList = d.map(def => {
-              const defectName = def.defectName || def.name || 'Unknown defect';
-              const severity = def.defectSeverity || def.severity || '';
+              // Try various field names that Geotab might use
+              const defectName = def.defectName || def.name || def.defectRemark || def.remark ||
+                                def.defectListName || def.defectListAsPartName ||
+                                (typeof def === 'string' ? def : 'Unknown defect');
+              const severity = def.defectSeverity || def.severity || def.Severity || '';
               return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
             }).join(', ');
             defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
           }
         }
-        catch(e){ if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>'; }
+        catch(e){
+          console.error('Error parsing defects:', e, 'Raw defects:', r.defects);
+          if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>';
+        }
       }
 
       let locationDisplay = '<em class="muted">No location</em>';
@@ -1224,6 +1242,20 @@ document.getElementById('getDvir').onclick = async function(){
         }
       }
       
+      // Handle defects - convert to JSON string if it's an array/object
+      let defectsString = '';
+      if (l.defects) {
+        if (typeof l.defects === 'string') {
+          defectsString = l.defects;
+        } else if (Array.isArray(l.defects)) {
+          defectsString = JSON.stringify(l.defects);
+          console.log(`Found ${l.defects.length} defects for ${deviceNames[deviceId]}:`, l.defects);
+        } else if (typeof l.defects === 'object') {
+          defectsString = JSON.stringify(l.defects);
+          console.log(`Found defect object for ${deviceNames[deviceId]}:`, l.defects);
+        }
+      }
+
       return {
         id:l.id,
         dateTime:new Date(l.dateTime).toLocaleString(),
@@ -1241,7 +1273,7 @@ document.getElementById('getDvir').onclick = async function(){
         longitude:loc.longitude,
         resolvedAddress:'',
         zones:[],
-        defects:l.defects || '',
+        defects:defectsString,
         isOverdue: false,
         ignitionTime: null,
         timeToInspection: null
@@ -1324,13 +1356,19 @@ document.getElementById('downloadCsv').onclick = function(){
           hasDefects='YES';
           defectCount=String(d.length);
           defectDetails = d.map(def => {
-            const defectName = def.defectName || def.name || 'Unknown defect';
-            const severity = def.defectSeverity || def.severity || '';
+            // Try various field names that Geotab might use
+            const defectName = def.defectName || def.name || def.defectRemark || def.remark ||
+                              def.defectListName || def.defectListAsPartName ||
+                              (typeof def === 'string' ? def : 'Unknown defect');
+            const severity = def.defectSeverity || def.severity || def.Severity || '';
             return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
           }).join('; ');
         }
       }
-      catch(e){ if(r.defects.length>10){ hasDefects='YES'; defectCount='Unknown'; defectDetails='Parse error'; } }
+      catch(e){
+        console.error('Error parsing defects for CSV:', e, 'Raw defects:', r.defects);
+        if(r.defects.length>10){ hasDefects='YES'; defectCount='Unknown'; defectDetails='Parse error'; }
+      }
     }
     const zonesText = (r.zones||[]).join(' | ') || 'No Zone';
     const row = [
@@ -1446,14 +1484,20 @@ document.getElementById('downloadReport').onclick = function(){
           const d = JSON.parse(r.defects);
           if(Array.isArray(d)&&d.length>0) {
             const defectList = d.map(def => {
-              const defectName = def.defectName || def.name || 'Unknown defect';
-              const severity = def.defectSeverity || def.severity || '';
+              // Try various field names that Geotab might use
+              const defectName = def.defectName || def.name || def.defectRemark || def.remark ||
+                                def.defectListName || def.defectListAsPartName ||
+                                (typeof def === 'string' ? def : 'Unknown defect');
+              const severity = def.defectSeverity || def.severity || def.Severity || '';
               return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
             }).join(', ');
             defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
           }
         }
-        catch(e){ if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>'; }
+        catch(e){
+          console.error('Error parsing defects:', e, 'Raw defects:', r.defects);
+          if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>';
+        }
       }
       let locationDisplay = '<em class="muted">No location</em>';
       if (r.latitude && r.longitude) {
