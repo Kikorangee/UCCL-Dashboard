@@ -74,8 +74,8 @@
         <input id="database" class="form-control" placeholder="Database" value="uccnz" />
       </div>
       <div class="form-row">
-        <input id="username" class="form-control" placeholder="Username" value="francis@directt.co.nz" />
-        <input id="password" class="form-control" type="password" placeholder="Password" value="@fr4nc1sWynn5" />
+        <input id="username" class="form-control" placeholder="Username" value="" />
+        <input id="password" class="form-control" type="password" placeholder="Password" value="" />
       </div>
       <button id="authButton" class="btn btn-primary">🔐 Authenticate</button>
       <div id="authResult"></div>
@@ -118,7 +118,7 @@
         <div class="checkbox-group">
           <label>
             <input type="checkbox" id="enableAutoEmail" />
-            Auto-Email on Defect Detection
+            Auto-Email on Defect Detection (Note: Currently logs to console only - not fully implemented)
           </label>
         </div>
 
@@ -783,18 +783,28 @@ function renderTable(rows){
   
   rows.forEach((r, index) => {
     if (r.isOverdue) overdueCount++;
-    
+
     const status = r.isSafeToOperate===true?'<span class="status-safe">SAFE</span>':
                   r.isSafeToOperate===false?'<span class="status-unsafe">⚠️ UNSAFE</span>':
                   r.isOverdue?'<span class="status-overdue">⏰ OVERDUE</span>':
                   '<span class="status-unknown">UNKNOWN</span>';
-                  
+
     let defectDisplay = '<em class="muted">None</em>';
     if (r.defects && r.defects !== '[]' && r.defects !== '') {
-      try{ const d = JSON.parse(r.defects); if(Array.isArray(d)&&d.length>0) defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${d.length}</span>`; }
+      try{
+        const d = JSON.parse(r.defects);
+        if(Array.isArray(d)&&d.length>0) {
+          const defectList = d.map(def => {
+            const defectName = def.defectName || def.name || 'Unknown defect';
+            const severity = def.defectSeverity || def.severity || '';
+            return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
+          }).join(', ');
+          defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+        }
+      }
       catch(e){ if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>'; }
     }
-    
+
     let locationDisplay = '<em class="muted">No location</em>';
     if (r.latitude && r.longitude) {
       if (r.resolvedAddress && r.resolvedAddress.trim() && r.resolvedAddress.length > 8) {
@@ -804,19 +814,19 @@ function renderTable(rows){
         locationDisplay = `<span class="coord-only">${coords}</span>`;
       }
     }
-    
-    const zonesDisplay = r.zones && r.zones.length > 0 
+
+    const zonesDisplay = r.zones && r.zones.length > 0
       ? r.zones.map(z => `<span class="zone-pill">${z}</span>`).join('')
       : '<em class="muted">No zone</em>';
-    
+
     let ignitionInfo = '';
     if (r.ignitionTime) {
       const ignitionStr = new Date(r.ignitionTime).toLocaleString();
       const timeDiff = r.timeToInspection;
       ignitionInfo = `<div class="ignition-info">Ignition: ${ignitionStr} (${timeDiff}min before)</div>`;
     }
-    
-    html += `<tr>
+
+    html += `<tr data-inspection-id="${r.id}">
       <td>${r.dateTime}${ignitionInfo}</td>
       <td><strong>${r.driverName}</strong></td>
       <td><strong>${r.vehicleName}</strong></td>
@@ -880,13 +890,23 @@ function renderTableGroupedByZone(rows) {
                     r.isSafeToOperate===false?'<span class="status-unsafe">⚠️ UNSAFE</span>':
                     r.isOverdue?'<span class="status-overdue">⏰ OVERDUE</span>':
                     '<span class="status-unknown">UNKNOWN</span>';
-                    
+
       let defectDisplay = '<em class="muted">None</em>';
       if (r.defects && r.defects !== '[]' && r.defects !== '') {
-        try{ const d = JSON.parse(r.defects); if(Array.isArray(d)&&d.length>0) defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${d.length}</span>`; }
+        try{
+          const d = JSON.parse(r.defects);
+          if(Array.isArray(d)&&d.length>0) {
+            const defectList = d.map(def => {
+              const defectName = def.defectName || def.name || 'Unknown defect';
+              const severity = def.defectSeverity || def.severity || '';
+              return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
+            }).join(', ');
+            defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+          }
+        }
         catch(e){ if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>'; }
       }
-      
+
       let locationDisplay = '<em class="muted">No location</em>';
       if (r.latitude && r.longitude) {
         if (r.resolvedAddress && r.resolvedAddress.trim() && r.resolvedAddress.length > 8) {
@@ -896,15 +916,15 @@ function renderTableGroupedByZone(rows) {
           locationDisplay = `<span class="coord-only">${coords}</span>`;
         }
       }
-      
+
       let ignitionInfo = '';
       if (r.ignitionTime) {
         const ignitionStr = new Date(r.ignitionTime).toLocaleString();
         const timeDiff = r.timeToInspection;
         ignitionInfo = `<div class="ignition-info">Ignition: ${ignitionStr} (${timeDiff}min before)</div>`;
       }
-      
-      html += `<tr>
+
+      html += `<tr data-inspection-id="${r.id}">
         <td>${r.dateTime}${ignitionInfo}</td>
         <td><strong>${r.driverName}</strong></td>
         <td><strong>${r.vehicleName}</strong></td>
@@ -938,13 +958,23 @@ function renderTableGroupedByZone(rows) {
                     r.isSafeToOperate===false?'<span class="status-unsafe">⚠️ UNSAFE</span>':
                     r.isOverdue?'<span class="status-overdue">⏰ OVERDUE</span>':
                     '<span class="status-unknown">UNKNOWN</span>';
-                    
+
       let defectDisplay = '<em class="muted">None</em>';
       if (r.defects && r.defects !== '[]' && r.defects !== '') {
-        try{ const d = JSON.parse(r.defects); if(Array.isArray(d)&&d.length>0) defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${d.length}</span>`; }
+        try{
+          const d = JSON.parse(r.defects);
+          if(Array.isArray(d)&&d.length>0) {
+            const defectList = d.map(def => {
+              const defectName = def.defectName || def.name || 'Unknown defect';
+              const severity = def.defectSeverity || def.severity || '';
+              return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
+            }).join(', ');
+            defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+          }
+        }
         catch(e){ if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>'; }
       }
-      
+
       let locationDisplay = '<em class="muted">No location</em>';
       if (r.latitude && r.longitude) {
         if (r.resolvedAddress && r.resolvedAddress.trim() && r.resolvedAddress.length > 8) {
@@ -954,15 +984,15 @@ function renderTableGroupedByZone(rows) {
           locationDisplay = `<span class="coord-only">${coords}</span>`;
         }
       }
-      
+
       let ignitionInfo = '';
       if (r.ignitionTime) {
         const ignitionStr = new Date(r.ignitionTime).toLocaleString();
         const timeDiff = r.timeToInspection;
         ignitionInfo = `<div class="ignition-info">Ignition: ${ignitionStr} (${timeDiff}min before)</div>`;
       }
-      
-      html += `<tr>
+
+      html += `<tr data-inspection-id="${r.id}">
         <td>${r.dateTime}${ignitionInfo}</td>
         <td><strong>${r.driverName}</strong></td>
         <td><strong>${r.vehicleName}</strong></td>
@@ -1283,25 +1313,36 @@ document.getElementById('downloadCsv').onclick = function(){
   const withZones = mappedDvirData.filter(r => r.zones && r.zones.length > 0).length;
   console.log(`Downloading CSV with ${mappedDvirData.length} inspections (${withZones} with zones, ${mappedDvirData.length - withZones} without zones)`);
   
-  const headers = ['DateTime','Driver_Name','Vehicle_Name','Safe_To_Operate','Driver_Inspected','Has_Defects','Defect_Count','Address','Zones','Latitude','Longitude','Odometer_km','Engine_Hours','Hubbometer','Ignition_Time','Time_To_Inspection_Min','Is_Overdue','Driver_Remarks'];
+  const headers = ['DateTime','Driver_Name','Vehicle_Name','Safe_To_Operate','Driver_Inspected','Has_Defects','Defect_Count','Defect_Details','Address','Zones','Latitude','Longitude','Odometer_km','Engine_Hours','Hubbometer','Ignition_Time','Time_To_Inspection_Min','Is_Overdue','Driver_Remarks'];
   let csv = headers.map(h=>`"${h}"`).join(',') + '\n';
   mappedDvirData.forEach(r=>{
-    let hasDefects='NO', defectCount='0';
+    let hasDefects='NO', defectCount='0', defectDetails='';
     if (r.defects && r.defects !== '[]' && r.defects !== '') {
-      try{ const d = JSON.parse(r.defects); if(Array.isArray(d)&&d.length>0){ hasDefects='YES'; defectCount=String(d.length); } }
-      catch(e){ if(r.defects.length>10){ hasDefects='YES'; defectCount='Unknown'; } }
+      try{
+        const d = JSON.parse(r.defects);
+        if(Array.isArray(d)&&d.length>0){
+          hasDefects='YES';
+          defectCount=String(d.length);
+          defectDetails = d.map(def => {
+            const defectName = def.defectName || def.name || 'Unknown defect';
+            const severity = def.defectSeverity || def.severity || '';
+            return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
+          }).join('; ');
+        }
+      }
+      catch(e){ if(r.defects.length>10){ hasDefects='YES'; defectCount='Unknown'; defectDetails='Parse error'; } }
     }
     const zonesText = (r.zones||[]).join(' | ') || 'No Zone';
     const row = [
       r.dateTime, r.driverName, r.vehicleName,
       r.isSafeToOperate===true?'SAFE':r.isSafeToOperate===false?'UNSAFE':'UNKNOWN',
       r.isInspectedByDriver===true?'YES':'NO',
-      hasDefects, defectCount,
+      hasDefects, defectCount, defectDetails,
       r.resolvedAddress || `${r.latitude || ''}, ${r.longitude || ''}`,
       zonesText,
       r.latitude || '', r.longitude || '',
-      r.odometer ? Math.round(r.odometer/1000*100)/100 : '', 
-      r.engineHours ? Math.round(r.engineHours/3600*100)/100 : '', 
+      r.odometer ? Math.round(r.odometer/1000*100)/100 : '',
+      r.engineHours ? Math.round(r.engineHours/3600*100)/100 : '',
       r.hubbometer || '',
       r.ignitionTime ? new Date(r.ignitionTime).toLocaleString() : '',
       r.timeToInspection || '',
@@ -1401,7 +1442,17 @@ document.getElementById('downloadReport').onclick = function(){
                     '<span class="badge unknown">UNKNOWN</span>';
       let defectDisplay = '<em class="muted">None</em>';
       if (r.defects && r.defects !== '[]' && r.defects !== '') {
-        try{ const d = JSON.parse(r.defects); if(Array.isArray(d)&&d.length>0) defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${d.length}</span>`; }
+        try{
+          const d = JSON.parse(r.defects);
+          if(Array.isArray(d)&&d.length>0) {
+            const defectList = d.map(def => {
+              const defectName = def.defectName || def.name || 'Unknown defect';
+              const severity = def.defectSeverity || def.severity || '';
+              return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
+            }).join(', ');
+            defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+          }
+        }
         catch(e){ if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>'; }
       }
       let locationDisplay = '<em class="muted">No location</em>';
@@ -1507,9 +1558,14 @@ document.getElementById('groupByZone').addEventListener('change', function() {
 // Simulate defect detection and auto-email
 document.addEventListener('click', function(e) {
   if (e.target && e.target.classList.contains('status-unsafe')) {
-    const rowIndex = Array.from(e.target.closest('tbody').children).indexOf(e.target.closest('tr'));
-    const defectRow = mappedDvirData[rowIndex];
-    sendDefectEmail(defectRow);
+    const row = e.target.closest('tr');
+    const inspectionId = row ? row.getAttribute('data-inspection-id') : null;
+    if (inspectionId) {
+      const defectRow = mappedDvirData.find(r => r.id === inspectionId);
+      if (defectRow) {
+        sendDefectEmail(defectRow);
+      }
+    }
   }
 });
 
