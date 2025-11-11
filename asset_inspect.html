@@ -796,9 +796,23 @@ function renderTable(rows){
         if(Array.isArray(d)&&d.length>0) {
           const defectList = d.map(def => {
             // Try various field names that Geotab might use
-            const defectName = def.defectName || def.name || def.defectRemark || def.remark ||
-                              def.defectListName || def.defectListAsPartName ||
-                              (typeof def === 'string' ? def : 'Unknown defect');
+            let defectName = '';
+
+            // Check nested defectList object
+            if (def.defectList && typeof def.defectList === 'object') {
+              defectName = def.defectList.name || def.defectList.Name || '';
+            }
+            // Check nested defectAsPartOf object
+            if (!defectName && def.defectAsPartOf && typeof def.defectAsPartOf === 'object') {
+              defectName = def.defectAsPartOf.name || def.defectAsPartOf.Name || '';
+            }
+            // Try direct fields
+            if (!defectName) {
+              defectName = def.defectName || def.name || def.remark || def.defectRemark ||
+                          def.defectListName || def.defectListAsPartName ||
+                          (typeof def === 'string' ? def : 'Unknown defect');
+            }
+
             const severity = def.defectSeverity || def.severity || def.Severity || '';
             return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
           }).join(', ');
@@ -1151,11 +1165,56 @@ document.getElementById('getDvir').onclick = async function(){
       typeName:'DVIRLog',
       search:{ fromDate: fromDateTime, toDate: toDateTime }
     });
-    
-    if(!dvirLogs || dvirLogs.length===0){ 
-      showMessage('infoBanner','No DVIR logs for the selected range','warning'); 
-      document.getElementById('dvirResult').innerHTML=''; 
-      return; 
+
+    if(!dvirLogs || dvirLogs.length===0){
+      showMessage('infoBanner','No DVIR logs for the selected range','warning');
+      document.getElementById('dvirResult').innerHTML='';
+      return;
+    }
+
+    // Debug: Log the first DVIR entry to see the structure
+    console.log('=== DVIR LOG STRUCTURE DEBUG ===');
+    console.log('Total DVIR logs:', dvirLogs.length);
+    if (dvirLogs.length > 0) {
+      console.log('First DVIR log (full object):', dvirLogs[0]);
+      console.log('Defects field:', dvirLogs[0].defects);
+      console.log('Defect field (singular):', dvirLogs[0].defect);
+      console.log('DefectList field:', dvirLogs[0].defectList);
+      console.log('All keys in DVIR object:', Object.keys(dvirLogs[0]));
+    }
+
+    // Try to fetch DVIRDefects separately if they exist
+    let defectMap = {};
+    try {
+      console.log('Attempting to fetch DVIRDefect records...');
+      const allDefects = await callGeotabAPI('Get', {
+        typeName: 'DVIRDefect',
+        search: {
+          fromDate: fromDateTime,
+          toDate: toDateTime
+        }
+      });
+
+      console.log('Found', allDefects.length, 'DVIRDefect records');
+      if (allDefects.length > 0) {
+        console.log('First defect:', allDefects[0]);
+        console.log('Defect keys:', Object.keys(allDefects[0]));
+      }
+
+      // Map defects by their DVIR log ID
+      allDefects.forEach(defect => {
+        const logId = extractId(defect.log || defect.dvirLog || defect.DVIRLog);
+        if (logId) {
+          if (!defectMap[logId]) {
+            defectMap[logId] = [];
+          }
+          defectMap[logId].push(defect);
+        }
+      });
+
+      console.log('Mapped defects to', Object.keys(defectMap).length, 'DVIR logs');
+    } catch (error) {
+      console.warn('Could not fetch DVIRDefect records:', error);
     }
 
     // Fetch custom data to get Hubbometer field values
@@ -1242,18 +1301,32 @@ document.getElementById('getDvir').onclick = async function(){
         }
       }
       
-      // Handle defects - convert to JSON string if it's an array/object
+      // Handle defects - try multiple sources
       let defectsString = '';
-      if (l.defects) {
+      let defectsArray = [];
+
+      // First, try to get defects from the separately fetched defect map
+      if (defectMap[l.id] && defectMap[l.id].length > 0) {
+        defectsArray = defectMap[l.id];
+        defectsString = JSON.stringify(defectsArray);
+        console.log(`Found ${defectsArray.length} defects from defectMap for ${deviceNames[deviceId]}:`, defectsArray);
+      }
+      // Otherwise, try the defects field from the DVIR log itself
+      else if (l.defects) {
         if (typeof l.defects === 'string') {
           defectsString = l.defects;
         } else if (Array.isArray(l.defects)) {
           defectsString = JSON.stringify(l.defects);
-          console.log(`Found ${l.defects.length} defects for ${deviceNames[deviceId]}:`, l.defects);
+          console.log(`Found ${l.defects.length} defects in log for ${deviceNames[deviceId]}:`, l.defects);
         } else if (typeof l.defects === 'object') {
           defectsString = JSON.stringify(l.defects);
-          console.log(`Found defect object for ${deviceNames[deviceId]}:`, l.defects);
+          console.log(`Found defect object in log for ${deviceNames[deviceId]}:`, l.defects);
         }
+      }
+
+      // If still no defects, log that
+      if (!defectsString) {
+        console.log(`No defects found for ${deviceNames[deviceId]} (ID: ${l.id})`);
       }
 
       return {
@@ -1357,9 +1430,23 @@ document.getElementById('downloadCsv').onclick = function(){
           defectCount=String(d.length);
           defectDetails = d.map(def => {
             // Try various field names that Geotab might use
-            const defectName = def.defectName || def.name || def.defectRemark || def.remark ||
-                              def.defectListName || def.defectListAsPartName ||
-                              (typeof def === 'string' ? def : 'Unknown defect');
+            let defectName = '';
+
+            // Check nested defectList object
+            if (def.defectList && typeof def.defectList === 'object') {
+              defectName = def.defectList.name || def.defectList.Name || '';
+            }
+            // Check nested defectAsPartOf object
+            if (!defectName && def.defectAsPartOf && typeof def.defectAsPartOf === 'object') {
+              defectName = def.defectAsPartOf.name || def.defectAsPartOf.Name || '';
+            }
+            // Try direct fields
+            if (!defectName) {
+              defectName = def.defectName || def.name || def.remark || def.defectRemark ||
+                          def.defectListName || def.defectListAsPartName ||
+                          (typeof def === 'string' ? def : 'Unknown defect');
+            }
+
             const severity = def.defectSeverity || def.severity || def.Severity || '';
             return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
           }).join('; ');
