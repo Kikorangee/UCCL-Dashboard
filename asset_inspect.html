@@ -1172,21 +1172,13 @@ document.getElementById('getDvir').onclick = async function(){
       return;
     }
 
-    // Debug: Log the first DVIR entry to see the structure
-    console.log('=== DVIR LOG STRUCTURE DEBUG ===');
-    console.log('Total DVIR logs:', dvirLogs.length);
-    if (dvirLogs.length > 0) {
-      console.log('First DVIR log (full object):', dvirLogs[0]);
-      console.log('Defects field:', dvirLogs[0].defects);
-      console.log('Defect field (singular):', dvirLogs[0].defect);
-      console.log('DefectList field:', dvirLogs[0].defectList);
-      console.log('All keys in DVIR object:', Object.keys(dvirLogs[0]));
-    }
-
-    // Try to fetch DVIRDefects separately if they exist
+    // Fetch DVIRDefects separately - this is where the actual defect details are stored
     let defectMap = {};
+    let defectFetchStatus = '';
+
+    showMessage('infoBanner', '🔍 Fetching defect records from Geotab...', 'info');
+
     try {
-      console.log('Attempting to fetch DVIRDefect records...');
       const allDefects = await callGeotabAPI('Get', {
         typeName: 'DVIRDefect',
         search: {
@@ -1195,11 +1187,7 @@ document.getElementById('getDvir').onclick = async function(){
         }
       });
 
-      console.log('Found', allDefects.length, 'DVIRDefect records');
-      if (allDefects.length > 0) {
-        console.log('First defect:', allDefects[0]);
-        console.log('Defect keys:', Object.keys(allDefects[0]));
-      }
+      defectFetchStatus = `✅ Found ${allDefects.length} DVIRDefect records from Geotab API. `;
 
       // Map defects by their DVIR log ID
       allDefects.forEach(defect => {
@@ -1212,9 +1200,21 @@ document.getElementById('getDvir').onclick = async function(){
         }
       });
 
-      console.log('Mapped defects to', Object.keys(defectMap).length, 'DVIR logs');
+      const logsWithDefects = Object.keys(defectMap).length;
+      defectFetchStatus += `Mapped to ${logsWithDefects} DVIR logs with defects.`;
+
+      if (allDefects.length > 0) {
+        // Show sample defect structure in UI for visibility
+        const sampleDefect = allDefects[0];
+        const defectFields = Object.keys(sampleDefect).join(', ');
+        defectFetchStatus += ` Sample defect fields: ${defectFields}`;
+      }
+
+      showMessage('infoBanner', defectFetchStatus, 'success');
+
     } catch (error) {
-      console.warn('Could not fetch DVIRDefect records:', error);
+      defectFetchStatus = `⚠️ Could not fetch DVIRDefect records: ${error.message}`;
+      showMessage('infoBanner', defectFetchStatus, 'warning');
     }
 
     // Fetch custom data to get Hubbometer field values
@@ -1309,7 +1309,6 @@ document.getElementById('getDvir').onclick = async function(){
       if (defectMap[l.id] && defectMap[l.id].length > 0) {
         defectsArray = defectMap[l.id];
         defectsString = JSON.stringify(defectsArray);
-        console.log(`Found ${defectsArray.length} defects from defectMap for ${deviceNames[deviceId]}:`, defectsArray);
       }
       // Otherwise, try the defects field from the DVIR log itself
       else if (l.defects) {
@@ -1317,16 +1316,9 @@ document.getElementById('getDvir').onclick = async function(){
           defectsString = l.defects;
         } else if (Array.isArray(l.defects)) {
           defectsString = JSON.stringify(l.defects);
-          console.log(`Found ${l.defects.length} defects in log for ${deviceNames[deviceId]}:`, l.defects);
         } else if (typeof l.defects === 'object') {
           defectsString = JSON.stringify(l.defects);
-          console.log(`Found defect object in log for ${deviceNames[deviceId]}:`, l.defects);
         }
-      }
-
-      // If still no defects, log that
-      if (!defectsString) {
-        console.log(`No defects found for ${deviceNames[deviceId]} (ID: ${l.id})`);
       }
 
       return {
@@ -1372,31 +1364,13 @@ document.getElementById('getDvir').onclick = async function(){
       const successCount = mappedDvirData.filter(r => r.resolvedAddress && r.resolvedAddress.trim()).length;
       const zoneCount = mappedDvirData.filter(r => r.zones && r.zones.length > 0).length;
       const hubbometerCount = mappedDvirData.filter(r => r.hubbometer && r.hubbometer.toString().trim()).length;
+      const defectCount = mappedDvirData.filter(r => r.defects && r.defects !== '[]' && r.defects !== '').length;
       const failCount = locationsToResolve.length - successCount;
-      
-      // Log zone info for debugging
-      console.log('=== ZONE MATCHING RESULTS ===');
-      console.log(`Total inspections: ${mappedDvirData.length}`);
-      console.log(`Inspections with zones: ${zoneCount}`);
-      console.log(`Inspections without zones: ${mappedDvirData.length - zoneCount}`);
-      console.log(`Inspections with hubbometer: ${hubbometerCount}`);
-      console.log(`Inspections without hubbometer: ${mappedDvirData.length - hubbometerCount}`);
-      
-      // Show zone breakdown
-      const zoneBreakdown = {};
-      mappedDvirData.forEach(r => {
-        if (r.zones && r.zones.length > 0) {
-          r.zones.forEach(z => {
-            zoneBreakdown[z] = (zoneBreakdown[z] || 0) + 1;
-          });
-        }
-      });
-      console.log('Zone breakdown:', zoneBreakdown);
-      
+
       if (successCount > 0) {
-        showMessage('infoBanner', `✅ SUCCESS! ${successCount}/${locationsToResolve.length} addresses resolved. ${zoneCount}/${mappedDvirData.length} inspections matched to zones. ${hubbometerCount}/${mappedDvirData.length} with hubbometer readings.${failCount > 0 ? ` ${failCount} addresses failed.` : ''}`, 'success');
+        showMessage('infoBanner', `✅ SUCCESS! Addresses: ${successCount}/${locationsToResolve.length} | Zones: ${zoneCount}/${mappedDvirData.length} | Defects: ${defectCount}/${mappedDvirData.length} | Hubbometer: ${hubbometerCount}/${mappedDvirData.length}${failCount > 0 ? ` | ${failCount} addresses failed` : ''}`, 'success');
       } else {
-        showMessage('infoBanner', `⚠️ Address resolution completed. ${zoneCount}/${mappedDvirData.length} inspections matched to zones. ${hubbometerCount}/${mappedDvirData.length} with hubbometer readings.`, 'warning');
+        showMessage('infoBanner', `⚠️ Completed! Zones: ${zoneCount}/${mappedDvirData.length} | Defects: ${defectCount}/${mappedDvirData.length} | Hubbometer: ${hubbometerCount}/${mappedDvirData.length}`, 'warning');
       }
     } else {
       showMessage('infoBanner', '✅ DVIR loaded! No locations to resolve.', 'success');
