@@ -809,8 +809,19 @@ function renderTable(rows){
             // Try direct fields
             if (!defectName) {
               defectName = def.defectName || def.name || def.remark || def.defectRemark ||
-                          def.defectListName || def.defectListAsPartName ||
-                          (typeof def === 'string' ? def : 'Unknown defect');
+                          def.defectListName || def.defectListAsPartName || '';
+            }
+
+            // If still no defect name, show the raw object keys to debug
+            if (!defectName) {
+              if (typeof def === 'string') {
+                defectName = def;
+              } else if (typeof def === 'object') {
+                const keys = Object.keys(def).join(', ');
+                defectName = `[Fields: ${keys}]`;
+              } else {
+                defectName = 'Unknown defect';
+              }
             }
 
             const severity = def.defectSeverity || def.severity || def.Severity || '';
@@ -1422,8 +1433,19 @@ document.getElementById('downloadCsv').onclick = function(){
             // Try direct fields
             if (!defectName) {
               defectName = def.defectName || def.name || def.remark || def.defectRemark ||
-                          def.defectListName || def.defectListAsPartName ||
-                          (typeof def === 'string' ? def : 'Unknown defect');
+                          def.defectListName || def.defectListAsPartName || '';
+            }
+
+            // If still no defect name, show the raw object keys to debug
+            if (!defectName) {
+              if (typeof def === 'string') {
+                defectName = def;
+              } else if (typeof def === 'object') {
+                const keys = Object.keys(def).join(', ');
+                defectName = `[Fields: ${keys}]`;
+              } else {
+                defectName = 'Unknown defect';
+              }
             }
 
             const severity = def.defectSeverity || def.severity || def.Severity || '';
