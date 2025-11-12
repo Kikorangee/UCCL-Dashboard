@@ -791,38 +791,9 @@ function renderTable(rows){
 
     let defectDisplay = '<em class="muted">None</em>';
     if (r.defects && r.defects !== '[]' && r.defects !== '') {
-      try{
-        const d = JSON.parse(r.defects);
-        if(Array.isArray(d)&&d.length>0) {
-          const defectList = d.map(def => {
-            // Try various field names that Geotab might use
-            let defectName = '';
-
-            // Check nested defectList object
-            if (def.defectList && typeof def.defectList === 'object') {
-              defectName = def.defectList.name || def.defectList.Name || '';
-            }
-            // Check nested defectAsPartOf object
-            if (!defectName && def.defectAsPartOf && typeof def.defectAsPartOf === 'object') {
-              defectName = def.defectAsPartOf.name || def.defectAsPartOf.Name || '';
-            }
-            // Try direct fields
-            if (!defectName) {
-              defectName = def.defectName || def.name || def.remark || def.defectRemark ||
-                          def.defectListName || def.defectListAsPartName ||
-                          (typeof def === 'string' ? def : 'Unknown defect');
-            }
-
-            const severity = def.defectSeverity || def.severity || def.Severity || '';
-            return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
-          }).join(', ');
-          defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
-        }
-      }
-      catch(e){
-        console.error('Error parsing defects:', e, 'Raw defects:', r.defects);
-        if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>';
-      }
+      // TEMPORARY DEBUG: Show first 200 chars of raw defect data
+      const preview = r.defects.substring(0, 200);
+      defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ RAW: ${preview}...</span>`;
     }
 
     let locationDisplay = '<em class="muted">No location</em>';
@@ -1208,6 +1179,11 @@ document.getElementById('getDvir').onclick = async function(){
         const sampleDefect = allDefects[0];
         const defectFields = Object.keys(sampleDefect).join(', ');
         defectFetchStatus += ` Sample defect fields: ${defectFields}`;
+
+        // Also log to console so it's not lost
+        console.log('=== DEFECT FIELD NAMES ===');
+        console.log('Available fields in DVIRDefect objects:', defectFields);
+        console.log('Sample defect object:', sampleDefect);
       }
 
       showMessage('infoBanner', defectFetchStatus, 'success');
@@ -1417,8 +1393,19 @@ document.getElementById('downloadCsv').onclick = function(){
             // Try direct fields
             if (!defectName) {
               defectName = def.defectName || def.name || def.remark || def.defectRemark ||
-                          def.defectListName || def.defectListAsPartName ||
-                          (typeof def === 'string' ? def : 'Unknown defect');
+                          def.defectListName || def.defectListAsPartName || '';
+            }
+
+            // If still no defect name, show the raw object keys to debug
+            if (!defectName) {
+              if (typeof def === 'string') {
+                defectName = def;
+              } else if (typeof def === 'object') {
+                const keys = Object.keys(def).join(', ');
+                defectName = `[Fields: ${keys}]`;
+              } else {
+                defectName = 'Unknown defect';
+              }
             }
 
             const severity = def.defectSeverity || def.severity || def.Severity || '';
