@@ -791,8 +791,8 @@ function renderTable(rows){
 
     let defectDisplay = '<em class="muted">None</em>';
     if (r.defects && r.defects !== '[]' && r.defects !== '') {
-      // TEMPORARY DEBUG: Show first 200 chars of raw defect data
-      const preview = r.defects.substring(0, 200);
+      // TEMPORARY DEBUG: Show first 500 chars of raw defect data
+      const preview = r.defects.substring(0, 500);
       defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ RAW: ${preview}...</span>`;
     }
 
