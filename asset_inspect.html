@@ -1202,79 +1202,37 @@ document.getElementById('getDvir').onclick = async function(){
       return;
     }
 
-    // Collect defect IDs and fetch them individually
+    // DVIRLog objects contain dvirDefects property with full defect details
     let defectMap = {};
-    const uniqueDefectIds = new Set();
+    let totalDefects = 0;
 
     dvirLogs.forEach(log => {
-      if (log.defects && Array.isArray(log.defects)) {
-        log.defects.forEach(defRef => {
-          if (defRef.id && !defRef.isDefectList) {
-            uniqueDefectIds.add(defRef.id);
-          }
-        });
+      // Check both possible property names (dvirDefects or DVIRDefects)
+      const defects = log.dvirDefects || log.DVIRDefects || [];
+
+      if (defects && Array.isArray(defects) && defects.length > 0) {
+        defectMap[log.id] = defects;
+        totalDefects += defects.length;
       }
     });
 
-    const defectIdArray = Array.from(uniqueDefectIds);
-    showMessage('infoBanner', `🔍 Fetching ${defectIdArray.length} defect details from Geotab...`, 'info');
+    const logsWithDefects = Object.keys(defectMap).length;
 
-    try {
-      if (defectIdArray.length > 0) {
-        // Fetch defects one by one using ExecuteMultiCall for batch processing
-        const calls = defectIdArray.map(id => ({
-          method: 'Get',
-          params: {
-            typeName: 'DVIRDefect',
-            search: { id }
-          }
-        }));
+    console.log('=== DVIR DEFECT ANALYSIS ===');
+    console.log(`Total DVIRLog records: ${dvirLogs.length}`);
+    console.log(`Logs with defects: ${logsWithDefects}`);
+    console.log(`Total defects: ${totalDefects}`);
 
-        const results = await callGeotabAPI('ExecuteMultiCall', { calls });
+    if (totalDefects > 0) {
+      const firstDefect = Object.values(defectMap)[0][0];
+      console.log('Sample defect structure:', firstDefect);
+      console.log('Defect properties:', Object.keys(firstDefect).join(', '));
+    }
 
-        // Flatten results and create defect map
-        const defectById = {};
-        let totalDefects = 0;
-        results.forEach((result, idx) => {
-          if (result && result.length > 0) {
-            const defect = result[0];
-            defectById[defectIdArray[idx]] = defect;
-            totalDefects++;
-          }
-        });
-
-        console.log('=== FETCHED DEFECT RECORDS ===');
-        console.log(`Total defects fetched: ${totalDefects}`);
-        if (totalDefects > 0) {
-          const firstDefect = Object.values(defectById)[0];
-          console.log('Sample defect:', firstDefect);
-          console.log('Defect fields:', Object.keys(firstDefect).join(', '));
-        }
-
-        // Map defects to their DVIR logs
-        dvirLogs.forEach(log => {
-          if (log.defects && Array.isArray(log.defects)) {
-            const logDefects = [];
-            log.defects.forEach(defRef => {
-              if (defRef.id && defectById[defRef.id]) {
-                logDefects.push(defectById[defRef.id]);
-              }
-            });
-            if (logDefects.length > 0) {
-              defectMap[log.id] = logDefects;
-            }
-          }
-        });
-
-        const logsWithDefects = Object.keys(defectMap).length;
-        showMessage('infoBanner', `✅ Loaded ${totalDefects} defect records for ${logsWithDefects} inspections`, 'success');
-      } else {
-        showMessage('infoBanner', `✅ No defects found in this date range`, 'success');
-      }
-
-    } catch (error) {
-      console.error('Error fetching defects:', error);
-      showMessage('infoBanner', `⚠️ Could not fetch defect details: ${error.message}`, 'warning');
+    if (logsWithDefects > 0) {
+      showMessage('infoBanner', `✅ Loaded ${totalDefects} defect records from ${logsWithDefects} inspections`, 'success');
+    } else {
+      showMessage('infoBanner', `✅ No defects found in this date range`, 'success');
     }
 
     // Fetch custom data to get Hubbometer field values
