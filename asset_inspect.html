@@ -1207,21 +1207,18 @@ document.getElementById('getDvir').onclick = async function(){
     if (dvirLogs.length > 0) {
       const sampleLog = dvirLogs[0];
       console.log('Sample DVIRLog properties:', Object.keys(sampleLog).join(', '));
-      console.log('Sample DVIRLog.defectList:', sampleLog.defectList);
-      if (sampleLog.defectList && sampleLog.defectList.children) {
-        console.log('Sample DVIRLog.defectList.children:', sampleLog.defectList.children);
-      }
+      console.log('Sample DVIRLog.dVIRDefects:', sampleLog.dVIRDefects);
     }
 
-    // Map defects from defectList.children property (defectList is a Group object with children array)
+    // Map defects from dVIRDefects property (the actual defect objects)
     let defectMap = {};
     let totalDefects = 0;
 
     dvirLogs.forEach(log => {
-      // defectList is a Group object, defects are in the children array
-      if (log.defectList && log.defectList.children && Array.isArray(log.defectList.children) && log.defectList.children.length > 0) {
-        defectMap[log.id] = log.defectList.children;
-        totalDefects += log.defectList.children.length;
+      // Use dVIRDefects property which contains the actual defect objects
+      if (log.dVIRDefects && Array.isArray(log.dVIRDefects) && log.dVIRDefects.length > 0) {
+        defectMap[log.id] = log.dVIRDefects;
+        totalDefects += log.dVIRDefects.length;
       }
     });
 
