@@ -1147,78 +1147,52 @@ document.getElementById('getDvir').onclick = async function(){
     let defectMap = {};
     let defectFetchStatus = '';
 
-    // First, collect all defect IDs from DVIR logs
-    const defectIds = new Set();
-    dvirLogs.forEach(log => {
-      if (log.defects && Array.isArray(log.defects)) {
-        log.defects.forEach(def => {
-          if (def.id) {
-            defectIds.add(def.id);
-          }
-        });
-      }
-    });
-
-    showMessage('infoBanner', `🔍 Fetching ${defectIds.size} defect records from Geotab...`, 'info');
+    // Map defects from DVIRLogs - they should already include DVIRDefects property
+    showMessage('infoBanner', `🔍 Processing defect records...`, 'info');
 
     try {
-      const allDefects = [];
+      let totalDefects = 0;
 
-      // Fetch defects by their IDs in batches
-      const defectIdArray = Array.from(defectIds);
-      for (let i = 0; i < defectIdArray.length; i += 50) {
-        const batch = defectIdArray.slice(i, i + 50);
-        const batchDefects = await callGeotabAPI('Get', {
-          typeName: 'DVIRDefect',
-          search: {
-            id: batch
-          }
-        });
-        allDefects.push(...batchDefects);
-      }
-
-      defectFetchStatus = `✅ Found ${allDefects.length} DVIRDefect records from Geotab API. `;
-
-      // Map defects by their ID for quick lookup
-      const defectById = {};
-      allDefects.forEach(defect => {
-        defectById[defect.id] = defect;
-      });
-
-      // Now map defects to their DVIR logs
       dvirLogs.forEach(log => {
-        if (log.defects && Array.isArray(log.defects)) {
-          const logDefects = [];
-          log.defects.forEach(def => {
-            if (def.id && defectById[def.id]) {
-              logDefects.push(defectById[def.id]);
-            }
+        // Check for DVIRDefects property (capital D) as per Geotab API docs
+        const dvirDefects = log.DVIRDefects || log.dvirDefects || log.defects;
+
+        if (dvirDefects && Array.isArray(dvirDefects) && dvirDefects.length > 0) {
+          // Filter out reference objects (isDefectList: false) and keep actual defect objects
+          const actualDefects = dvirDefects.filter(def => {
+            // If it only has 'id' and 'isDefectList' fields, it's a reference, not actual data
+            const keys = Object.keys(def);
+            return keys.length > 2; // Actual defects have more than just id and isDefectList
           });
-          if (logDefects.length > 0) {
-            defectMap[log.id] = logDefects;
+
+          if (actualDefects.length > 0) {
+            defectMap[log.id] = actualDefects;
+            totalDefects += actualDefects.length;
           }
         }
       });
 
       const logsWithDefects = Object.keys(defectMap).length;
-      defectFetchStatus += `Mapped to ${logsWithDefects} DVIR logs with defects.`;
+      defectFetchStatus = `✅ Found ${totalDefects} defects across ${logsWithDefects} inspections.`;
 
-      if (allDefects.length > 0) {
-        // Show sample defect structure in UI for visibility
-        const sampleDefect = allDefects[0];
-        const defectFields = Object.keys(sampleDefect).join(', ');
-        defectFetchStatus += ` Sample defect fields: ${defectFields}`;
+      // Show sample defect if available
+      if (totalDefects > 0) {
+        const firstLogWithDefects = Object.values(defectMap)[0];
+        if (firstLogWithDefects && firstLogWithDefects[0]) {
+          const sampleDefect = firstLogWithDefects[0];
+          const defectFields = Object.keys(sampleDefect).join(', ');
+          defectFetchStatus += ` Sample defect fields: ${defectFields}`;
 
-        // Also log to console so it's not lost
-        console.log('=== DEFECT FIELD NAMES ===');
-        console.log('Available fields in DVIRDefect objects:', defectFields);
-        console.log('Sample defect object:', sampleDefect);
+          console.log('=== DEFECT FIELD NAMES ===');
+          console.log('Available fields in DVIRDefect objects:', defectFields);
+          console.log('Sample defect object:', sampleDefect);
+        }
       }
 
       showMessage('infoBanner', defectFetchStatus, 'success');
 
     } catch (error) {
-      defectFetchStatus = `⚠️ Could not fetch DVIRDefect records: ${error.message}`;
+      defectFetchStatus = `⚠️ Could not process DVIRDefect records: ${error.message}`;
       showMessage('infoBanner', defectFetchStatus, 'warning');
     }
 
