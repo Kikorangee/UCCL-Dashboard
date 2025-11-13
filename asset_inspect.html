@@ -776,7 +776,7 @@ function renderTable(rows){
   
   let html = `<table class="dvir-table"><thead><tr>
     <th>Date/Time</th><th>Driver</th><th>Vehicle</th><th>Status</th><th>Driver Inspected</th>
-    <th>Defects</th><th>Location</th><th>Zones</th><th>Odometer</th><th>Engine Hours</th><th>Hubbometer</th><th>Driver Remarks</th>
+    <th>Defects</th><th>Location</th><th>Zones</th><th>Odometer</th><th>Engine Hours</th><th>Hubbo KM's</th>
   </tr></thead><tbody>`;
   
   let overdueCount = 0;
@@ -861,7 +861,6 @@ function renderTable(rows){
       <td>${zonesDisplay}</td>
       <td>${r.odometer?Math.round(r.odometer/1000*100)/100+' km':'N/A'}</td>
       <td>${r.engineHours?Math.round(r.engineHours/3600*100)/100+' hrs':'N/A'}</td>
-      <td>${r.hubbometer ? `<strong style="color:#2d5016;">${r.hubbometer}</strong>` : '<span style="color:#e53e3e;font-weight:600;">⚠️ Missing</span>'}</td>
       <td>${r.driverRemark || '<em class="muted">No remarks</em>'}</td>
     </tr>`;
   });
@@ -905,7 +904,7 @@ function renderTableGroupedByZone(rows) {
         <table class="dvir-table">
           <thead><tr>
             <th>Date/Time</th><th>Driver</th><th>Vehicle</th><th>Status</th><th>Driver Inspected</th>
-            <th>Defects</th><th>Location</th><th>Odometer</th><th>Engine Hours</th><th>Hubbometer</th><th>Driver Remarks</th>
+            <th>Defects</th><th>Location</th><th>Odometer</th><th>Engine Hours</th><th>Hubbo KM's</th>
           </tr></thead>
           <tbody>`;
     
@@ -977,7 +976,6 @@ function renderTableGroupedByZone(rows) {
         <td>${locationDisplay}</td>
         <td>${r.odometer?Math.round(r.odometer/1000*100)/100+' km':'N/A'}</td>
         <td>${r.engineHours?Math.round(r.engineHours/3600*100)/100+' hrs':'N/A'}</td>
-        <td>${r.hubbometer ? `<strong style="color:#2d5016;">${r.hubbometer}</strong>` : '<span style="color:#e53e3e;font-weight:600;">⚠️ Missing</span>'}</td>
         <td>${r.driverRemark || '<em class="muted">No remarks</em>'}</td>
       </tr>`;
     });
@@ -992,7 +990,7 @@ function renderTableGroupedByZone(rows) {
         <table class="dvir-table">
           <thead><tr>
             <th>Date/Time</th><th>Driver</th><th>Vehicle</th><th>Status</th><th>Driver Inspected</th>
-            <th>Defects</th><th>Location</th><th>Odometer</th><th>Engine Hours</th><th>Hubbometer</th><th>Driver Remarks</th>
+            <th>Defects</th><th>Location</th><th>Odometer</th><th>Engine Hours</th><th>Hubbo KM's</th>
           </tr></thead>
           <tbody>`;
     
@@ -1064,7 +1062,6 @@ function renderTableGroupedByZone(rows) {
         <td>${locationDisplay}</td>
         <td>${r.odometer?Math.round(r.odometer/1000*100)/100+' km':'N/A'}</td>
         <td>${r.engineHours?Math.round(r.engineHours/3600*100)/100+' hrs':'N/A'}</td>
-        <td>${r.hubbometer ? `<strong style="color:#2d5016;">${r.hubbometer}</strong>` : '<span style="color:#e53e3e;font-weight:600;">⚠️ Missing</span>'}</td>
         <td>${r.driverRemark || '<em class="muted">No remarks</em>'}</td>
       </tr>`;
     });
@@ -1240,48 +1237,6 @@ document.getElementById('getDvir').onclick = async function(){
       showMessage('infoBanner', `✅ No defects found in this date range`, 'success');
     }
 
-    // Fetch custom data to get Hubbometer field values
-    let customDataMap = {};
-    try {
-      showMessage('infoBanner', '📋 Fetching custom field data (Hubbometer)...', 'info');
-      
-      const customData = await callGeotabAPI('Get', {
-        typeName: 'CustomData',
-        search: {
-          fromDate: fromDateTime,
-          toDate: toDateTime
-        }
-      });
-      
-      // Map custom data by device and datetime for quick lookup
-      customData.forEach(cd => {
-        if (cd.data && cd.device && cd.dateTime) {
-          const deviceId = extractId(cd.device);
-          const dateTime = new Date(cd.dateTime).getTime();
-          const key = `${deviceId}_${dateTime}`;
-          
-          // Parse the custom data to find Hubbometer field
-          try {
-            const data = typeof cd.data === 'string' ? JSON.parse(cd.data) : cd.data;
-            // Look for "Hubbometer" field
-            if (data['Hubbometer'] || data['hubbometer']) {
-              customDataMap[key] = data['Hubbometer'] || data['hubbometer'];
-            }
-          } catch (e) {
-            // If data is already the value
-            if (cd.data) {
-              customDataMap[key] = cd.data;
-            }
-          }
-        }
-      });
-      
-      console.log(`Found ${Object.keys(customDataMap).length} custom Hubbometer entries`);
-    } catch (error) {
-      console.log('Could not fetch custom data:', error);
-      showMessage('infoBanner', '⚠️ Could not fetch custom Hubbometer data, will try other methods', 'warning');
-    }
-
     const driverIds = new Set(), deviceIds = new Set();
     dvirLogs.forEach(l=>{ const did = extractId(l.driver); const vid = extractId(l.device); if(did) driverIds.add(did); if(vid) deviceIds.add(vid); });
     const calls = [];
@@ -1296,34 +1251,7 @@ document.getElementById('getDvir').onclick = async function(){
       const driverId = extractId(l.driver);
       const deviceId = extractId(l.device);
       const loc = extractLocation(l.location);
-      
-      // Extract hubbometer - try multiple sources in priority order
-      let hubbometerValue = '';
-      
-      // 1. Check custom data map for "Hubbometer" field
-      const inspectionTime = new Date(l.dateTime).getTime();
-      const customKey = `${deviceId}_${inspectionTime}`;
-      if (customDataMap[customKey]) {
-        hubbometerValue = customDataMap[customKey];
-        console.log(`Found Hubbometer value ${hubbometerValue} from custom field for ${deviceNames[deviceId]}`);
-      }
-      
-      // 2. Try standard hubbometer field
-      if (!hubbometerValue) {
-        hubbometerValue = l.hubbometer || '';
-      }
-      
-      // 3. Try to extract from remarks as fallback
-      if (!hubbometerValue && l.driverRemark) {
-        // Try to extract hubbometer from remarks with formats like:
-        // "HUB: 12345" or "HUBBOMETER: 12345" or "Hub Odo: 12345"
-        const hubMatch = l.driverRemark.match(/(?:HUB|HUBBOMETER|HUB ODO|HUBODO):\s*(\d+)/i);
-        if (hubMatch) {
-          hubbometerValue = hubMatch[1];
-          console.log(`Extracted hubbometer ${hubbometerValue} from remarks for ${deviceNames[deviceId]}`);
-        }
-      }
-      
+
       // Handle defects - try multiple sources
       let defectsString = '';
       let defectsArray = [];
@@ -1356,7 +1284,6 @@ document.getElementById('getDvir').onclick = async function(){
         driverRemark:l.driverRemark || '',
         odometer:l.odometer || 0,
         engineHours:l.engineHours || 0,
-        hubbometer:hubbometerValue,
         latitude:loc.latitude,
         longitude:loc.longitude,
         resolvedAddress:'',
@@ -1386,14 +1313,13 @@ document.getElementById('getDvir').onclick = async function(){
       
       const successCount = mappedDvirData.filter(r => r.resolvedAddress && r.resolvedAddress.trim()).length;
       const zoneCount = mappedDvirData.filter(r => r.zones && r.zones.length > 0).length;
-      const hubbometerCount = mappedDvirData.filter(r => r.hubbometer && r.hubbometer.toString().trim()).length;
       const defectCount = mappedDvirData.filter(r => r.defects && r.defects !== '[]' && r.defects !== '').length;
       const failCount = locationsToResolve.length - successCount;
 
       if (successCount > 0) {
-        showMessage('infoBanner', `✅ SUCCESS! Addresses: ${successCount}/${locationsToResolve.length} | Zones: ${zoneCount}/${mappedDvirData.length} | Defects: ${defectCount}/${mappedDvirData.length} | Hubbometer: ${hubbometerCount}/${mappedDvirData.length}${failCount > 0 ? ` | ${failCount} addresses failed` : ''}`, 'success');
+        showMessage('infoBanner', `✅ SUCCESS! Addresses: ${successCount}/${locationsToResolve.length} | Zones: ${zoneCount}/${mappedDvirData.length} | Defects: ${defectCount}/${mappedDvirData.length}${failCount > 0 ? ` | ${failCount} addresses failed` : ''}`, 'success');
       } else {
-        showMessage('infoBanner', `⚠️ Completed! Zones: ${zoneCount}/${mappedDvirData.length} | Defects: ${defectCount}/${mappedDvirData.length} | Hubbometer: ${hubbometerCount}/${mappedDvirData.length}`, 'warning');
+        showMessage('infoBanner', `⚠️ Completed! Zones: ${zoneCount}/${mappedDvirData.length} | Defects: ${defectCount}/${mappedDvirData.length}`, 'warning');
       }
     } else {
       showMessage('infoBanner', '✅ DVIR loaded! No locations to resolve.', 'success');
@@ -1415,7 +1341,7 @@ document.getElementById('downloadCsv').onclick = function(){
   const withZones = mappedDvirData.filter(r => r.zones && r.zones.length > 0).length;
   console.log(`Downloading CSV with ${mappedDvirData.length} inspections (${withZones} with zones, ${mappedDvirData.length - withZones} without zones)`);
   
-  const headers = ['DateTime','Driver_Name','Vehicle_Name','Safe_To_Operate','Driver_Inspected','Has_Defects','Defect_Count','Defect_Details','Address','Zones','Latitude','Longitude','Odometer_km','Engine_Hours','Hubbometer','Ignition_Time','Time_To_Inspection_Min','Is_Overdue','Driver_Remarks'];
+  const headers = ['DateTime','Driver_Name','Vehicle_Name','Safe_To_Operate','Driver_Inspected','Has_Defects','Defect_Count','Defect_Details','Address','Zones','Latitude','Longitude','Odometer_km','Engine_Hours','Ignition_Time','Time_To_Inspection_Min','Is_Overdue','Hubbo_KMs'];
   let csv = headers.map(h=>`"${h}"`).join(',') + '\n';
   mappedDvirData.forEach(r=>{
     let hasDefects='NO', defectCount='0', defectDetails='';
@@ -1464,7 +1390,6 @@ document.getElementById('downloadCsv').onclick = function(){
       r.latitude || '', r.longitude || '',
       r.odometer ? Math.round(r.odometer/1000*100)/100 : '',
       r.engineHours ? Math.round(r.engineHours/3600*100)/100 : '',
-      r.hubbometer || '',
       r.ignitionTime ? new Date(r.ignitionTime).toLocaleString() : '',
       r.timeToInspection || '',
       r.isOverdue ? 'YES' : 'NO',
@@ -1554,7 +1479,7 @@ document.getElementById('downloadReport').onclick = function(){
   <table>
     <thead><tr>
       <th>Date/Time</th><th>Driver</th><th>Vehicle</th><th>Status</th><th>Driver Inspected</th>
-      <th>Defects</th><th>Location</th><th>Zones</th><th>Odometer</th><th>Engine Hours</th><th>Hubbometer</th><th>Driver Remarks</th>
+      <th>Defects</th><th>Location</th><th>Zones</th><th>Odometer</th><th>Engine Hours</th><th>Hubbo KM's</th>
     </tr></thead>
     <tbody>${mappedDvirData.map(r=>{
       const status = r.isSafeToOperate===true?'<span class="badge safe">SAFE</span>':
@@ -1624,7 +1549,6 @@ document.getElementById('downloadReport').onclick = function(){
         <td>${zones}</td>
         <td>${r.odometer?Math.round(r.odometer/1000*100)/100+' km':'N/A'}</td>
         <td>${r.engineHours?Math.round(r.engineHours/3600*100)/100+' hrs':'N/A'}</td>
-        <td>${r.hubbometer ? `<strong style="color:#2d5016;">${r.hubbometer}</strong>` : '<span style="color:#e53e3e;font-weight:600;">⚠️ Missing</span>'}</td>
         <td>${r.driverRemark || '<em class="muted">No remarks</em>'}</td>
       </tr>`;
     }).join('')}</tbody>
