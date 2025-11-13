@@ -1208,17 +1208,20 @@ document.getElementById('getDvir').onclick = async function(){
       const sampleLog = dvirLogs[0];
       console.log('Sample DVIRLog properties:', Object.keys(sampleLog).join(', '));
       console.log('Sample DVIRLog.defectList:', sampleLog.defectList);
+      if (sampleLog.defectList && sampleLog.defectList.children) {
+        console.log('Sample DVIRLog.defectList.children:', sampleLog.defectList.children);
+      }
     }
 
-    // Map defects from defectList property (this is the correct Geotab property name)
+    // Map defects from defectList.children property (defectList is a Group object with children array)
     let defectMap = {};
     let totalDefects = 0;
 
     dvirLogs.forEach(log => {
-      // defectList is the correct property name in Geotab API
-      if (log.defectList && Array.isArray(log.defectList) && log.defectList.length > 0) {
-        defectMap[log.id] = log.defectList;
-        totalDefects += log.defectList.length;
+      // defectList is a Group object, defects are in the children array
+      if (log.defectList && log.defectList.children && Array.isArray(log.defectList.children) && log.defectList.children.length > 0) {
+        defectMap[log.id] = log.defectList.children;
+        totalDefects += log.defectList.children.length;
       }
     });
 
