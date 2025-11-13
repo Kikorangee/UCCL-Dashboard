@@ -1147,27 +1147,56 @@ document.getElementById('getDvir').onclick = async function(){
     let defectMap = {};
     let defectFetchStatus = '';
 
-    showMessage('infoBanner', '🔍 Fetching defect records from Geotab...', 'info');
+    // First, collect all defect IDs from DVIR logs
+    const defectIds = new Set();
+    dvirLogs.forEach(log => {
+      if (log.defects && Array.isArray(log.defects)) {
+        log.defects.forEach(def => {
+          if (def.id) {
+            defectIds.add(def.id);
+          }
+        });
+      }
+    });
+
+    showMessage('infoBanner', `🔍 Fetching ${defectIds.size} defect records from Geotab...`, 'info');
 
     try {
-      const allDefects = await callGeotabAPI('Get', {
-        typeName: 'DVIRDefect',
-        search: {
-          fromDate: fromDateTime,
-          toDate: toDateTime
-        }
-      });
+      const allDefects = [];
+
+      // Fetch defects by their IDs in batches
+      const defectIdArray = Array.from(defectIds);
+      for (let i = 0; i < defectIdArray.length; i += 50) {
+        const batch = defectIdArray.slice(i, i + 50);
+        const batchDefects = await callGeotabAPI('Get', {
+          typeName: 'DVIRDefect',
+          search: {
+            id: batch
+          }
+        });
+        allDefects.push(...batchDefects);
+      }
 
       defectFetchStatus = `✅ Found ${allDefects.length} DVIRDefect records from Geotab API. `;
 
-      // Map defects by their DVIR log ID
+      // Map defects by their ID for quick lookup
+      const defectById = {};
       allDefects.forEach(defect => {
-        const logId = extractId(defect.log || defect.dvirLog || defect.DVIRLog);
-        if (logId) {
-          if (!defectMap[logId]) {
-            defectMap[logId] = [];
+        defectById[defect.id] = defect;
+      });
+
+      // Now map defects to their DVIR logs
+      dvirLogs.forEach(log => {
+        if (log.defects && Array.isArray(log.defects)) {
+          const logDefects = [];
+          log.defects.forEach(def => {
+            if (def.id && defectById[def.id]) {
+              logDefects.push(defectById[def.id]);
+            }
+          });
+          if (logDefects.length > 0) {
+            defectMap[log.id] = logDefects;
           }
-          defectMap[logId].push(defect);
         }
       });
 
