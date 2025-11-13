@@ -1208,8 +1208,8 @@ document.getElementById('getDvir').onclick = async function(){
       const sampleLog = dvirLogs[0];
       console.log('Sample DVIRLog properties:', Object.keys(sampleLog).join(', '));
       console.log('Sample DVIRLog.defects:', sampleLog.defects);
+      console.log('Sample DVIRLog.DVIRDefect:', sampleLog.DVIRDefect);
       console.log('Sample DVIRLog.dvirDefects:', sampleLog.dvirDefects);
-      console.log('Sample DVIRLog.DVIRDefects:', sampleLog.DVIRDefects);
       console.log('Sample DVIRLog.isSafeToOperate:', sampleLog.isSafeToOperate);
     }
 
@@ -1218,8 +1218,8 @@ document.getElementById('getDvir').onclick = async function(){
     const defectIdsToFetch = new Set();
 
     dvirLogs.forEach(log => {
-      // First check if dvirDefects is already populated
-      const fullDefects = log.dvirDefects || log.DVIRDefects || [];
+      // First check if DVIRDefect is already populated (singular property name)
+      const fullDefects = log.DVIRDefect || log.dvirDefects || log.DVIRDefects || [];
       if (fullDefects && Array.isArray(fullDefects) && fullDefects.length > 0) {
         defectMap[log.id] = fullDefects;
         return;
