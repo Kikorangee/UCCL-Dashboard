@@ -803,8 +803,8 @@ function sortData(data, column, direction) {
 
     switch(column) {
       case 'dateTime':
-        valA = new Date(a.dateTime);
-        valB = new Date(b.dateTime);
+        valA = a.rawDateTime || 0;
+        valB = b.rawDateTime || 0;
         break;
       case 'driverName':
       case 'vehicleName':
@@ -1448,6 +1448,7 @@ document.getElementById('getDvir').onclick = async function(){
       return {
         id:l.id,
         dateTime:new Date(l.dateTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
+        rawDateTime:new Date(l.dateTime).getTime(), // Raw timestamp for sorting
         driverName:driverNames[driverId] || 'Unknown Driver',
         driverId:driverId || '',
         vehicleName:deviceNames[deviceId] || 'Unknown Vehicle',
