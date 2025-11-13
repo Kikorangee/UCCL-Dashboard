@@ -1202,51 +1202,75 @@ document.getElementById('getDvir').onclick = async function(){
       return;
     }
 
-    // Fetch DVIRDefect records by date range and map them to logs
+    // Collect defect IDs and fetch them individually
     let defectMap = {};
+    const uniqueDefectIds = new Set();
 
-    showMessage('infoBanner', `🔍 Fetching defect details from Geotab...`, 'info');
+    dvirLogs.forEach(log => {
+      if (log.defects && Array.isArray(log.defects)) {
+        log.defects.forEach(defRef => {
+          if (defRef.id && !defRef.isDefectList) {
+            uniqueDefectIds.add(defRef.id);
+          }
+        });
+      }
+    });
+
+    const defectIdArray = Array.from(uniqueDefectIds);
+    showMessage('infoBanner', `🔍 Fetching ${defectIdArray.length} defect details from Geotab...`, 'info');
 
     try {
-      // Fetch all DVIRDefect records for the date range
-      const defectRecords = await callGeotabAPI('Get', {
-        typeName: 'DVIRDefect',
-        search: {
-          fromDate: fromDateTime,
-          toDate: toDateTime
-        }
-      });
-
-      console.log('=== FETCHED DEFECT RECORDS ===');
-      console.log(`Total defects fetched: ${defectRecords.length}`);
-      if (defectRecords.length > 0) {
-        console.log('Sample defect:', defectRecords[0]);
-        console.log('Defect fields:', Object.keys(defectRecords[0]).join(', '));
-      }
-
-      // Create a map of defect ID -> defect object
-      const defectById = {};
-      defectRecords.forEach(def => {
-        defectById[def.id] = def;
-      });
-
-      // Now map defects to their DVIR logs using the IDs from log.defects
-      dvirLogs.forEach(log => {
-        if (log.defects && Array.isArray(log.defects)) {
-          const logDefects = [];
-          log.defects.forEach(defRef => {
-            if (defRef.id && !defRef.isDefectList && defectById[defRef.id]) {
-              logDefects.push(defectById[defRef.id]);
-            }
-          });
-          if (logDefects.length > 0) {
-            defectMap[log.id] = logDefects;
+      if (defectIdArray.length > 0) {
+        // Fetch defects one by one using ExecuteMultiCall for batch processing
+        const calls = defectIdArray.map(id => ({
+          method: 'Get',
+          params: {
+            typeName: 'DVIRDefect',
+            search: { id }
           }
-        }
-      });
+        }));
 
-      const logsWithDefects = Object.keys(defectMap).length;
-      showMessage('infoBanner', `✅ Loaded ${defectRecords.length} defect records for ${logsWithDefects} inspections`, 'success');
+        const results = await callGeotabAPI('ExecuteMultiCall', { calls });
+
+        // Flatten results and create defect map
+        const defectById = {};
+        let totalDefects = 0;
+        results.forEach((result, idx) => {
+          if (result && result.length > 0) {
+            const defect = result[0];
+            defectById[defectIdArray[idx]] = defect;
+            totalDefects++;
+          }
+        });
+
+        console.log('=== FETCHED DEFECT RECORDS ===');
+        console.log(`Total defects fetched: ${totalDefects}`);
+        if (totalDefects > 0) {
+          const firstDefect = Object.values(defectById)[0];
+          console.log('Sample defect:', firstDefect);
+          console.log('Defect fields:', Object.keys(firstDefect).join(', '));
+        }
+
+        // Map defects to their DVIR logs
+        dvirLogs.forEach(log => {
+          if (log.defects && Array.isArray(log.defects)) {
+            const logDefects = [];
+            log.defects.forEach(defRef => {
+              if (defRef.id && defectById[defRef.id]) {
+                logDefects.push(defectById[defRef.id]);
+              }
+            });
+            if (logDefects.length > 0) {
+              defectMap[log.id] = logDefects;
+            }
+          }
+        });
+
+        const logsWithDefects = Object.keys(defectMap).length;
+        showMessage('infoBanner', `✅ Loaded ${totalDefects} defect records for ${logsWithDefects} inspections`, 'success');
+      } else {
+        showMessage('infoBanner', `✅ No defects found in this date range`, 'success');
+      }
 
     } catch (error) {
       console.error('Error fetching defects:', error);
