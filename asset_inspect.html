@@ -845,7 +845,7 @@ function renderTable(rows){
 
     let ignitionInfo = '';
     if (r.ignitionTime) {
-      const ignitionStr = new Date(r.ignitionTime).toLocaleString();
+      const ignitionStr = new Date(r.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
       const timeDiff = r.timeToInspection;
       ignitionInfo = `<div class="ignition-info">Ignition: ${ignitionStr} (${timeDiff}min before)</div>`;
     }
@@ -961,7 +961,7 @@ function renderTableGroupedByZone(rows) {
 
       let ignitionInfo = '';
       if (r.ignitionTime) {
-        const ignitionStr = new Date(r.ignitionTime).toLocaleString();
+        const ignitionStr = new Date(r.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
         const timeDiff = r.timeToInspection;
         ignitionInfo = `<div class="ignition-info">Ignition: ${ignitionStr} (${timeDiff}min before)</div>`;
       }
@@ -1047,7 +1047,7 @@ function renderTableGroupedByZone(rows) {
 
       let ignitionInfo = '';
       if (r.ignitionTime) {
-        const ignitionStr = new Date(r.ignitionTime).toLocaleString();
+        const ignitionStr = new Date(r.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
         const timeDiff = r.timeToInspection;
         ignitionInfo = `<div class="ignition-info">Ignition: ${ignitionStr} (${timeDiff}min before)</div>`;
       }
@@ -1205,6 +1205,8 @@ document.getElementById('getDvir').onclick = async function(){
       const sampleLog = dvirLogs[0];
       console.log('Sample DVIRLog properties:', Object.keys(sampleLog).join(', '));
       console.log('Sample DVIRLog.dVIRDefects:', sampleLog.dVIRDefects);
+      console.log('Sample DVIRLog.driverRemark:', sampleLog.driverRemark);
+      console.log('Sample DVIRLog.certifyRemark:', sampleLog.certifyRemark);
     }
 
     // Map defects from dVIRDefects property (the actual defect objects)
@@ -1222,6 +1224,7 @@ document.getElementById('getDvir').onclick = async function(){
     const logsWithDefects = Object.keys(defectMap).length;
 
     console.log('=== DEFECT MAPPING COMPLETE ===');
+    console.log(`Logs with remarks: ${dvirLogs.filter(l => l.driverRemark || l.certifyRemark).length}`);
     console.log(`Logs with defects: ${logsWithDefects}`);
     console.log(`Total defects: ${totalDefects}`);
 
@@ -1274,14 +1277,14 @@ document.getElementById('getDvir').onclick = async function(){
 
       return {
         id:l.id,
-        dateTime:new Date(l.dateTime).toLocaleString(),
+        dateTime:new Date(l.dateTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
         driverName:driverNames[driverId] || 'Unknown Driver',
         driverId:driverId || '',
         vehicleName:deviceNames[deviceId] || 'Unknown Vehicle',
         deviceId:deviceId || '',
         isSafeToOperate:l.isSafeToOperate,
         isInspectedByDriver:l.isInspectedByDriver,
-        driverRemark:l.driverRemark || '',
+        driverRemark:l.driverRemark || l.certifyRemark || '',
         odometer:l.odometer || 0,
         engineHours:l.engineHours || 0,
         latitude:loc.latitude,
@@ -1390,7 +1393,7 @@ document.getElementById('downloadCsv').onclick = function(){
       r.latitude || '', r.longitude || '',
       r.odometer ? Math.round(r.odometer/1000*100)/100 : '',
       r.engineHours ? Math.round(r.engineHours/3600*100)/100 : '',
-      r.ignitionTime ? new Date(r.ignitionTime).toLocaleString() : '',
+      r.ignitionTime ? new Date(r.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }) : '',
       r.timeToInspection || '',
       r.isOverdue ? 'YES' : 'NO',
       r.driverRemark || ''
@@ -1474,7 +1477,7 @@ document.getElementById('downloadReport').onclick = function(){
     .ignition-info{font-size:12px;color:#666;margin-top:4px}
   </style></head><body>
   <h1>UCCL Asset Inspection Report</h1>
-  <div class="muted">Generated on ${new Date().toLocaleString()}</div>
+  <div class="muted">Generated on ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}</div>
   ${zoneSummaryHtml}
   <table>
     <thead><tr>
@@ -1533,7 +1536,7 @@ document.getElementById('downloadReport').onclick = function(){
       
       let ignitionInfo = '';
       if (r.ignitionTime) {
-        const ignitionStr = new Date(r.ignitionTime).toLocaleString();
+        const ignitionStr = new Date(r.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
         const timeDiff = r.timeToInspection;
         ignitionInfo = `<div class="ignition-info">Ignition: ${ignitionStr} (${timeDiff}min before)</div>`;
       }
