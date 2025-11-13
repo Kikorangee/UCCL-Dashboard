@@ -144,9 +144,13 @@
           <div style="margin-top:10px;">
             <label>Email Service:</label>
             <select id="emailService" class="form-control">
-              <option value="geotab">Geotab Notifications (recommended)</option>
               <option value="console">Console Log Only (for testing)</option>
+              <option value="geotab">Geotab Notifications</option>
             </select>
+          </div>
+          <div style="margin-top:10px;">
+            <button id="testEmailBtn" class="btn" style="background:#667eea;color:white;padding:8px 16px;">Test Email Notification</button>
+            <span id="testEmailResult" style="margin-left:10px;font-size:14px;"></span>
           </div>
           <div style="margin-top:10px;">
             <label>Defect Alert Subject:</label>
@@ -1241,13 +1245,23 @@ async function sendEmailNotification(type, data) {
       showMessage('infoBanner', `📧 Notifications sent to ${recipientList.length} recipient(s)`, 'success');
     } else {
       // Console log only (for testing)
-      console.log('=== EMAIL NOTIFICATION ===');
+      console.log('');
+      console.log('═══════════════════════════════════════════════════');
+      console.log('📧 EMAIL NOTIFICATION (CONSOLE TEST MODE)');
+      console.log('═══════════════════════════════════════════════════');
       console.log(`Type: ${type.toUpperCase()}`);
       console.log(`To: ${recipientList.join(', ')}`);
       console.log(`Subject: ${subject}`);
-      console.log(`Body:\n${body}`);
-      console.log('========================');
-      showMessage('infoBanner', `📋 Email notification logged to console (${type})`, 'info');
+      console.log('───────────────────────────────────────────────────');
+      console.log('Body:');
+      console.log(body);
+      console.log('═══════════════════════════════════════════════════');
+      console.log('NOTE: This is console mode. To send real emails via');
+      console.log('Geotab, change Email Service to "Geotab Notifications"');
+      console.log('and use Geotab user IDs as recipients.');
+      console.log('═══════════════════════════════════════════════════');
+      console.log('');
+      showMessage('infoBanner', `📋 Email notification logged to console (${type}) - Check browser console (F12)`, 'info');
     }
   } catch (error) {
     console.error('Email notification error:', error);
@@ -1479,6 +1493,11 @@ document.getElementById('getDvir').onclick = async function(){
     const selectedZone = document.getElementById('zoneFilter').value;
     const filteredData = filterDataByZone(mappedDvirData, selectedZone);
     const sortedData = sortData(filteredData, currentSortColumn, currentSortDirection);
+
+    console.log('=== SORT CHECK ===');
+    console.log('First 3 dates after sort:', sortedData.slice(0, 3).map(r => ({ date: r.dateTime, raw: r.rawDateTime })));
+    console.log('Last 3 dates after sort:', sortedData.slice(-3).map(r => ({ date: r.dateTime, raw: r.rawDateTime })));
+
     renderTable(sortedData);
 
     const locationsToResolve = mappedDvirData.filter(r => r.latitude != null && r.longitude != null);
@@ -1764,6 +1783,32 @@ document.getElementById('enableAutoEmail').addEventListener('change', function()
 document.getElementById('enableOverdueEmail').addEventListener('change', function() {
   const defectEnabled = document.getElementById('enableAutoEmail').checked;
   document.getElementById('emailOptions').style.display = (this.checked || defectEnabled) ? 'block' : 'none';
+});
+
+// Test email notification button
+document.getElementById('testEmailBtn').addEventListener('click', async function() {
+  const resultSpan = document.getElementById('testEmailResult');
+  resultSpan.textContent = 'Sending test...';
+  resultSpan.style.color = '#666';
+
+  const testData = {
+    vehicleName: 'Test Vehicle XYZ',
+    driverName: 'Test Driver',
+    dateTime: new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
+    resolvedAddress: 'Test Location',
+    ignitionTime: Date.now() - 10*60*1000, // 10 minutes ago
+    timeToInspection: 10,
+    defects: 'Test defect description'
+  };
+
+  try {
+    await sendEmailNotification('overdue', testData);
+    resultSpan.textContent = '✓ Test sent! Check console for output.';
+    resultSpan.style.color = '#38a169';
+  } catch (err) {
+    resultSpan.textContent = '✗ Test failed: ' + err.message;
+    resultSpan.style.color = '#e53e3e';
+  }
 });
 
 document.getElementById('zoneFilter').addEventListener('change', function() {
