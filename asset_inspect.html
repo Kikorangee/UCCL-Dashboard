@@ -803,8 +803,8 @@ function sortData(data, column, direction) {
 
     switch(column) {
       case 'dateTime':
-        valA = new Date(a.dateTime);
-        valB = new Date(b.dateTime);
+        valA = a.rawDateTime || 0;
+        valB = b.rawDateTime || 0;
         break;
       case 'driverName':
       case 'vehicleName':
@@ -1448,6 +1448,7 @@ document.getElementById('getDvir').onclick = async function(){
       return {
         id:l.id,
         dateTime:new Date(l.dateTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
+        rawDateTime:new Date(l.dateTime).getTime(), // Raw timestamp for sorting
         driverName:driverNames[driverId] || 'Unknown Driver',
         driverId:driverId || '',
         vehicleName:deviceNames[deviceId] || 'Unknown Vehicle',
@@ -1469,11 +1470,16 @@ document.getElementById('getDvir').onclick = async function(){
     });
 
     mappedDvirData = checkOverdueInspections(mappedDvirData);
-    
+
+    // Apply default sort (latest inspections first)
+    currentSortColumn = 'dateTime';
+    currentSortDirection = 'desc';
+
     // Apply current filter before rendering
     const selectedZone = document.getElementById('zoneFilter').value;
     const filteredData = filterDataByZone(mappedDvirData, selectedZone);
-    renderTable(filteredData);
+    const sortedData = sortData(filteredData, currentSortColumn, currentSortDirection);
+    renderTable(sortedData);
 
     const locationsToResolve = mappedDvirData.filter(r => r.latitude != null && r.longitude != null);
 
@@ -1764,7 +1770,8 @@ document.getElementById('zoneFilter').addEventListener('change', function() {
   if (!mappedDvirData.length) return;
   const selectedZone = this.value;
   const filteredData = filterDataByZone(mappedDvirData, selectedZone);
-  renderTable(filteredData);
+  const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
+  renderTable(sortedData);
 });
 
 document.getElementById('alertWindow').addEventListener('change', function() {
@@ -1772,7 +1779,8 @@ document.getElementById('alertWindow').addEventListener('change', function() {
   mappedDvirData = checkOverdueInspections(mappedDvirData);
   const selectedZone = document.getElementById('zoneFilter').value;
   const filteredData = filterDataByZone(mappedDvirData, selectedZone);
-  renderTable(filteredData);
+  const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
+  renderTable(sortedData);
 });
 
 document.getElementById('assetType').addEventListener('change', function() {
@@ -1780,7 +1788,8 @@ document.getElementById('assetType').addEventListener('change', function() {
   mappedDvirData = checkOverdueInspections(mappedDvirData);
   const selectedZone = document.getElementById('zoneFilter').value;
   const filteredData = filterDataByZone(mappedDvirData, selectedZone);
-  renderTable(filteredData);
+  const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
+  renderTable(sortedData);
 });
 
 document.getElementById('enableOverdueAlerts').addEventListener('change', function() {
@@ -1788,14 +1797,16 @@ document.getElementById('enableOverdueAlerts').addEventListener('change', functi
   mappedDvirData = checkOverdueInspections(mappedDvirData);
   const selectedZone = document.getElementById('zoneFilter').value;
   const filteredData = filterDataByZone(mappedDvirData, selectedZone);
-  renderTable(filteredData);
+  const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
+  renderTable(sortedData);
 });
 
 document.getElementById('groupByZone').addEventListener('change', function() {
   if (!mappedDvirData.length) return;
   const selectedZone = document.getElementById('zoneFilter').value;
   const filteredData = filterDataByZone(mappedDvirData, selectedZone);
-  renderTable(filteredData);
+  const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
+  renderTable(sortedData);
 });
 
 // Simulate defect detection and auto-email
