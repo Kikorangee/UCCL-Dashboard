@@ -1202,32 +1202,93 @@ document.getElementById('getDvir').onclick = async function(){
       return;
     }
 
-    // DVIRLog objects contain dvirDefects property with full defect details
+    console.log('=== DVIRLog RESPONSE INSPECTION ===');
+    console.log(`Total DVIRLog records fetched: ${dvirLogs.length}`);
+    if (dvirLogs.length > 0) {
+      const sampleLog = dvirLogs[0];
+      console.log('Sample DVIRLog properties:', Object.keys(sampleLog).join(', '));
+      console.log('Sample DVIRLog.defects:', sampleLog.defects);
+      console.log('Sample DVIRLog.DVIRDefect:', sampleLog.DVIRDefect);
+      console.log('Sample DVIRLog.dvirDefects:', sampleLog.dvirDefects);
+      console.log('Sample DVIRLog.isSafeToOperate:', sampleLog.isSafeToOperate);
+    }
+
+    // Build a map of defect IDs from the defects property
     let defectMap = {};
-    let totalDefects = 0;
+    const defectIdsToFetch = new Set();
 
     dvirLogs.forEach(log => {
-      // Check both possible property names (dvirDefects or DVIRDefects)
-      const defects = log.dvirDefects || log.DVIRDefects || [];
+      // First check if DVIRDefect is already populated (singular property name)
+      const fullDefects = log.DVIRDefect || log.dvirDefects || log.DVIRDefects || [];
+      if (fullDefects && Array.isArray(fullDefects) && fullDefects.length > 0) {
+        defectMap[log.id] = fullDefects;
+        return;
+      }
 
-      if (defects && Array.isArray(defects) && defects.length > 0) {
-        defectMap[log.id] = defects;
-        totalDefects += defects.length;
+      // Otherwise, collect defect IDs from the defects property for separate fetching
+      if (log.defects && Array.isArray(log.defects)) {
+        log.defects.forEach(defRef => {
+          if (defRef && defRef.id) {
+            defectIdsToFetch.add(defRef.id);
+          }
+        });
       }
     });
 
+    console.log(`Found ${defectIdsToFetch.size} unique defect IDs to fetch`);
+
+    // If defects need to be fetched separately, do so
+    if (defectIdsToFetch.size > 0 && Object.keys(defectMap).length === 0) {
+      showMessage('infoBanner', `🔍 Fetching ${defectIdsToFetch.size} defect details...`, 'info');
+
+      try {
+        // Fetch all defects by their IDs
+        const defectIdArray = Array.from(defectIdsToFetch);
+        const fetchedDefects = await callGeotabAPI('Get', {
+          typeName: 'DVIRDefect',
+          search: {}
+        });
+
+        console.log(`Fetched ${fetchedDefects.length} DVIRDefect records from API`);
+        if (fetchedDefects.length > 0) {
+          console.log('Sample DVIRDefect:', fetchedDefects[0]);
+          console.log('DVIRDefect properties:', Object.keys(fetchedDefects[0]).join(', '));
+        }
+
+        // Create a lookup map of defects by ID
+        const defectsById = {};
+        fetchedDefects.forEach(def => {
+          if (def && def.id) {
+            defectsById[def.id] = def;
+          }
+        });
+
+        // Map defects back to their logs
+        dvirLogs.forEach(log => {
+          if (log.defects && Array.isArray(log.defects)) {
+            const logDefects = [];
+            log.defects.forEach(defRef => {
+              if (defRef && defRef.id && defectsById[defRef.id]) {
+                logDefects.push(defectsById[defRef.id]);
+              }
+            });
+            if (logDefects.length > 0) {
+              defectMap[log.id] = logDefects;
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching DVIRDefects:', error);
+        showMessage('infoBanner', `⚠️ Could not fetch defect details: ${error.message}`, 'warning');
+      }
+    }
+
+    const totalDefects = Object.values(defectMap).reduce((sum, defects) => sum + defects.length, 0);
     const logsWithDefects = Object.keys(defectMap).length;
 
-    console.log('=== DVIR DEFECT ANALYSIS ===');
-    console.log(`Total DVIRLog records: ${dvirLogs.length}`);
+    console.log('=== DEFECT MAPPING COMPLETE ===');
     console.log(`Logs with defects: ${logsWithDefects}`);
     console.log(`Total defects: ${totalDefects}`);
-
-    if (totalDefects > 0) {
-      const firstDefect = Object.values(defectMap)[0][0];
-      console.log('Sample defect structure:', firstDefect);
-      console.log('Defect properties:', Object.keys(firstDefect).join(', '));
-    }
 
     if (logsWithDefects > 0) {
       showMessage('infoBanner', `✅ Loaded ${totalDefects} defect records from ${logsWithDefects} inspections`, 'success');
