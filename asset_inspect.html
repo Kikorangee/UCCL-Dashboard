@@ -153,8 +153,22 @@
             <label>Email Service:</label>
             <select id="emailService" class="form-control">
               <option value="console">Console Log Only (for testing)</option>
-              <option value="geotab">Geotab Notifications</option>
+              <option value="webhook">Webhook/API (for external emails)</option>
+              <option value="geotab">Geotab In-App Notifications Only</option>
             </select>
+          </div>
+          <div id="webhookConfig" style="margin-top:10px;display:none;">
+            <label>Webhook URL (for sending external emails):</label>
+            <input id="webhookUrl" class="form-control" placeholder="https://your-webhook-endpoint.com/send-email" />
+            <div style="font-size:12px;color:#666;margin-top:5px;">
+              Enter a webhook URL that accepts POST requests with email data.<br>
+              Popular options: Zapier, Make.com, n8n, or custom serverless function
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <label>Your Email Address (for external notifications):</label>
+            <input id="externalEmail" class="form-control" placeholder="your-email@example.com" />
+            <div style="font-size:12px;color:#666;margin-top:5px;">This will be used for webhook/external email notifications</div>
           </div>
           <div style="margin-top:10px;">
             <button id="testEmailBtn" class="btn" style="background:#667eea;color:white;padding:8px 16px;">Test Email Notification</button>
@@ -1284,8 +1298,51 @@ async function sendEmailNotification(type, data) {
   }
 
   try {
-    if (emailService === 'geotab') {
-      // Use Geotab's TextMessage API to send notifications
+    if (emailService === 'webhook') {
+      // Send via webhook for external email delivery
+      const webhookUrl = document.getElementById('webhookUrl').value;
+      const externalEmail = document.getElementById('externalEmail').value;
+
+      if (!webhookUrl) {
+        showMessage('infoBanner', '⚠️ Webhook URL is required for external emails', 'warning');
+        console.error('Webhook URL not configured');
+        return;
+      }
+
+      if (!externalEmail) {
+        showMessage('infoBanner', '⚠️ External email address is required', 'warning');
+        console.error('External email address not configured');
+        return;
+      }
+
+      const payload = {
+        to: externalEmail,
+        subject: subject,
+        body: body,
+        type: type,
+        data: data,
+        timestamp: new Date().toISOString()
+      };
+
+      console.log('📧 Sending email via webhook:', webhookUrl);
+      console.log('Payload:', payload);
+
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        console.log(`✅ Email sent successfully to ${externalEmail}`);
+        showMessage('infoBanner', `✅ Email sent to ${externalEmail}`, 'success');
+      } else {
+        throw new Error(`Webhook returned status ${response.status}: ${response.statusText}`);
+      }
+    } else if (emailService === 'geotab') {
+      // Use Geotab's TextMessage API to send in-app notifications only
       for (const recipient of recipientList) {
         try {
           await callGeotabAPI('Add', {
@@ -1295,18 +1352,18 @@ async function sendEmailNotification(type, data) {
                 message: `${subject}\n\n${body}`,
                 isDirectionToVehicle: false
               },
-              user: { id: recipient }, // Geotab user ID or email
+              user: { id: recipient },
               activeFrom: new Date().toISOString(),
-              activeTo: new Date(Date.now() + 24*60*60*1000).toISOString(), // Active for 24 hours
+              activeTo: new Date(Date.now() + 24*60*60*1000).toISOString(),
               isDirectionToVehicle: false
             }
           });
-          console.log(`✅ Notification sent to ${recipient} via Geotab`);
+          console.log(`✅ Geotab notification sent to user ${recipient}`);
         } catch (err) {
           console.error(`❌ Failed to send to ${recipient}:`, err);
         }
       }
-      showMessage('infoBanner', `📧 Notifications sent to ${recipientList.length} recipient(s)`, 'success');
+      showMessage('infoBanner', `📧 Geotab in-app notifications sent to ${recipientList.length} user(s)`, 'success');
     } else {
       // Console log only (for testing)
       console.log('');
@@ -1320,16 +1377,15 @@ async function sendEmailNotification(type, data) {
       console.log('Body:');
       console.log(body);
       console.log('═══════════════════════════════════════════════════');
-      console.log('NOTE: This is console mode. To send real emails via');
-      console.log('Geotab, change Email Service to "Geotab Notifications"');
-      console.log('and use Geotab user IDs as recipients.');
+      console.log('NOTE: This is console mode. For external emails,');
+      console.log('use "Webhook/API" mode with a configured webhook URL.');
       console.log('═══════════════════════════════════════════════════');
       console.log('');
       showMessage('infoBanner', `📋 Email notification logged to console (${type}) - Check browser console (F12)`, 'info');
     }
   } catch (error) {
     console.error('Email notification error:', error);
-    showMessage('infoBanner', `Failed to send notification: ${error.message}`, 'error');
+    showMessage('infoBanner', `❌ Failed to send notification: ${error.message}`, 'error');
   }
 }
 
@@ -1854,6 +1910,12 @@ document.getElementById('enableAutoEmail').addEventListener('change', function()
 document.getElementById('enableOverdueEmail').addEventListener('change', function() {
   const defectEnabled = document.getElementById('enableAutoEmail').checked;
   document.getElementById('emailOptions').style.display = (this.checked || defectEnabled) ? 'block' : 'none';
+});
+
+// Show/hide webhook config based on email service selection
+document.getElementById('emailService').addEventListener('change', function() {
+  const webhookConfig = document.getElementById('webhookConfig');
+  webhookConfig.style.display = this.value === 'webhook' ? 'block' : 'none';
 });
 
 // Test email notification button
