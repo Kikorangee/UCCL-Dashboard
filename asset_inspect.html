@@ -118,7 +118,14 @@
         <div class="checkbox-group">
           <label>
             <input type="checkbox" id="enableAutoEmail" />
-            Auto-Email on Defect Detection (Note: Currently logs to console only - not fully implemented)
+            Auto-Email on Defect Detection
+          </label>
+        </div>
+
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="enableOverdueEmail" />
+            Auto-Email on Overdue Inspections
           </label>
         </div>
 
@@ -130,12 +137,24 @@
         </div>
         
         <div id="emailOptions" class="email-options" style="display:none;">
+          <h4 style="margin-top:0;">Email Alert Configuration</h4>
           <div class="form-row">
-            <input id="emailRecipient" class="form-control" placeholder="Email Recipient" />
-            <input id="emailSubject" class="form-control" placeholder="Email Subject" value="Asset Inspection Defect Alert" />
+            <input id="emailRecipient" class="form-control" placeholder="Email Recipients (comma-separated)" />
           </div>
-          <div>
-            <textarea id="emailTemplate" class="form-control" placeholder="Email Template" rows="3">A defect has been detected during asset inspection. Please review the details in the attached report.</textarea>
+          <div style="margin-top:10px;">
+            <label>Email Service:</label>
+            <select id="emailService" class="form-control">
+              <option value="geotab">Geotab Notifications (recommended)</option>
+              <option value="console">Console Log Only (for testing)</option>
+            </select>
+          </div>
+          <div style="margin-top:10px;">
+            <label>Defect Alert Subject:</label>
+            <input id="emailSubjectDefect" class="form-control" placeholder="Subject for defect alerts" value="⚠️ Asset Inspection Defect Detected" />
+          </div>
+          <div style="margin-top:10px;">
+            <label>Overdue Alert Subject:</label>
+            <input id="emailSubjectOverdue" class="form-control" placeholder="Subject for overdue alerts" value="⏰ Overdue Asset Inspection Alert" />
           </div>
         </div>
       </div>
@@ -169,7 +188,7 @@
         <label style="display:block;margin-bottom:8px;font-weight:600;color:#2d3748;">Quick Date Selection:</label>
         <button id="quickToday" class="btn" style="background:#667eea;color:white;padding:8px 16px;font-size:14px;">Today</button>
         <button id="quickYesterday" class="btn" style="background:#667eea;color:white;padding:8px 16px;font-size:14px;">Yesterday</button>
-        <button id="quickLast7" class="btn" style="background:#667eea;color:white;padding:8px 16px;font-size:14px;">Last 7 Days</button>
+        <button id="quickLast7" class="btn" style="background:#667eea;color:white;padding:8px 16px;font-size:14px;">Last Week</button>
         <button id="quickLast30" class="btn" style="background:#667eea;color:white;padding:8px 16px;font-size:14px;">Last 30 Days</button>
         <button id="quickThisWeek" class="btn" style="background:#667eea;color:white;padding:8px 16px;font-size:14px;">This Week</button>
         <button id="quickThisMonth" class="btn" style="background:#667eea;color:white;padding:8px 16px;font-size:14px;">This Month</button>
@@ -247,9 +266,13 @@ document.getElementById('quickYesterday')?.addEventListener('click', function() 
 
 document.getElementById('quickLast7')?.addEventListener('click', function() {
   const today = new Date();
-  const last7 = new Date(Date.now() - 7*24*60*60*1000);
-  document.getElementById('fromDate').value = last7.toISOString().split('T')[0];
-  document.getElementById('toDate').value = today.toISOString().split('T')[0];
+  const dayOfWeek = today.getDay();
+  // Calculate last Monday (go back to this Monday, then subtract 7 days)
+  const thisMonday = new Date(today.getTime() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) * 24*60*60*1000);
+  const lastMonday = new Date(thisMonday.getTime() - 7*24*60*60*1000);
+  const lastSunday = new Date(lastMonday.getTime() + 6*24*60*60*1000);
+  document.getElementById('fromDate').value = lastMonday.toISOString().split('T')[0];
+  document.getElementById('toDate').value = lastSunday.toISOString().split('T')[0];
   document.getElementById('fromTime').value = '00:00';
   document.getElementById('toTime').value = '23:59';
 });
@@ -649,14 +672,18 @@ function checkOverdueInspections(rows) {
       
       if (row.isInspectedByDriver && timeDiff > alertWindow) {
         row.isOverdue = true;
+        // Send email notification for overdue inspection
+        sendOverdueEmail(row).catch(err => console.error('Failed to send overdue email:', err));
       } else if (!row.isInspectedByDriver) {
         const timeSinceIgnition = (now - ignitionTime) / (1000 * 60);
         if (timeSinceIgnition > alertWindow) {
           row.isOverdue = true;
+          // Send email notification for overdue inspection
+          sendOverdueEmail(row).catch(err => console.error('Failed to send overdue email:', err));
         }
       }
     }
-    
+
     return row;
   });
 }
@@ -765,18 +792,98 @@ function renderZoneStatistics(rows) {
   statsDiv.style.display = 'block';
 }
 
+// Sorting state
+let currentSortColumn = null;
+let currentSortDirection = 'asc';
+
+function sortData(data, column, direction) {
+  const sorted = [...data];
+  sorted.sort((a, b) => {
+    let valA, valB;
+
+    switch(column) {
+      case 'dateTime':
+        valA = new Date(a.dateTime);
+        valB = new Date(b.dateTime);
+        break;
+      case 'driverName':
+      case 'vehicleName':
+      case 'driverRemark':
+        valA = (a[column] || '').toLowerCase();
+        valB = (b[column] || '').toLowerCase();
+        break;
+      case 'odometer':
+      case 'engineHours':
+        valA = a[column] || 0;
+        valB = b[column] || 0;
+        break;
+      case 'isSafeToOperate':
+        valA = a.isSafeToOperate === true ? 2 : a.isSafeToOperate === false ? 0 : 1;
+        valB = b.isSafeToOperate === true ? 2 : b.isSafeToOperate === false ? 0 : 1;
+        break;
+      case 'isInspectedByDriver':
+        valA = a.isInspectedByDriver ? 1 : 0;
+        valB = b.isInspectedByDriver ? 1 : 0;
+        break;
+      case 'zones':
+        valA = (a.zones || []).join(',');
+        valB = (b.zones || []).join(',');
+        break;
+      case 'location':
+        valA = a.resolvedAddress || '';
+        valB = b.resolvedAddress || '';
+        break;
+      default:
+        valA = a[column];
+        valB = b[column];
+    }
+
+    if (valA < valB) return direction === 'asc' ? -1 : 1;
+    if (valA > valB) return direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+  return sorted;
+}
+
+function sortTable(column) {
+  // Toggle direction if clicking the same column, otherwise reset to ascending
+  if (currentSortColumn === column) {
+    currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSortColumn = column;
+    currentSortDirection = 'asc';
+  }
+
+  // Sort the data
+  const selectedZone = document.getElementById('zoneFilter').value;
+  const filteredData = filterDataByZone(mappedDvirData, selectedZone);
+  const sortedData = sortData(filteredData, column, currentSortDirection);
+
+  // Re-render the table
+  renderTable(sortedData);
+}
+
 function renderTable(rows){
   const resultDiv = document.getElementById('dvirResult');
   const groupByZone = document.getElementById('groupByZone').checked;
-  
+
   if (groupByZone) {
     renderTableGroupedByZone(rows);
     return;
   }
-  
+
   let html = `<table class="dvir-table"><thead><tr>
-    <th>Date/Time</th><th>Driver</th><th>Vehicle</th><th>Status</th><th>Driver Inspected</th>
-    <th>Defects</th><th>Location</th><th>Zones</th><th>Odometer</th><th>Engine Hours</th><th>Hubbo KM's</th>
+    <th onclick="sortTable('dateTime')" style="cursor:pointer;">Date/Time ${currentSortColumn === 'dateTime' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('driverName')" style="cursor:pointer;">Driver ${currentSortColumn === 'driverName' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('vehicleName')" style="cursor:pointer;">Vehicle ${currentSortColumn === 'vehicleName' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('isSafeToOperate')" style="cursor:pointer;">Status ${currentSortColumn === 'isSafeToOperate' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('isInspectedByDriver')" style="cursor:pointer;">Driver Inspected ${currentSortColumn === 'isInspectedByDriver' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th>Defects</th>
+    <th onclick="sortTable('location')" style="cursor:pointer;">Location ${currentSortColumn === 'location' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('zones')" style="cursor:pointer;">Zones ${currentSortColumn === 'zones' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('odometer')" style="cursor:pointer;">Odometer ${currentSortColumn === 'odometer' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('engineHours')" style="cursor:pointer;">Engine Hours ${currentSortColumn === 'engineHours' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('driverRemark')" style="cursor:pointer;">Hubbo KM's ${currentSortColumn === 'driverRemark' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
   </tr></thead><tbody>`;
   
   let overdueCount = 0;
@@ -1072,31 +1179,94 @@ function renderTableGroupedByZone(rows) {
   resultDiv.innerHTML = html;
 }
 
+// Send email notification using Geotab or console
+async function sendEmailNotification(type, data) {
+  const recipients = document.getElementById('emailRecipient').value;
+  const emailService = document.getElementById('emailService').value;
+
+  if (!recipients) {
+    console.warn('No email recipients configured');
+    return;
+  }
+
+  const recipientList = recipients.split(',').map(r => r.trim()).filter(r => r);
+
+  let subject, body;
+
+  if (type === 'defect') {
+    subject = document.getElementById('emailSubjectDefect').value;
+    body = `⚠️ DEFECT DETECTED\n\n` +
+           `Vehicle: ${data.vehicleName}\n` +
+           `Driver: ${data.driverName}\n` +
+           `Date/Time: ${data.dateTime}\n` +
+           `Location: ${data.resolvedAddress || 'Unknown'}\n` +
+           `Defects: ${data.defects}\n\n` +
+           `Please review and take appropriate action.`;
+  } else if (type === 'overdue') {
+    subject = document.getElementById('emailSubjectOverdue').value;
+    body = `⏰ OVERDUE INSPECTION ALERT\n\n` +
+           `Vehicle: ${data.vehicleName}\n` +
+           `Driver: ${data.driverName}\n` +
+           `Ignition Time: ${new Date(data.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}\n` +
+           `Inspection Time: ${data.dateTime}\n` +
+           `Delay: ${data.timeToInspection} minutes\n` +
+           `Location: ${data.resolvedAddress || 'Unknown'}\n\n` +
+           `This inspection was completed ${data.timeToInspection} minutes after ignition, ` +
+           `exceeding the ${document.getElementById('alertWindow').value} minute threshold.`;
+  }
+
+  try {
+    if (emailService === 'geotab') {
+      // Use Geotab's TextMessage API to send notifications
+      for (const recipient of recipientList) {
+        try {
+          await callGeotabAPI('Add', {
+            typeName: 'TextMessage',
+            entity: {
+              messageContent: {
+                message: `${subject}\n\n${body}`,
+                isDirectionToVehicle: false
+              },
+              user: { id: recipient }, // Geotab user ID or email
+              activeFrom: new Date().toISOString(),
+              activeTo: new Date(Date.now() + 24*60*60*1000).toISOString(), // Active for 24 hours
+              isDirectionToVehicle: false
+            }
+          });
+          console.log(`✅ Notification sent to ${recipient} via Geotab`);
+        } catch (err) {
+          console.error(`❌ Failed to send to ${recipient}:`, err);
+        }
+      }
+      showMessage('infoBanner', `📧 Notifications sent to ${recipientList.length} recipient(s)`, 'success');
+    } else {
+      // Console log only (for testing)
+      console.log('=== EMAIL NOTIFICATION ===');
+      console.log(`Type: ${type.toUpperCase()}`);
+      console.log(`To: ${recipientList.join(', ')}`);
+      console.log(`Subject: ${subject}`);
+      console.log(`Body:\n${body}`);
+      console.log('========================');
+      showMessage('infoBanner', `📋 Email notification logged to console (${type})`, 'info');
+    }
+  } catch (error) {
+    console.error('Email notification error:', error);
+    showMessage('infoBanner', `Failed to send notification: ${error.message}`, 'error');
+  }
+}
+
 // Send email for defects
 async function sendDefectEmail(defectRow) {
   const enableAutoEmail = document.getElementById('enableAutoEmail').checked;
   if (!enableAutoEmail) return;
-  
-  const recipient = document.getElementById('emailRecipient').value;
-  const subject = document.getElementById('emailSubject').value;
-  const template = document.getElementById('emailTemplate').value;
-  
-  if (!recipient) {
-    showMessage('infoBanner', 'Email recipient is required for auto-email feature', 'warning');
-    return;
-  }
-  
-  try {
-    const emailBody = `${template}\n\nAsset: ${defectRow.vehicleName}\nDriver: ${defectRow.driverName}\nDate/Time: ${defectRow.dateTime}\nDefects: ${defectRow.defects}`;
-    
-    console.log(`Would send email to: ${recipient}`);
-    console.log(`Subject: ${subject}`);
-    console.log(`Body: ${emailBody}`);
-    
-    showMessage('infoBanner', `Defect email would be sent to ${recipient}`, 'success');
-  } catch (error) {
-    showMessage('infoBanner', `Failed to send email: ${error.message}`, 'error');
-  }
+  await sendEmailNotification('defect', defectRow);
+}
+
+// Send email for overdue inspections
+async function sendOverdueEmail(overdueRow) {
+  const enableOverdueEmail = document.getElementById('enableOverdueEmail').checked;
+  if (!enableOverdueEmail) return;
+  await sendEmailNotification('overdue', overdueRow);
 }
 
 // Update zone dropdown with predefined zones from spreadsheet
@@ -1581,7 +1751,13 @@ document.getElementById('logout').onclick = function(){
 
 // Event listeners
 document.getElementById('enableAutoEmail').addEventListener('change', function() {
-  document.getElementById('emailOptions').style.display = this.checked ? 'block' : 'none';
+  const overdueEnabled = document.getElementById('enableOverdueEmail').checked;
+  document.getElementById('emailOptions').style.display = (this.checked || overdueEnabled) ? 'block' : 'none';
+});
+
+document.getElementById('enableOverdueEmail').addEventListener('change', function() {
+  const defectEnabled = document.getElementById('enableAutoEmail').checked;
+  document.getElementById('emailOptions').style.display = (this.checked || defectEnabled) ? 'block' : 'none';
 });
 
 document.getElementById('zoneFilter').addEventListener('change', function() {
