@@ -138,8 +138,16 @@
         
         <div id="emailOptions" class="email-options" style="display:none;">
           <h4 style="margin-top:0;">Email Alert Configuration</h4>
-          <div class="form-row">
-            <input id="emailRecipient" class="form-control" placeholder="Email Recipients (comma-separated)" />
+          <div style="margin-top:10px;">
+            <label>Select Geotab Users to Notify:</label>
+            <select id="geotabUserSelect" class="form-control" multiple size="5" style="height:120px;">
+              <option value="" disabled>Loading users...</option>
+            </select>
+            <div style="font-size:12px;color:#666;margin-top:5px;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple users</div>
+          </div>
+          <div style="margin-top:10px;">
+            <label>Or enter User IDs manually (comma-separated):</label>
+            <input id="emailRecipient" class="form-control" placeholder="e.g., b123,b456 (optional if using dropdown above)" />
           </div>
           <div style="margin-top:10px;">
             <label>Email Service:</label>
@@ -217,6 +225,7 @@ let serverUsed = null;
 let mappedDvirData = [];
 let ignitionData = {};
 let geotabZones = []; // Store zone definitions with boundaries
+let geotabUsers = []; // Store Geotab users for email notifications
 
 // Predefined zone list from Advanced_Zone_List spreadsheet
 const PREDEFINED_ZONES = [
@@ -429,6 +438,47 @@ async function fetchGeotabZones() {
     showMessage('infoBanner', '⚠️ Could not fetch zone definitions. Zones may not be assigned correctly.', 'warning');
   }
   
+  return [];
+}
+
+// Fetch Geotab users for email notifications
+async function fetchGeotabUsers() {
+  try {
+    console.log('📧 Fetching Geotab users for email notifications...');
+
+    const users = await callGeotabAPI('Get', {
+      typeName: 'User',
+      resultsLimit: 5000
+    });
+
+    if (users && users.length > 0) {
+      geotabUsers = users.map(user => ({
+        id: user.id,
+        name: user.name || user.Name || 'Unknown',
+        firstName: user.firstName || user.FirstName || '',
+        lastName: user.lastName || user.LastName || '',
+        email: user.email || user.Email || ''
+      })).filter(u => u.id); // Only include users with IDs
+
+      // Sort by name
+      geotabUsers.sort((a, b) => a.name.localeCompare(b.name));
+
+      // Populate the dropdown
+      const userSelect = document.getElementById('geotabUserSelect');
+      userSelect.innerHTML = geotabUsers.map(user => {
+        const displayName = `${user.name}${user.email ? ' (' + user.email + ')' : ''}`;
+        return `<option value="${user.id}">${displayName}</option>`;
+      }).join('');
+
+      console.log(`✓ Loaded ${geotabUsers.length} Geotab users`);
+      return geotabUsers;
+    }
+  } catch (error) {
+    console.error('Error fetching Geotab users:', error);
+    const userSelect = document.getElementById('geotabUserSelect');
+    userSelect.innerHTML = '<option value="" disabled>Error loading users</option>';
+  }
+
   return [];
 }
 
@@ -1185,15 +1235,29 @@ function renderTableGroupedByZone(rows) {
 
 // Send email notification using Geotab or console
 async function sendEmailNotification(type, data) {
-  const recipients = document.getElementById('emailRecipient').value;
   const emailService = document.getElementById('emailService').value;
 
-  if (!recipients) {
-    console.warn('No email recipients configured');
-    return;
+  // Get recipients from dropdown first, then fall back to manual input
+  const userSelect = document.getElementById('geotabUserSelect');
+  const selectedOptions = Array.from(userSelect.selectedOptions).map(opt => opt.value);
+  const manualRecipients = document.getElementById('emailRecipient').value;
+
+  let recipientList = [];
+
+  // Priority 1: Selected users from dropdown
+  if (selectedOptions.length > 0) {
+    recipientList = selectedOptions;
+  }
+  // Priority 2: Manual input
+  else if (manualRecipients) {
+    recipientList = manualRecipients.split(',').map(r => r.trim()).filter(r => r);
   }
 
-  const recipientList = recipients.split(',').map(r => r.trim()).filter(r => r);
+  if (recipientList.length === 0) {
+    console.warn('No email recipients configured. Please select users from dropdown or enter user IDs manually.');
+    showMessage('infoBanner', '⚠️ No email recipients configured', 'warning');
+    return;
+  }
 
   let subject, body;
 
@@ -1341,6 +1405,8 @@ document.getElementById('authButton').onclick = async function(){
     updateZoneDropdown();
     // Fetch zone definitions from Geotab for coordinate matching
     await fetchGeotabZones();
+    // Fetch Geotab users for email notifications
+    await fetchGeotabUsers();
   }catch(e){
     showMessage('authResult',`Authentication failed: ${e.message}`,'error');
   }
