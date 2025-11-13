@@ -791,9 +791,42 @@ function renderTable(rows){
 
     let defectDisplay = '<em class="muted">None</em>';
     if (r.defects && r.defects !== '[]' && r.defects !== '') {
-      // TEMPORARY DEBUG: Show first 200 chars of raw defect data
-      const preview = r.defects.substring(0, 200);
-      defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ RAW: ${preview}...</span>`;
+      try{
+        const d = JSON.parse(r.defects);
+        if(Array.isArray(d)&&d.length>0) {
+          const defectList = d.map(def => {
+            let defectName = '';
+
+            // Check DefectRemarks array for the remark text
+            if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
+              defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
+            }
+
+            // Check Defect object for defect name
+            if (!defectName && def.defect && typeof def.defect === 'object') {
+              defectName = def.defect.name || def.defect.Name || '';
+            }
+
+            // Check Part object for part name
+            if (!defectName && def.part && typeof def.part === 'object') {
+              defectName = def.part.name || def.part.Name || '';
+            }
+
+            // Fallback to direct properties
+            if (!defectName) {
+              defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
+            }
+
+            const repairStatus = def.repairStatus || def.RepairStatus || '';
+            return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
+          }).join(', ');
+          defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+        }
+      }
+      catch(e){
+        console.error('Error parsing defects:', e, 'Raw defects:', r.defects);
+        if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>';
+      }
     }
 
     let locationDisplay = '<em class="muted">No location</em>';
@@ -888,12 +921,25 @@ function renderTableGroupedByZone(rows) {
           const d = JSON.parse(r.defects);
           if(Array.isArray(d)&&d.length>0) {
             const defectList = d.map(def => {
-              // Try various field names that Geotab might use
-              const defectName = def.defectName || def.name || def.defectRemark || def.remark ||
-                                def.defectListName || def.defectListAsPartName ||
-                                (typeof def === 'string' ? def : 'Unknown defect');
-              const severity = def.defectSeverity || def.severity || def.Severity || '';
-              return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
+              let defectName = '';
+              // Check DefectRemarks array
+              if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
+                defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
+              }
+              // Check Defect object
+              if (!defectName && def.defect && typeof def.defect === 'object') {
+                defectName = def.defect.name || def.defect.Name || '';
+              }
+              // Check Part object
+              if (!defectName && def.part && typeof def.part === 'object') {
+                defectName = def.part.name || def.part.Name || '';
+              }
+              // Fallback
+              if (!defectName) {
+                defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
+              }
+              const repairStatus = def.repairStatus || def.RepairStatus || '';
+              return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
             }).join(', ');
             defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
           }
@@ -962,12 +1008,25 @@ function renderTableGroupedByZone(rows) {
           const d = JSON.parse(r.defects);
           if(Array.isArray(d)&&d.length>0) {
             const defectList = d.map(def => {
-              // Try various field names that Geotab might use
-              const defectName = def.defectName || def.name || def.defectRemark || def.remark ||
-                                def.defectListName || def.defectListAsPartName ||
-                                (typeof def === 'string' ? def : 'Unknown defect');
-              const severity = def.defectSeverity || def.severity || def.Severity || '';
-              return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
+              let defectName = '';
+              // Check DefectRemarks array
+              if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
+                defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
+              }
+              // Check Defect object
+              if (!defectName && def.defect && typeof def.defect === 'object') {
+                defectName = def.defect.name || def.defect.Name || '';
+              }
+              // Check Part object
+              if (!defectName && def.part && typeof def.part === 'object') {
+                defectName = def.part.name || def.part.Name || '';
+              }
+              // Fallback
+              if (!defectName) {
+                defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
+              }
+              const repairStatus = def.repairStatus || def.RepairStatus || '';
+              return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
             }).join(', ');
             defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
           }
@@ -1143,54 +1202,69 @@ document.getElementById('getDvir').onclick = async function(){
       return;
     }
 
-    // Fetch DVIRDefects separately - this is where the actual defect details are stored
+    // Extract defect IDs and fetch actual DVIRDefect records
     let defectMap = {};
-    let defectFetchStatus = '';
 
-    showMessage('infoBanner', '🔍 Fetching defect records from Geotab...', 'info');
+    // Collect all defect IDs from the DVIR logs
+    const defectIds = [];
+    dvirLogs.forEach(log => {
+      if (log.defects && Array.isArray(log.defects)) {
+        log.defects.forEach(defRef => {
+          if (defRef.id && !defRef.isDefectList) {
+            defectIds.push(defRef.id);
+          }
+        });
+      }
+    });
+
+    showMessage('infoBanner', `🔍 Fetching ${defectIds.length} defect details from Geotab...`, 'info');
 
     try {
-      const allDefects = await callGeotabAPI('Get', {
-        typeName: 'DVIRDefect',
-        search: {
-          fromDate: fromDateTime,
-          toDate: toDateTime
-        }
-      });
-
-      defectFetchStatus = `✅ Found ${allDefects.length} DVIRDefect records from Geotab API. `;
-
-      // Map defects by their DVIR log ID
-      allDefects.forEach(defect => {
-        const logId = extractId(defect.log || defect.dvirLog || defect.DVIRLog);
-        if (logId) {
-          if (!defectMap[logId]) {
-            defectMap[logId] = [];
+      if (defectIds.length > 0) {
+        // Fetch all DVIRDefect records by their IDs
+        const defectRecords = await callGeotabAPI('Get', {
+          typeName: 'DVIRDefect',
+          search: {
+            id: defectIds
           }
-          defectMap[logId].push(defect);
+        });
+
+        console.log('=== FETCHED DEFECT RECORDS ===');
+        console.log(`Total defects fetched: ${defectRecords.length}`);
+        if (defectRecords.length > 0) {
+          console.log('Sample defect:', defectRecords[0]);
+          console.log('Defect fields:', Object.keys(defectRecords[0]).join(', '));
         }
-      });
 
-      const logsWithDefects = Object.keys(defectMap).length;
-      defectFetchStatus += `Mapped to ${logsWithDefects} DVIR logs with defects.`;
+        // Create a map of defect ID -> defect object
+        const defectById = {};
+        defectRecords.forEach(def => {
+          defectById[def.id] = def;
+        });
 
-      if (allDefects.length > 0) {
-        // Show sample defect structure in UI for visibility
-        const sampleDefect = allDefects[0];
-        const defectFields = Object.keys(sampleDefect).join(', ');
-        defectFetchStatus += ` Sample defect fields: ${defectFields}`;
+        // Now map defects to their DVIR logs
+        dvirLogs.forEach(log => {
+          if (log.defects && Array.isArray(log.defects)) {
+            const logDefects = [];
+            log.defects.forEach(defRef => {
+              if (defRef.id && defectById[defRef.id]) {
+                logDefects.push(defectById[defRef.id]);
+              }
+            });
+            if (logDefects.length > 0) {
+              defectMap[log.id] = logDefects;
+            }
+          }
+        });
 
-        // Also log to console so it's not lost
-        console.log('=== DEFECT FIELD NAMES ===');
-        console.log('Available fields in DVIRDefect objects:', defectFields);
-        console.log('Sample defect object:', sampleDefect);
+        showMessage('infoBanner', `✅ Loaded ${defectRecords.length} defect records for ${Object.keys(defectMap).length} inspections`, 'success');
+      } else {
+        showMessage('infoBanner', `✅ No defects found in this date range`, 'success');
       }
 
-      showMessage('infoBanner', defectFetchStatus, 'success');
-
     } catch (error) {
-      defectFetchStatus = `⚠️ Could not fetch DVIRDefect records: ${error.message}`;
-      showMessage('infoBanner', defectFetchStatus, 'warning');
+      console.error('Error fetching defects:', error);
+      showMessage('infoBanner', `⚠️ Could not fetch defect details: ${error.message}`, 'warning');
     }
 
     // Fetch custom data to get Hubbometer field values
@@ -1379,37 +1453,25 @@ document.getElementById('downloadCsv').onclick = function(){
           hasDefects='YES';
           defectCount=String(d.length);
           defectDetails = d.map(def => {
-            // Try various field names that Geotab might use
             let defectName = '';
-
-            // Check nested defectList object
-            if (def.defectList && typeof def.defectList === 'object') {
-              defectName = def.defectList.name || def.defectList.Name || '';
+            // Check DefectRemarks array
+            if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
+              defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
             }
-            // Check nested defectAsPartOf object
-            if (!defectName && def.defectAsPartOf && typeof def.defectAsPartOf === 'object') {
-              defectName = def.defectAsPartOf.name || def.defectAsPartOf.Name || '';
+            // Check Defect object
+            if (!defectName && def.defect && typeof def.defect === 'object') {
+              defectName = def.defect.name || def.defect.Name || '';
             }
-            // Try direct fields
+            // Check Part object
+            if (!defectName && def.part && typeof def.part === 'object') {
+              defectName = def.part.name || def.part.Name || '';
+            }
+            // Fallback
             if (!defectName) {
-              defectName = def.defectName || def.name || def.remark || def.defectRemark ||
-                          def.defectListName || def.defectListAsPartName || '';
+              defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
             }
-
-            // If still no defect name, show the raw object keys to debug
-            if (!defectName) {
-              if (typeof def === 'string') {
-                defectName = def;
-              } else if (typeof def === 'object') {
-                const keys = Object.keys(def).join(', ');
-                defectName = `[Fields: ${keys}]`;
-              } else {
-                defectName = 'Unknown defect';
-              }
-            }
-
-            const severity = def.defectSeverity || def.severity || def.Severity || '';
-            return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
+            const repairStatus = def.repairStatus || def.RepairStatus || '';
+            return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
           }).join('; ');
         }
       }
@@ -1532,12 +1594,25 @@ document.getElementById('downloadReport').onclick = function(){
           const d = JSON.parse(r.defects);
           if(Array.isArray(d)&&d.length>0) {
             const defectList = d.map(def => {
-              // Try various field names that Geotab might use
-              const defectName = def.defectName || def.name || def.defectRemark || def.remark ||
-                                def.defectListName || def.defectListAsPartName ||
-                                (typeof def === 'string' ? def : 'Unknown defect');
-              const severity = def.defectSeverity || def.severity || def.Severity || '';
-              return `${defectName}${severity ? ' (' + severity + ')' : ''}`;
+              let defectName = '';
+              // Check DefectRemarks array
+              if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
+                defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
+              }
+              // Check Defect object
+              if (!defectName && def.defect && typeof def.defect === 'object') {
+                defectName = def.defect.name || def.defect.Name || '';
+              }
+              // Check Part object
+              if (!defectName && def.part && typeof def.part === 'object') {
+                defectName = def.part.name || def.part.Name || '';
+              }
+              // Fallback
+              if (!defectName) {
+                defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
+              }
+              const repairStatus = def.repairStatus || def.RepairStatus || '';
+              return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
             }).join(', ');
             defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
           }
