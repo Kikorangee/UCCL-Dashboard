@@ -1504,11 +1504,16 @@ document.getElementById('getDvir').onclick = async function(){
 
     if (locationsToResolve.length > 0) {
       showMessage('infoBanner', `🌍 Resolving ${locationsToResolve.length} addresses and matching zones...`, 'info');
-      
+
       await resolveAllAddresses(mappedDvirData);
-      
+
+      // Re-render with sorted data after addresses are resolved
+      const filteredDataAfterResolve = filterDataByZone(mappedDvirData, selectedZone);
+      const sortedDataAfterResolve = sortData(filteredDataAfterResolve, currentSortColumn, currentSortDirection);
+      renderTable(sortedDataAfterResolve);
+
       renderZoneStatistics(mappedDvirData);
-      
+
       const successCount = mappedDvirData.filter(r => r.resolvedAddress && r.resolvedAddress.trim()).length;
       const zoneCount = mappedDvirData.filter(r => r.zones && r.zones.length > 0).length;
       const defectCount = mappedDvirData.filter(r => r.defects && r.defects !== '[]' && r.defects !== '').length;
