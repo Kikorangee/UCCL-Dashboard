@@ -394,6 +394,36 @@ let serverUsed = null;
 let vehicleData = [];
 let idlingData = [];
 let currentSort = { column: 'idlingTime', direction: 'desc' };
+let chartInstance = null;
+
+// Vehicle role and type mappings (from device_groups.xlsx analysis)
+const VEHICLE_MAPPINGS = {
+  roles: {
+    // Project Managers (Alex Fitch)
+    pm: ['b218', 'b17F', 'bE3', 'b131', 'b130'],
+    // Project Engineers (Alex Fitch)
+    pe: ['b18E', 'b18C', 'bFA', 'bD2', 'bE2', 'b111', 'b184', 'b189'],
+    // Supervisors (Tania Tipene)
+    supervisor: ['b198', 'bFD', 'b195', 'b18B', 'b10B', 'b188', 'b181'],
+    // Trade Staff (Tania Tipene) - 91 vehicles, sample shown
+    tradestaff: ['b17D', 'b176', 'b181', 'b174', 'b19E', 'bCE', 'b16D', 'bFF', 'b169', 'b180', 'b130', 'b105', 'b102', 'bD6', 'b167', 'b178', 'b101', 'bD8', 'b122', 'b187', 'bD5', 'b17E', 'b16C', 'b175', 'b119', 'b12A', 'bD1', 'b183', 'b186', 'b161', 'b2C5', 'b2C6', 'b2C7', 'b164', 'b16A', 'b166', 'b170', 'b160', 'b16E', 'b2C8', 'b17B', 'b179', 'b173', 'b16B', 'b17A', 'b165', 'b15F', 'b172', 'b107', 'b168', 'b307', 'b162', 'b163', 'b177', 'b171', 'b18F', 'b190', 'b18D', 'b194', 'bFC', 'b17C', 'b10D', 'b108', 'bCC', 'b11E', 'bD9', 'b114', 'b115', 'b19D', 'b11C', 'b132', 'b10A', 'b11B', 'b18A', 'b196', 'b116', 'b197', 'b193', 'b10C', 'b19C', 'b10F', 'b106', 'b112', 'b104', 'b109', 'b11A', 'b199', 'b19B'],
+    // Other Management (Paul Mandeno)
+    other_mgmt: ['bD0', 'bCA', 'bC9', 'bE2', 'b185', 'b16F', 'b2', 'bF3', 'bCB']
+  },
+  vehicleTypes: {
+    // Light vehicles: 71 vehicles (5min threshold, <100m movement)
+    light: ['b18E', 'bD0', 'b198', 'b17D', 'bFD', 'b181', 'b218', 'b18C', 'bFA', 'b17F', 'b19E', 'b195', 'bCE', 'bCA', 'b18B', 'bE3', 'b131', 'bC9', 'b130', 'b105', 'b102', 'bE2', 'bD6', 'b113', 'b111', 'bD8', 'b10B', 'b122', 'b187', 'b188', 'bD5', 'b189', 'b17E', 'bD2', 'b182', 'b192', 'b19A', 'bDA', 'b119', 'b185', 'b12A', 'bD1', 'b16F', 'b184', 'b2', 'bF3', 'bB2', 'b186', 'bCB', 'bFC', 'b17C', 'b10D', 'b108', 'bCC', 'b11E', 'bD9', 'b114', 'b115', 'b19D', 'b11C', 'b132', 'b10A', 'b11B', 'b18A', 'b196', 'b116', 'b197', 'b193', 'b10C', 'b19C'],
+    // Heavy vehicles: 15 vehicles (10min threshold, <100m movement)
+    heavy: ['b174', 'bFF', 'b19B', 'b199', 'b10F', 'b106', 'b112', 'b104', 'b109', 'b11A', 'b18F'],
+    // Machinery: 46 vehicles (using diagnostic + machine data)
+    machinery: ['b176', 'b161', 'b2C5', 'b2C6', 'b2C7', 'b164', 'b16A', 'b166', 'b170', 'b160', 'b16E', 'b2C8', 'b17B', 'b179', 'b173', 'b16B', 'b17A', 'b165', 'b167', 'b15F', 'b172', 'b107', 'b175', 'b191', 'b169', 'b16D', 'b16C', 'b168', 'b307', 'b162', 'b163', 'b177', 'b171', 'b183', 'b190', 'b18D', 'b194']
+  },
+  thresholds: {
+    light: { minutes: 5, meters: 100 },
+    heavy: { minutes: 10, meters: 100 },
+    machinery: { minutes: 10, meters: 100 }
+  }
+};
 
 // Initialize dates
 function setDefaultDates() {
@@ -480,6 +510,177 @@ document.getElementById('authButton').onclick = async function() {
   }
 };
 
+// Helper: Get vehicle type from device ID
+function getVehicleType(deviceId) {
+  if (VEHICLE_MAPPINGS.vehicleTypes.light.includes(deviceId)) return 'light';
+  if (VEHICLE_MAPPINGS.vehicleTypes.heavy.includes(deviceId)) return 'heavy';
+  if (VEHICLE_MAPPINGS.vehicleTypes.machinery.includes(deviceId)) return 'machinery';
+  return 'light'; // default
+}
+
+// Helper: Get idle threshold for vehicle
+function getIdleThreshold(deviceId) {
+  const type = getVehicleType(deviceId);
+  return VEHICLE_MAPPINGS.thresholds[type];
+}
+
+// Helper: Filter vehicles by role
+function filterVehiclesByRole(roleSelection) {
+  if (roleSelection === 'all') {
+    return [...VEHICLE_MAPPINGS.vehicleTypes.light, ...VEHICLE_MAPPINGS.vehicleTypes.heavy, ...VEHICLE_MAPPINGS.vehicleTypes.machinery];
+  } else if (roleSelection === 'supervisors') {
+    // Supervisors + Trade Staff (Tania Tipene)
+    return [...VEHICLE_MAPPINGS.roles.supervisor, ...VEHICLE_MAPPINGS.roles.tradestaff];
+  } else if (roleSelection === 'projectmanagers') {
+    // Project Managers + Engineers (Alex Fitch)
+    return [...VEHICLE_MAPPINGS.roles.pm, ...VEHICLE_MAPPINGS.roles.pe];
+  }
+  return [];
+}
+
+// Method 1: Query diagnostic data for idling status
+async function detectIdlingMethod1_Diagnostic(deviceIds, fromDateTime, toDateTime) {
+  try {
+    // Query StatusData for EngineSpeed and IgnitionStatus
+    const statusData = await callGeotabAPI('Get', {
+      typeName: 'StatusData',
+      search: {
+        deviceSearch: { id: deviceIds.map(id => ({ id })) },
+        diagnosticSearch: { id: ['DiagnosticEngineSpeedId', 'DiagnosticIgnitionId'] },
+        fromDate: fromDateTime,
+        toDate: toDateTime
+      }
+    });
+
+    return statusData;
+  } catch (error) {
+    console.error('Method 1 (Diagnostic) error:', error);
+    return [];
+  }
+}
+
+// Method 2: Calculate idling from GPS speed + engine status
+async function detectIdlingMethod2_GPS(devices, fromDateTime, toDateTime) {
+  const idlingEvents = [];
+
+  for (const device of devices) {
+    try {
+      // Get LogRecords (GPS data with speed)
+      const logRecords = await callGeotabAPI('Get', {
+        typeName: 'LogRecord',
+        search: {
+          deviceSearch: { id: device.id },
+          fromDate: fromDateTime,
+          toDate: toDateTime
+        },
+        resultsLimit: 50000
+      });
+
+      // Get StatusData for engine status
+      const engineData = await callGeotabAPI('Get', {
+        typeName: 'StatusData',
+        search: {
+          deviceSearch: { id: device.id },
+          diagnosticSearch: { id: 'DiagnosticEngineSpeedId' },
+          fromDate: fromDateTime,
+          toDate: toDateTime
+        }
+      });
+
+      // Calculate idling: engine on (speed > 0 RPM) + GPS speed < 1 km/h + distance < threshold
+      const threshold = getIdleThreshold(device.id);
+      let currentIdleStart = null;
+      let totalIdlingMs = 0;
+      const events = [];
+
+      for (let i = 0; i < logRecords.length; i++) {
+        const record = logRecords[i];
+        const speed = record.speed || 0; // km/h
+        const time = new Date(record.dateTime);
+
+        // Find matching engine data
+        const engineStatus = engineData.find(e =>
+          Math.abs(new Date(e.dateTime).getTime() - time.getTime()) < 60000 // within 1 minute
+        );
+        const engineSpeed = engineStatus ? engineStatus.data : 0;
+
+        // Idling condition: engine on (RPM > 0) AND speed < 1 km/h
+        const isIdling = engineSpeed > 0 && speed < 1;
+
+        if (isIdling && !currentIdleStart) {
+          currentIdleStart = time;
+        } else if (!isIdling && currentIdleStart) {
+          const idleDuration = time.getTime() - currentIdleStart.getTime();
+          if (idleDuration >= threshold.minutes * 60000) {
+            events.push({
+              start: currentIdleStart,
+              end: time,
+              duration: idleDuration,
+              location: record.latitude && record.longitude ? { lat: record.latitude, lon: record.longitude } : null
+            });
+            totalIdlingMs += idleDuration;
+          }
+          currentIdleStart = null;
+        }
+      }
+
+      // Close final event if still idling
+      if (currentIdleStart) {
+        const idleDuration = new Date(toDateTime).getTime() - currentIdleStart.getTime();
+        if (idleDuration >= threshold.minutes * 60000) {
+          events.push({
+            start: currentIdleStart,
+            end: new Date(toDateTime),
+            duration: idleDuration,
+            location: null
+          });
+          totalIdlingMs += idleDuration;
+        }
+      }
+
+      if (events.length > 0) {
+        idlingEvents.push({
+          device: device,
+          totalIdling: totalIdlingMs,
+          events: events,
+          method: 'gps'
+        });
+      }
+
+    } catch (error) {
+      console.error(`Method 2 (GPS) error for ${device.name}:`, error);
+    }
+  }
+
+  return idlingEvents;
+}
+
+// Method 3: Use existing Geotab rules if configured
+async function detectIdlingMethod3_Rules(deviceIds, fromDateTime, toDateTime) {
+  try {
+    // Query ExceptionEvents for idling-related exceptions
+    const exceptions = await callGeotabAPI('Get', {
+      typeName: 'ExceptionEvent',
+      search: {
+        deviceSearch: { id: deviceIds.map(id => ({ id })) },
+        fromDate: fromDateTime,
+        toDate: toDateTime
+      }
+    });
+
+    // Filter for idling-related rules
+    const idlingExceptions = exceptions.filter(e =>
+      e.rule && e.rule.name &&
+      (e.rule.name.toLowerCase().includes('idle') || e.rule.name.toLowerCase().includes('idling'))
+    );
+
+    return idlingExceptions;
+  } catch (error) {
+    console.error('Method 3 (Rules) error:', error);
+    return [];
+  }
+}
+
 // Generate Report
 document.getElementById('generateReport').onclick = async function() {
   if (!credentials) {
@@ -500,13 +701,96 @@ document.getElementById('generateReport').onclick = async function() {
   const fromDateTime = `${fromDate}T${fromTime}:00.000Z`;
   const toDateTime = `${toDate}T${toTime}:59.999Z`;
 
+  const userRole = document.getElementById('userRole').value;
+  const vehicleTypeFilter = document.getElementById('vehicleType').value;
+  const exceptionFilter = document.getElementById('exceptionFilter').value;
+  const customThreshold = parseInt(document.getElementById('customThreshold').value) || 30;
+
   try {
-    showMessage('🔄 Fetching idling data from Geotab...', 'info');
+    showMessage('🔄 Step 1/4: Fetching vehicles from Geotab...', 'info');
 
-    // TODO: Implement actual Geotab API calls for idling data
-    // This is a placeholder structure
+    // Get all devices
+    const allDevices = await callGeotabAPI('Get', {
+      typeName: 'Device',
+      resultsLimit: 5000
+    });
 
-    showMessage('⚠️ Dashboard structure created. Integration with Geotab StatusData API needed.', 'warning');
+    // Filter by role
+    const roleDeviceIds = filterVehiclesByRole(userRole);
+    let filteredDevices = allDevices.filter(d => roleDeviceIds.includes(d.id));
+
+    // Filter by vehicle type
+    if (vehicleTypeFilter !== 'all') {
+      const typeDeviceIds = VEHICLE_MAPPINGS.vehicleTypes[vehicleTypeFilter] || [];
+      filteredDevices = filteredDevices.filter(d => typeDeviceIds.includes(d.id));
+    }
+
+    vehicleData = filteredDevices;
+    showMessage(`🔄 Step 2/4: Analyzing ${vehicleData.length} vehicles using 3 detection methods...`, 'info');
+
+    // Run all 3 detection methods in parallel
+    const [method1Data, method2Data, method3Data] = await Promise.all([
+      detectIdlingMethod1_Diagnostic(vehicleData.map(d => d.id), fromDateTime, toDateTime),
+      detectIdlingMethod2_GPS(vehicleData, fromDateTime, toDateTime),
+      detectIdlingMethod3_Rules(vehicleData.map(d => d.id), fromDateTime, toDateTime)
+    ]);
+
+    showMessage('🔄 Step 3/4: Processing idling data...', 'info');
+
+    // Combine results from all 3 methods
+    const idlingResults = {};
+
+    // Process Method 2 (GPS) - most reliable
+    method2Data.forEach(result => {
+      const deviceId = result.device.id;
+      idlingResults[deviceId] = {
+        device: result.device,
+        totalIdling: result.totalIdling,
+        events: result.events,
+        vehicleType: getVehicleType(deviceId),
+        methods: ['GPS+Engine']
+      };
+    });
+
+    // Augment with Method 3 (Rules) data
+    method3Data.forEach(exception => {
+      const deviceId = exception.device.id;
+      if (!idlingResults[deviceId]) {
+        const device = vehicleData.find(d => d.id === deviceId);
+        if (device) {
+          idlingResults[deviceId] = {
+            device: device,
+            totalIdling: exception.duration || 0,
+            events: [{ start: exception.activeFrom, end: exception.activeTo, duration: exception.duration || 0 }],
+            vehicleType: getVehicleType(deviceId),
+            methods: ['Geotab Rules']
+          };
+        }
+      } else {
+        idlingResults[deviceId].methods.push('Geotab Rules');
+      }
+    });
+
+    // Convert to array
+    idlingData = Object.values(idlingResults);
+
+    // Apply exception filter
+    if (exceptionFilter === 'excessive') {
+      idlingData = idlingData.filter(d => d.totalIdling >= 30 * 60000);
+    } else if (exceptionFilter === 'custom') {
+      idlingData = idlingData.filter(d => d.totalIdling >= customThreshold * 60000);
+    }
+
+    showMessage('🔄 Step 4/4: Generating visualizations...', 'info');
+
+    // Update statistics
+    updateStatistics();
+
+    // Render chart
+    renderChart();
+
+    // Render table
+    renderTable();
 
     // Show sections
     document.getElementById('statsSection').style.display = 'block';
@@ -514,10 +798,138 @@ document.getElementById('generateReport').onclick = async function() {
     document.getElementById('tableSection').style.display = 'block';
     document.getElementById('exportPowerBI').disabled = false;
 
+    showMessage(`✅ Report generated successfully! Found ${idlingData.length} vehicles with idling data.`, 'success');
+
   } catch (error) {
     showMessage(`❌ Error: ${error.message}`, 'error');
+    console.error('Full error:', error);
   }
 };
+
+// Update statistics
+function updateStatistics() {
+  if (idlingData.length === 0) {
+    document.getElementById('statTotalVehicles').textContent = '0';
+    document.getElementById('statTotalIdling').textContent = '0h';
+    document.getElementById('statTotalIdlingMins').textContent = '';
+    document.getElementById('statAvgIdling').textContent = '0m';
+    document.getElementById('statIdlingEvents').textContent = '0';
+    document.getElementById('statWorstOffender').textContent = '-';
+    document.getElementById('statWorstOffenderTime').textContent = '';
+    return;
+  }
+
+  // Total vehicles
+  document.getElementById('statTotalVehicles').textContent = idlingData.length;
+
+  // Total idling time
+  const totalIdlingMs = idlingData.reduce((sum, d) => sum + d.totalIdling, 0);
+  const totalHours = Math.floor(totalIdlingMs / 3600000);
+  const totalMinutes = Math.floor((totalIdlingMs % 3600000) / 60000);
+  document.getElementById('statTotalIdling').textContent = `${totalHours}h`;
+  document.getElementById('statTotalIdlingMins').textContent = `${totalMinutes}m`;
+
+  // Average idling per vehicle
+  const avgIdlingMs = totalIdlingMs / idlingData.length;
+  const avgMinutes = Math.floor(avgIdlingMs / 60000);
+  document.getElementById('statAvgIdling').textContent = `${avgMinutes}m`;
+
+  // Total events
+  const totalEvents = idlingData.reduce((sum, d) => sum + (d.events ? d.events.length : 0), 0);
+  document.getElementById('statIdlingEvents').textContent = totalEvents;
+
+  // Worst offender
+  const sorted = [...idlingData].sort((a, b) => b.totalIdling - a.totalIdling);
+  const worst = sorted[0];
+  const worstHours = Math.floor(worst.totalIdling / 3600000);
+  const worstMins = Math.floor((worst.totalIdling % 3600000) / 60000);
+  document.getElementById('statWorstOffender').textContent = worst.device.name || worst.device.id;
+  document.getElementById('statWorstOffenderTime').textContent = `${worstHours}h ${worstMins}m idling`;
+}
+
+// Render chart
+function renderChart() {
+  const ctx = document.getElementById('idlingChart').getContext('2d');
+
+  // Destroy existing chart
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
+  // Prepare data - top 20 vehicles by idling time
+  const sortedData = [...idlingData].sort((a, b) => b.totalIdling - a.totalIdling).slice(0, 20);
+  const labels = sortedData.map(d => d.device.name || d.device.id);
+  const data = sortedData.map(d => Math.floor(d.totalIdling / 60000)); // convert to minutes
+
+  // Color code by severity
+  const backgroundColors = data.map(mins => {
+    if (mins > 30) return 'rgba(255, 90, 103, 0.8)'; // danger
+    if (mins > 15) return 'rgba(255, 176, 32, 0.8)'; // warn
+    return 'rgba(39, 209, 127, 0.8)'; // ok
+  });
+
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Idling Time (minutes)',
+        data: data,
+        backgroundColor: backgroundColors,
+        borderColor: backgroundColors.map(c => c.replace('0.8', '1')),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: '#121a2b',
+          titleColor: '#e7eefc',
+          bodyColor: '#e7eefc',
+          borderColor: '#1d2a44',
+          borderWidth: 1,
+          callbacks: {
+            label: function(context) {
+              const mins = context.parsed.y;
+              const hours = Math.floor(mins / 60);
+              const remainMins = mins % 60;
+              return `${hours}h ${remainMins}m idling`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: '#1d2a44'
+          },
+          ticks: {
+            color: '#a7b1c2',
+            callback: function(value) {
+              return value + ' min';
+            }
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            color: '#a7b1c2',
+            maxRotation: 45,
+            minRotation: 45
+          }
+        }
+      }
+    }
+  });
+}
 
 // Sort table
 function sortTable(column) {
@@ -532,13 +944,138 @@ function sortTable(column) {
 
 // Render table
 function renderTable() {
-  // TODO: Implement table rendering with actual data
+  const tbody = document.getElementById('tableBody');
+
+  if (idlingData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted)">No idling data found for selected filters</td></tr>';
+    return;
+  }
+
+  // Sort data
+  const sorted = [...idlingData].sort((a, b) => {
+    let valA, valB;
+
+    switch(currentSort.column) {
+      case 'vehicle':
+        valA = (a.device.name || a.device.id).toLowerCase();
+        valB = (b.device.name || b.device.id).toLowerCase();
+        break;
+      case 'type':
+        valA = a.vehicleType;
+        valB = b.vehicleType;
+        break;
+      case 'idlingTime':
+        valA = a.totalIdling;
+        valB = b.totalIdling;
+        break;
+      case 'events':
+        valA = a.events ? a.events.length : 0;
+        valB = b.events ? b.events.length : 0;
+        break;
+      case 'avgEvent':
+        valA = a.events && a.events.length > 0 ? a.totalIdling / a.events.length : 0;
+        valB = b.events && b.events.length > 0 ? b.totalIdling / b.events.length : 0;
+        break;
+      case 'worstEvent':
+        valA = a.events && a.events.length > 0 ? Math.max(...a.events.map(e => e.duration)) : 0;
+        valB = b.events && b.events.length > 0 ? Math.max(...b.events.map(e => e.duration)) : 0;
+        break;
+      default:
+        valA = a.totalIdling;
+        valB = b.totalIdling;
+    }
+
+    if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+    if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  // Render rows
+  tbody.innerHTML = sorted.map(d => {
+    const vehicleName = d.device.name || d.device.id;
+    const vehicleType = d.vehicleType.charAt(0).toUpperCase() + d.vehicleType.slice(1);
+
+    const totalHours = Math.floor(d.totalIdling / 3600000);
+    const totalMins = Math.floor((d.totalIdling % 3600000) / 60000);
+    const totalIdlingStr = `${totalHours}h ${totalMins}m`;
+
+    const eventCount = d.events ? d.events.length : 0;
+
+    const avgEventMs = eventCount > 0 ? d.totalIdling / eventCount : 0;
+    const avgMins = Math.floor(avgEventMs / 60000);
+    const avgEventStr = `${avgMins}m`;
+
+    const worstEventMs = eventCount > 0 ? Math.max(...d.events.map(e => e.duration)) : 0;
+    const worstMins = Math.floor(worstEventMs / 60000);
+    const worstEventStr = `${worstMins}m`;
+
+    // Status badge
+    let statusBadge;
+    const totalIdlingMins = d.totalIdling / 60000;
+    if (totalIdlingMins > 30) {
+      statusBadge = '<span class="badge badge-danger">Excessive</span>';
+    } else if (totalIdlingMins > 15) {
+      statusBadge = '<span class="badge badge-warn">High</span>';
+    } else {
+      statusBadge = '<span class="badge badge-ok">Normal</span>';
+    }
+
+    return `
+      <tr class="clickable" onclick="showDrilldown('${d.device.id}')">
+        <td>${vehicleName}</td>
+        <td>${vehicleType}</td>
+        <td>${totalIdlingStr}</td>
+        <td>${eventCount}</td>
+        <td>${avgEventStr}</td>
+        <td>${worstEventStr}</td>
+        <td>${statusBadge}</td>
+        <td><button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="event.stopPropagation();showDrilldown('${d.device.id}')">View Events</button></td>
+      </tr>
+    `;
+  }).join('');
 }
 
 // Drill-down modal
 function showDrilldown(vehicleId) {
+  const vehicleData = idlingData.find(d => d.device.id === vehicleId);
+  if (!vehicleData) return;
+
+  document.getElementById('modalTitle').textContent = `Idling Events: ${vehicleData.device.name || vehicleData.device.id}`;
+
+  const events = vehicleData.events || [];
+  if (events.length === 0) {
+    document.getElementById('modalBody').innerHTML = '<p style="color:var(--muted)">No individual events recorded</p>';
+  } else {
+    const eventsHtml = events.map((event, idx) => {
+      const duration = event.duration;
+      const hours = Math.floor(duration / 3600000);
+      const mins = Math.floor((duration % 3600000) / 60000);
+      const secs = Math.floor((duration % 60000) / 1000);
+
+      const startTime = new Date(event.start).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
+      const endTime = new Date(event.end).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
+
+      const location = event.location ? `${event.location.lat.toFixed(5)}, ${event.location.lon.toFixed(5)}` : 'N/A';
+
+      return `
+        <div style="background:#0f182b;border:1px solid #1f2b47;border-radius:8px;padding:15px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <strong style="font-size:16px">Event ${idx + 1}</strong>
+            <span class="badge ${duration > 1800000 ? 'badge-danger' : duration > 900000 ? 'badge-warn' : 'badge-ok'}">${hours}h ${mins}m ${secs}s</span>
+          </div>
+          <div style="color:var(--muted);font-size:13px;line-height:1.6">
+            <div>⏱️ Start: ${startTime}</div>
+            <div>⏱️ End: ${endTime}</div>
+            <div>📍 Location: ${location}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('modalBody').innerHTML = eventsHtml;
+  }
+
   document.getElementById('drilldownModal').classList.add('show');
-  // TODO: Populate modal with individual idling events
 }
 
 function closeModal() {
@@ -547,8 +1084,42 @@ function closeModal() {
 
 // Export to Power BI
 document.getElementById('exportPowerBI').onclick = function() {
-  // TODO: Generate CSV export for Power BI
-  showMessage('Exporting data for Power BI...', 'info');
+  if (idlingData.length === 0) {
+    showMessage('No data to export', 'warning');
+    return;
+  }
+
+  // Generate CSV data
+  const headers = ['Vehicle ID', 'Vehicle Name', 'Vehicle Type', 'Total Idling (minutes)', 'Event Count', 'Avg Event Duration (minutes)', 'Worst Event (minutes)', 'Detection Methods'];
+  const rows = idlingData.map(d => {
+    const vehicleName = (d.device.name || '').replace(/,/g, ' ');
+    const totalMins = Math.floor(d.totalIdling / 60000);
+    const eventCount = d.events ? d.events.length : 0;
+    const avgMins = eventCount > 0 ? Math.floor((d.totalIdling / eventCount) / 60000) : 0;
+    const worstMins = eventCount > 0 ? Math.floor(Math.max(...d.events.map(e => e.duration)) / 60000) : 0;
+    const methods = (d.methods || []).join('+');
+
+    return [d.device.id, vehicleName, d.vehicleType, totalMins, eventCount, avgMins, worstMins, methods];
+  });
+
+  // Build CSV
+  let csv = headers.join(',') + '\n';
+  rows.forEach(row => {
+    csv += row.join(',') + '\n';
+  });
+
+  // Download CSV
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `UCCL_Idling_Report_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showMessage('✅ CSV exported successfully for Power BI!', 'success');
 };
 
 // Logout
