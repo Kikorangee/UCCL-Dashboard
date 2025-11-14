@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UCCL Idling Dashboard</title>
+  <style>
+    :root{
+      --bg:#0b1220;--card:#121a2b;--muted:#a7b1c2;--text:#e7eefc;
+      --accent:#4ea1ff;--warn:#ffb020;--danger:#ff5a67;--ok:#27d17f;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      background:var(--bg);color:var(--text);
+      font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      padding:0;margin:0;
+    }
+    header{
+      padding:20px 24px;border-bottom:2px solid #1d2a44;
+      background:var(--card);
+    }
+    header h1{font-size:24px;font-weight:700;margin-bottom:4px}
+    header .subtitle{color:var(--muted);font-size:14px}
+
+    .container{max-width:1600px;margin:0 auto;padding:20px}
+
+    .controls-section{
+      background:var(--card);border:1px solid #1d2a44;
+      border-radius:12px;padding:20px;margin-bottom:20px;
+    }
+    .control-row{
+      display:flex;gap:15px;flex-wrap:wrap;align-items:center;
+      margin-bottom:15px;
+    }
+    .control-row:last-child{margin-bottom:0}
+    .control-group{
+      display:flex;flex-direction:column;gap:6px;min-width:200px;
+    }
+    .control-label{
+      color:var(--muted);font-size:12px;font-weight:600;
+      text-transform:uppercase;letter-spacing:0.5px;
+    }
+
+    select, input[type="date"], input[type="time"], input[type="number"]{
+      background:#0e1628;border:1px solid #23324f;
+      color:var(--text);padding:10px 12px;border-radius:8px;
+      font-size:14px;width:100%;
+    }
+    select:focus, input:focus{
+      outline:none;border-color:var(--accent);
+    }
+
+    .btn{
+      background:var(--accent);border:none;color:#fff;
+      padding:11px 20px;border-radius:8px;font-weight:600;
+      cursor:pointer;font-size:14px;transition:all 0.2s;
+    }
+    .btn:hover{background:#3a8aea;transform:translateY(-1px)}
+    .btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+    .btn-success{background:var(--ok)}
+    .btn-success:hover{background:#20b56b}
+    .btn-secondary{background:#22314f}
+    .btn-secondary:hover{background:#2a3d5f}
+
+    .stats-grid{
+      display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+      gap:15px;margin-bottom:20px;
+    }
+    .stat-card{
+      background:var(--card);border:1px solid #1d2a44;
+      border-radius:12px;padding:18px;
+    }
+    .stat-label{color:var(--muted);font-size:12px;margin-bottom:8px}
+    .stat-value{font-size:32px;font-weight:800;color:var(--text)}
+    .stat-sublabel{color:var(--muted);font-size:11px;margin-top:4px}
+
+    .chart-container{
+      background:var(--card);border:1px solid #1d2a44;
+      border-radius:12px;padding:20px;margin-bottom:20px;
+    }
+    .chart-title{font-size:16px;font-weight:600;margin-bottom:15px}
+    canvas{width:100%;height:300px}
+
+    .table-container{
+      background:var(--card);border:1px solid #1d2a44;
+      border-radius:12px;padding:20px;overflow-x:auto;
+    }
+    table{width:100%;border-collapse:separate;border-spacing:0 6px}
+    thead th{
+      color:var(--muted);font-weight:700;text-align:left;
+      padding:10px;font-size:12px;text-transform:uppercase;
+      cursor:pointer;user-select:none;
+    }
+    thead th:hover{color:var(--text)}
+    tbody td{
+      padding:12px 10px;background:#0f182b;
+      border-top:1px solid #1f2b47;border-bottom:1px solid #1f2b47;
+    }
+    tbody tr td:first-child{
+      border-left:1px solid #1f2b47;
+      border-top-left-radius:8px;border-bottom-left-radius:8px;
+    }
+    tbody tr td:last-child{
+      border-right:1px solid #1f2b47;
+      border-top-right-radius:8px;border-bottom-right-radius:8px;
+    }
+    tbody tr:hover td{background:#131e35}
+    tbody tr.clickable{cursor:pointer}
+
+    .badge{
+      padding:4px 10px;border-radius:6px;font-size:11px;
+      font-weight:700;display:inline-block;
+    }
+    .badge-danger{
+      background:rgba(255,90,103,.15);color:#ff8c94;
+      border:1px solid rgba(255,90,103,.3);
+    }
+    .badge-warn{
+      background:rgba(255,176,32,.15);color:#ffd08a;
+      border:1px solid rgba(255,176,32,.3);
+    }
+    .badge-ok{
+      background:rgba(39,209,127,.15);color:#8cf0c1;
+      border:1px solid rgba(39,209,127,.3);
+    }
+
+    .alert{
+      padding:15px 18px;border-radius:8px;margin-bottom:20px;
+      border-left:4px solid;
+    }
+    .alert-info{
+      background:rgba(78,161,255,.1);border-color:var(--accent);
+      color:var(--text);
+    }
+    .alert-success{
+      background:rgba(39,209,127,.1);border-color:var(--ok);
+      color:var(--text);
+    }
+    .alert-warning{
+      background:rgba(255,176,32,.1);border-color:var(--warn);
+      color:var(--text);
+    }
+    .alert-error{
+      background:rgba(255,90,103,.1);border-color:var(--danger);
+      color:var(--text);
+    }
+
+    .modal{
+      display:none;position:fixed;top:0;left:0;
+      width:100%;height:100%;background:rgba(0,0,0,0.8);
+      z-index:1000;align-items:center;justify-content:center;
+    }
+    .modal.show{display:flex}
+    .modal-content{
+      background:var(--card);border:1px solid #1d2a44;
+      border-radius:12px;padding:24px;max-width:800px;
+      width:90%;max-height:80vh;overflow-y:auto;
+    }
+    .modal-header{
+      font-size:20px;font-weight:700;margin-bottom:20px;
+      display:flex;justify-content:space-between;align-items:center;
+    }
+    .modal-close{
+      background:none;border:none;color:var(--muted);
+      font-size:28px;cursor:pointer;padding:0;line-height:1;
+    }
+    .modal-close:hover{color:var(--text)}
+
+    .progress-bar{
+      width:100%;height:8px;background:#0e1628;
+      border-radius:4px;overflow:hidden;margin:10px 0;
+    }
+    .progress-fill{
+      height:100%;background:var(--accent);
+      transition:width 0.3s;
+    }
+
+    .legend{
+      display:flex;gap:20px;flex-wrap:wrap;
+      padding:12px 0;border-top:1px solid #1d2a44;
+      margin-top:12px;
+    }
+    .legend-item{
+      display:flex;align-items:center;gap:8px;
+      font-size:13px;color:var(--muted);
+    }
+    .legend-color{
+      width:12px;height:12px;border-radius:3px;
+    }
+
+    .empty-state{
+      text-align:center;padding:60px 20px;
+      color:var(--muted);
+    }
+    .empty-state-icon{font-size:48px;margin-bottom:12px;opacity:0.5}
+
+    #message{display:none}
+    #message.show{display:block}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🚗 UCCL Idling Dashboard</h1>
+    <div class="subtitle">Monitor vehicle idling across light vehicles, heavy vehicles, and machinery</div>
+  </header>
+
+  <div class="container">
+    <!-- Authentication Section -->
+    <div class="controls-section" id="authSection">
+      <h3 style="margin-bottom:15px">Geotab Authentication</h3>
+      <div class="control-row">
+        <div class="control-group">
+          <label class="control-label">Server</label>
+          <input type="text" id="server" value="my.geotab.com" />
+        </div>
+        <div class="control-group">
+          <label class="control-label">Database</label>
+          <input type="text" id="database" placeholder="Database name" />
+        </div>
+        <div class="control-group">
+          <label class="control-label">Username</label>
+          <input type="text" id="username" placeholder="Username" />
+        </div>
+        <div class="control-group">
+          <label class="control-label">Password</label>
+          <input type="password" id="password" placeholder="Password" />
+        </div>
+        <div class="control-group" style="justify-content:flex-end">
+          <label class="control-label" style="opacity:0">Action</label>
+          <button class="btn" id="authButton">🔐 Connect to Geotab</button>
+        </div>
+      </div>
+      <div id="authResult"></div>
+    </div>
+
+    <!-- Main Controls Section (hidden until authenticated) -->
+    <div class="controls-section" id="mainControls" style="display:none">
+      <h3 style="margin-bottom:15px">Report Parameters</h3>
+
+      <div class="control-row">
+        <div class="control-group">
+          <label class="control-label">View/User Role</label>
+          <select id="userRole">
+            <option value="all">All Vehicles (Paul Mandeno / You)</option>
+            <option value="supervisors">Supervisors & Trade Staff (Tania Tipene)</option>
+            <option value="projectmanagers">Project Managers & Engineers (Alex Fitch)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">Vehicle Type</label>
+          <select id="vehicleType">
+            <option value="all">All Vehicle Types</option>
+            <option value="light">Light Vehicles Only</option>
+            <option value="heavy">Heavy Vehicles Only</option>
+            <option value="machinery">Machinery Only</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">Exception Reporting</label>
+          <select id="exceptionFilter">
+            <option value="none">No Exceptions</option>
+            <option value="excessive">Excessive Idling Only (>30min)</option>
+            <option value="custom">Custom Threshold...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <div class="control-group">
+          <label class="control-label">From Date</label>
+          <input type="date" id="fromDate" />
+        </div>
+        <div class="control-group">
+          <label class="control-label">From Time</label>
+          <input type="time" id="fromTime" value="00:00" />
+        </div>
+        <div class="control-group">
+          <label class="control-label">To Date</label>
+          <input type="date" id="toDate" />
+        </div>
+        <div class="control-group">
+          <label class="control-label">To Time</label>
+          <input type="time" id="toTime" value="23:59" />
+        </div>
+      </div>
+
+      <div class="control-row">
+        <div class="control-group">
+          <label class="control-label">Custom Idle Threshold (minutes)</label>
+          <input type="number" id="customThreshold" min="1" value="30" />
+        </div>
+        <div class="control-group" style="flex:1"></div>
+        <div class="control-group" style="justify-content:flex-end">
+          <label class="control-label" style="opacity:0">Actions</label>
+          <button class="btn btn-success" id="generateReport">📊 Generate Idling Report</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="message"></div>
+
+    <!-- Stats Section -->
+    <div id="statsSection" style="display:none">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Vehicles</div>
+          <div class="stat-value" id="statTotalVehicles">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Idling Time</div>
+          <div class="stat-value" id="statTotalIdling">0h</div>
+          <div class="stat-sublabel" id="statTotalIdlingMins"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg Idling per Vehicle</div>
+          <div class="stat-value" id="statAvgIdling">0m</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Idling Events</div>
+          <div class="stat-value" id="statIdlingEvents">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Worst Offender</div>
+          <div class="stat-value" style="font-size:16px" id="statWorstOffender">-</div>
+          <div class="stat-sublabel" id="statWorstOffenderTime"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div id="chartSection" style="display:none" class="chart-container">
+      <div class="chart-title">Idling Distribution by Vehicle</div>
+      <canvas id="idlingChart"></canvas>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background:var(--danger)"></div>
+          <span>Excessive Idling (>30min)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background:var(--warn)"></div>
+          <span>High Idling (15-30min)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background:var(--ok)"></div>
+          <span>Normal Idling (<15min)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <div id="tableSection" style="display:none" class="table-container">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+        <h3 style="margin:0">Idling Report Details</h3>
+        <button class="btn btn-secondary" id="exportPowerBI" disabled>
+          📤 Export for Power BI (CSV)
+        </button>
+      </div>
+      <table id="idlingTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable('vehicle')">Vehicle ▲▼</th>
+            <th onclick="sortTable('type')">Type ▲▼</th>
+            <th onclick="sortTable('idlingTime')">Total Idling ▲▼</th>
+            <th onclick="sortTable('events')">Events ▲▼</th>
+            <th onclick="sortTable('avgEvent')">Avg per Event ▲▼</th>
+            <th onclick="sortTable('worstEvent')">Worst Event ▲▼</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Drill-down Modal -->
+  <div class="modal" id="drilldownModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span id="modalTitle">Idling Events</span>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let credentials = null;
+let serverUsed = null;
+let vehicleData = [];
+let idlingData = [];
+let currentSort = { column: 'idlingTime', direction: 'desc' };
+
+// Initialize dates
+function setDefaultDates() {
+  const today = new Date();
+  const lastWeek = new Date(today.getTime() - 7*24*60*60*1000);
+  document.getElementById('toDate').value = today.toISOString().split('T')[0];
+  document.getElementById('fromDate').value = lastWeek.toISOString().split('T')[0];
+}
+setDefaultDates();
+
+// Show message helper
+function showMessage(msg, type='info') {
+  const el = document.getElementById('message');
+  el.className = `alert alert-${type} show`;
+  el.textContent = msg;
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Geotab API call
+async function callGeotabAPI(method, params) {
+  if (!credentials || !serverUsed) throw new Error('Not authenticated');
+  const response = await fetch(`https://${serverUsed}/apiv1`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      method,
+      params: { ...params, credentials }
+    })
+  });
+  const data = await response.json();
+  if (data.error) throw new Error(data.error.message || 'API Error');
+  return data.result;
+}
+
+// Authentication
+document.getElementById('authButton').onclick = async function() {
+  const server = document.getElementById('server').value.trim();
+  const database = document.getElementById('database').value.trim();
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!server || !database || !username || !password) {
+    showMessage('Please fill in all authentication fields', 'error');
+    return;
+  }
+
+  try {
+    showMessage('Authenticating with Geotab...', 'info');
+    serverUsed = server;
+    const res = await fetch(`https://${server}/apiv1`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        method: 'Authenticate',
+        params: { userName: username, password, database }
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    if (data.result.path && data.result.path !== 'ThisServer') {
+      serverUsed = data.result.path;
+      const res2 = await fetch(`https://${serverUsed}/apiv1`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          method: 'Authenticate',
+          params: { userName: username, password, database }
+        })
+      });
+      const data2 = await res2.json();
+      if (data2.error) throw new Error(data2.error.message);
+      credentials = data2.result.credentials;
+    } else {
+      credentials = data.result.credentials;
+    }
+
+    showMessage('✅ Authentication successful!', 'success');
+    document.getElementById('authResult').innerHTML = '<div class="alert alert-success">Connected to Geotab</div>';
+    document.getElementById('mainControls').style.display = 'block';
+
+  } catch (error) {
+    showMessage(`❌ Authentication failed: ${error.message}`, 'error');
+  }
+};
+
+// Generate Report
+document.getElementById('generateReport').onclick = async function() {
+  if (!credentials) {
+    showMessage('Please authenticate first', 'error');
+    return;
+  }
+
+  const fromDate = document.getElementById('fromDate').value;
+  const toDate = document.getElementById('toDate').value;
+  const fromTime = document.getElementById('fromTime').value;
+  const toTime = document.getElementById('toTime').value;
+
+  if (!fromDate || !toDate) {
+    showMessage('Please select date range', 'error');
+    return;
+  }
+
+  const fromDateTime = `${fromDate}T${fromTime}:00.000Z`;
+  const toDateTime = `${toDate}T${toTime}:59.999Z`;
+
+  try {
+    showMessage('🔄 Fetching idling data from Geotab...', 'info');
+
+    // TODO: Implement actual Geotab API calls for idling data
+    // This is a placeholder structure
+
+    showMessage('⚠️ Dashboard structure created. Integration with Geotab StatusData API needed.', 'warning');
+
+    // Show sections
+    document.getElementById('statsSection').style.display = 'block';
+    document.getElementById('chartSection').style.display = 'block';
+    document.getElementById('tableSection').style.display = 'block';
+    document.getElementById('exportPowerBI').disabled = false;
+
+  } catch (error) {
+    showMessage(`❌ Error: ${error.message}`, 'error');
+  }
+};
+
+// Sort table
+function sortTable(column) {
+  if (currentSort.column === column) {
+    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort.column = column;
+    currentSort.direction = 'desc';
+  }
+  renderTable();
+}
+
+// Render table
+function renderTable() {
+  // TODO: Implement table rendering with actual data
+}
+
+// Drill-down modal
+function showDrilldown(vehicleId) {
+  document.getElementById('drilldownModal').classList.add('show');
+  // TODO: Populate modal with individual idling events
+}
+
+function closeModal() {
+  document.getElementById('drilldownModal').classList.remove('show');
+}
+
+// Export to Power BI
+document.getElementById('exportPowerBI').onclick = function() {
+  // TODO: Generate CSV export for Power BI
+  showMessage('Exporting data for Power BI...', 'info');
+};
+
+// Logout
+function logout() {
+  credentials = null;
+  serverUsed = null;
+  document.getElementById('mainControls').style.display = 'none';
+  document.getElementById('statsSection').style.display = 'none';
+  document.getElementById('chartSection').style.display = 'none';
+  document.getElementById('tableSection').style.display = 'none';
+  showMessage('Logged out', 'info');
+}
+</script>
+</body>
+</html>
