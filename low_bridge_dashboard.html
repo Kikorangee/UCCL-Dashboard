@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auckland Low Bridge Alert System - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .status-card {
+            flex: 1;
+            min-width: 200px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .status-card .label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .status-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .status-card.critical .value {
+            color: #e74c3c;
+        }
+
+        .status-card.warning .value {
+            color: #f39c12;
+        }
+
+        .status-card.success .value {
+            color: #27ae60;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            background: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .tab-button:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .bridge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .bridge-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 5px solid #667eea;
+            transition: transform 0.3s;
+        }
+
+        .bridge-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .bridge-card.critical {
+            border-left-color: #e74c3c;
+        }
+
+        .bridge-card.high {
+            border-left-color: #f39c12;
+        }
+
+        .bridge-card.medium {
+            border-left-color: #3498db;
+        }
+
+        .bridge-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .bridge-info {
+            color: #666;
+            margin: 5px 0;
+            font-size: 0.95em;
+        }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .severity-badge.CRITICAL {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .severity-badge.HIGH {
+            background: #f39c12;
+            color: white;
+        }
+
+        .severity-badge.MEDIUM {
+            background: #3498db;
+            color: white;
+        }
+
+        .alert-log {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .alert-item {
+            background: #f8f9fa;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+
+        .alert-item.no-buzzer {
+            border-left-color: #95a5a6;
+        }
+
+        .alert-time {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .alert-details {
+            color: #666;
+            font-size: 0.95em;
+            margin: 3px 0;
+        }
+
+        .config-section {
+            margin-bottom: 30px;
+        }
+
+        .config-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .button.danger {
+            background: #e74c3c;
+        }
+
+        .button.danger:hover {
+            background: #c0392b;
+        }
+
+        .button.success {
+            background: #27ae60;
+        }
+
+        .button.success:hover {
+            background: #229954;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .bridge-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .status-bar {
+                flex-direction: column;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                width: 100%;
+            }
+        }
+
+        .refresh-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #27ae60;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🚨 Auckland Low Bridge Alert System</h1>
+            <p class="subtitle">Real-time monitoring and alerting for low clearance bridges</p>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-card">
+                <div class="label">Total Bridges</div>
+                <div class="value" id="total-bridges">0</div>
+            </div>
+            <div class="status-card critical">
+                <div class="label">Critical</div>
+                <div class="value" id="critical-bridges">0</div>
+            </div>
+            <div class="status-card warning">
+                <div class="label">High Risk</div>
+                <div class="value" id="high-bridges">0</div>
+            </div>
+            <div class="status-card success">
+                <div class="label">Total Alerts</div>
+                <div class="value" id="total-alerts">0</div>
+            </div>
+            <div class="status-card">
+                <div class="label">Poll Interval</div>
+                <div class="value" style="font-size: 1.5em;">2s <span class="refresh-indicator"></span></div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('bridges')">Bridge Database</button>
+            <button class="tab-button" onclick="showTab('alerts')">Alert Log</button>
+            <button class="tab-button" onclick="showTab('config')">Configuration</button>
+            <button class="tab-button" onclick="showTab('add-bridge')">Add Bridge</button>
+        </div>
+
+        <!-- Bridge Database Tab -->
+        <div id="bridges-tab" class="tab-content active">
+            <h2>Low Bridge Database</h2>
+            <input type="text" class="search-box" id="bridge-search" placeholder="🔍 Search bridges by name, location, or severity..." onkeyup="filterBridges()">
+            <div class="bridge-grid" id="bridge-grid">
+                <!-- Bridges will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Alert Log Tab -->
+        <div id="alerts-tab" class="tab-content">
+            <h2>Recent Alerts</h2>
+            <div style="margin-bottom: 20px;">
+                <button class="button" onclick="loadAlerts()">🔄 Refresh Alerts</button>
+                <button class="button danger" onclick="clearAlerts()">🗑️ Clear All Alerts</button>
+            </div>
+            <div class="alert-log" id="alert-log">
+                <!-- Alerts will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Configuration Tab -->
+        <div id="config-tab" class="tab-content">
+            <h2>System Configuration</h2>
+            
+            <div class="config-section">
+                <h3>API Settings</h3>
+                <div class="form-group">
+                    <label>Account</label>
+                    <input type="text" id="config-account" value="Phoenix" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="config-username" value="francisw" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Polling Interval</label>
+                    <input type="number" id="config-poll" value="2" readonly>
+                    <small style="color: #666; display: block; margin-top: 5px;">Currently set to 2 seconds for high-frequency monitoring</small>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <h3>Alert Settings</h3>
+                <div class="form-group">
+                    <label>Buzzer Output Name</label>
+                    <input type="text" id="config-buzzer-name" value="Low Bridge">
+                </div>
+                <div class="form-group">
+                    <label>Buzzer Duration (seconds)</label>
+                    <input type="number" id="config-buzzer-duration" value="5">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="config-ignition" checked>
+                        Require Ignition ON to trigger buzzer
+                    </label>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <h3>Geofence Management</h3>
+                <button class="button success" onclick="alert('Run: python low_bridge_monitor.py and select option 1 to create geofences')">📍 Create All Geofences</button>
+                <button class="button danger" onclick="alert('Run: python low_bridge_monitor.py and select option 3 to delete geofences')">🗑️ Delete All Geofences</button>
+                <p style="margin-top: 15px; color: #666;">Use the Python script to manage geofences via Webfleet API</p>
+            </div>
+        </div>
+
+        <!-- Add Bridge Tab -->
+        <div id="add-bridge-tab" class="tab-content">
+            <h2>Add New Bridge</h2>
+            <form onsubmit="addBridge(event)">
+                <div class="form-group">
+                    <label>Bridge Name *</label>
+                    <input type="text" id="new-bridge-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Location *</label>
+                    <input type="text" id="new-bridge-location" required>
+                </div>
+                <div class="form-group">
+                    <label>Clearance Height *</label>
+                    <input type="text" id="new-bridge-clearance" placeholder="e.g., 4.2m" required>
+                </div>
+                <div class="form-group">
+                    <label>Latitude *</label>
+                    <input type="number" step="any" id="new-bridge-lat" required>
+                </div>
+                <div class="form-group">
+                    <label>Longitude *</label>
+                    <input type="number" step="any" id="new-bridge-lon" required>
+                </div>
+                <div class="form-group">
+                    <label>Road</label>
+                    <input type="text" id="new-bridge-road">
+                </div>
+                <div class="form-group">
+                    <label>Severity</label>
+                    <select id="new-bridge-severity">
+                        <option value="CRITICAL">CRITICAL (< 3.5m)</option>
+                        <option value="HIGH">HIGH (3.5m - 4.0m)</option>
+                        <option value="MEDIUM">MEDIUM (4.0m - 4.3m)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Geofence Radius (meters)</label>
+                    <input type="number" id="new-bridge-radius" value="100">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="new-bridge-description" rows="3"></textarea>
+                </div>
+                <button type="submit" class="button success">➕ Add Bridge</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Sample data - In production, this would load from the JSON files
+        let bridges = [];
+        let alerts = [];
+
+        // Initialize
+        function init() {
+            loadBridges();
+            loadAlerts();
+            updateStats();
+            
+            // Auto-refresh alerts every 10 seconds
+            setInterval(() => {
+                if (document.getElementById('alerts-tab').classList.contains('active')) {
+                    loadAlerts();
+                }
+            }, 10000);
+        }
+
+        // Load bridges from data
+        function loadBridges() {
+            // Sample bridges data - replace with actual file loading
+            bridges = [
+                {
+                    id: "penrose_bridge",
+                    name: "Penrose Bridge (Southern Motorway)",
+                    location: "Penrose, Auckland",
+                    clearance_height: "4.57m",
+                    latitude: -36.9166,
+                    longitude: 174.8333,
+                    description: "Lowest clearance bridge on Auckland motorway network.",
+                    road: "State Highway 1",
+                    severity: "HIGH",
+                    radius_meters: 100
+                },
+                {
+                    id: "rust_avenue_whangarei",
+                    name: "Rust Avenue Railway Bridge",
+                    location: "Rust Avenue, Whangarei",
+                    clearance_height: "3.44m",
+                    latitude: -35.7242,
+                    longitude: 174.3197,
+                    description: "Hit over 15 times since 2004. Extremely low clearance.",
+                    road: "Rust Avenue",
+                    severity: "CRITICAL",
+                    radius_meters: 100
+                },
+                {
+                    id: "ellerslie_panmure",
+                    name: "Ellerslie-Panmure Highway Bridge",
+                    location: "Ellerslie, Auckland",
+                    clearance_height: "4.3m",
+                    latitude: -36.8883,
+                    longitude: 174.8297,
+                    description: "Railway overbridge on major highway route.",
+                    road: "Ellerslie-Panmure Highway",
+                    severity: "HIGH",
+                    radius_meters: 100
+                },
+                {
+                    id: "waipawa_railway",
+                    name: "Waipawa Railway Bridge",
+                    location: "Waipawa",
+                    clearance_height: "4.0m",
+                    latitude: -39.9373,
+                    longitude: 176.5871,
+                    description: "Railway bridge at south end of town.",
+                    road: "Main Road",
+                    severity: "MEDIUM",
+                    radius_meters: 100
+                }
+            ];
+
+            displayBridges();
+        }
+
+        function displayBridges() {
+            const grid = document.getElementById('bridge-grid');
+            
+            if (bridges.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📍</div>
+                        <h3>No bridges configured</h3>
+                        <p>Add bridges using the "Add Bridge" tab</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = bridges.map(bridge => `
+                <div class="bridge-card ${bridge.severity.toLowerCase()}">
+                    <h3>${bridge.name}</h3>
+                    <div class="bridge-info">📍 ${bridge.location}</div>
+                    <div class="bridge-info">📏 Clearance: <strong>${bridge.clearance_height}</strong></div>
+                    <div class="bridge-info">🛣️ ${bridge.road || 'N/A'}</div>
+                    <div class="bridge-info">🌐 ${bridge.latitude}, ${bridge.longitude}</div>
+                    <div class="bridge-info">${bridge.description}</div>
+                    <span class="severity-badge ${bridge.severity}">${bridge.severity}</span>
+                </div>
+            `).join('');
+        }
+
+        function filterBridges() {
+            const search = document.getElementById('bridge-search').value.toLowerCase();
+            const cards = document.querySelectorAll('.bridge-card');
+            
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(search) ? 'block' : 'none';
+            });
+        }
+
+        function loadAlerts() {
+            // Sample alerts - replace with actual file loading
+            alerts = [
+                {
+                    timestamp: "2025-10-27T14:30:15",
+                    bridge_name: "Penrose Bridge (Southern Motorway)",
+                    location: "Penrose, Auckland",
+                    clearance_height: "4.57m",
+                    severity: "HIGH",
+                    vehicle: "006",
+                    ignition_on: true,
+                    buzzer_triggered: true
+                },
+                {
+                    timestamp: "2025-10-27T12:15:30",
+                    bridge_name: "Rust Avenue Railway Bridge",
+                    location: "Whangarei",
+                    clearance_height: "3.44m",
+                    severity: "CRITICAL",
+                    vehicle: "012",
+                    ignition_on: false,
+                    buzzer_triggered: false
+                }
+            ];
+
+            displayAlerts();
+            updateStats();
+        }
+
+        function displayAlerts() {
+            const log = document.getElementById('alert-log');
+            
+            if (alerts.length === 0) {
+                log.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">✅</div>
+                        <h3>No alerts recorded</h3>
+                        <p>System is monitoring for low bridge events</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Show most recent first
+            const sortedAlerts = [...alerts].reverse();
+            
+            log.innerHTML = sortedAlerts.map(alert => `
+                <div class="alert-item ${alert.buzzer_triggered ? '' : 'no-buzzer'}">
+                    <div class="alert-time">🚨 ${new Date(alert.timestamp).toLocaleString()}</div>
+                    <div class="alert-details"><strong>Bridge:</strong> ${alert.bridge_name}</div>
+                    <div class="alert-details"><strong>Location:</strong> ${alert.location}</div>
+                    <div class="alert-details"><strong>Clearance:</strong> ${alert.clearance_height}</div>
+                    <div class="alert-details"><strong>Vehicle:</strong> ${alert.vehicle}</div>
+                    <div class="alert-details"><strong>Ignition:</strong> ${alert.ignition_on ? '✅ ON' : '⏸️ OFF'}</div>
+                    <div class="alert-details"><strong>Buzzer:</strong> ${alert.buzzer_triggered ? '🔔 TRIGGERED' : '❌ NOT TRIGGERED'}</div>
+                    <span class="severity-badge ${alert.severity}">${alert.severity}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('total-bridges').textContent = bridges.length;
+            document.getElementById('critical-bridges').textContent = bridges.filter(b => b.severity === 'CRITICAL').length;
+            document.getElementById('high-bridges').textContent = bridges.filter(b => b.severity === 'HIGH').length;
+            document.getElementById('total-alerts').textContent = alerts.length;
+        }
+
+        function clearAlerts() {
+            if (confirm('Are you sure you want to clear all alerts?')) {
+                alerts = [];
+                displayAlerts();
+                updateStats();
+                alert('Alerts cleared. Note: This only clears the display. Run the Python script to clear the actual log file.');
+            }
+        }
+
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Deactivate all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Activate button
+            event.target.classList.add('active');
+        }
+
+        function addBridge(event) {
+            event.preventDefault();
+            
+            const newBridge = {
+                id: document.getElementById('new-bridge-name').value.toLowerCase().replace(/\s+/g, '_'),
+                name: document.getElementById('new-bridge-name').value,
+                location: document.getElementById('new-bridge-location').value,
+                clearance_height: document.getElementById('new-bridge-clearance').value,
+                latitude: parseFloat(document.getElementById('new-bridge-lat').value),
+                longitude: parseFloat(document.getElementById('new-bridge-lon').value),
+                road: document.getElementById('new-bridge-road').value,
+                severity: document.getElementById('new-bridge-severity').value,
+                radius_meters: parseInt(document.getElementById('new-bridge-radius').value),
+                description: document.getElementById('new-bridge-description').value
+            };
+            
+            bridges.push(newBridge);
+            displayBridges();
+            updateStats();
+            
+            alert('Bridge added! To sync with the monitoring system:\n1. Export the bridge data\n2. Update low_bridges.json\n3. Recreate geofences using the Python script');
+            
+            // Reset form
+            event.target.reset();
+        }
+
+        // Initialize on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
