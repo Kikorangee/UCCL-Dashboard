@@ -139,26 +139,8 @@
         <div id="emailOptions" class="email-options" style="display:none;">
           <h4 style="margin-top:0;">Email Alert Configuration</h4>
           <div style="margin-top:10px;">
-            <label>Select Geotab Users to Notify:</label>
-            <select id="geotabUserSelect" class="form-control" multiple size="5" style="height:120px;">
-              <option value="" disabled>Loading users...</option>
-            </select>
-            <div style="font-size:12px;color:#666;margin-top:5px;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple users</div>
-          </div>
-          <div style="margin-top:10px;">
-            <label>Or enter User IDs manually (comma-separated):</label>
-            <input id="emailRecipient" class="form-control" placeholder="e.g., b123,b456 (optional if using dropdown above)" />
-          </div>
-          <div style="margin-top:10px;">
-            <label>Email Service:</label>
-            <select id="emailService" class="form-control">
-              <option value="console">Console Log Only (for testing)</option>
-              <option value="geotab">Geotab Notifications</option>
-            </select>
-          </div>
-          <div style="margin-top:10px;">
-            <button id="testEmailBtn" class="btn" style="background:#667eea;color:white;padding:8px 16px;">Test Email Notification</button>
-            <span id="testEmailResult" style="margin-left:10px;font-size:14px;"></span>
+            <label>Email Recipients (comma-separated):</label>
+            <input id="emailRecipient" class="form-control" placeholder="e.g., user@example.com, another@example.com" />
           </div>
           <div style="margin-top:10px;">
             <label>Defect Alert Subject:</label>
@@ -167,6 +149,12 @@
           <div style="margin-top:10px;">
             <label>Overdue Alert Subject:</label>
             <input id="emailSubjectOverdue" class="form-control" placeholder="Subject for overdue alerts" value="⏰ Overdue Asset Inspection Alert" />
+          </div>
+          <div style="margin-top:20px;padding-top:15px;border-top:1px solid #ddd;">
+            <h4>🧪 Test Emails</h4>
+            <button id="testDefectBtn" class="btn" style="background:#e53e3e;color:white;padding:8px 16px;margin-right:10px;">Test Defect Email</button>
+            <button id="testOverdueBtn" class="btn" style="background:#f59e0b;color:white;padding:8px 16px;">Test Overdue Email</button>
+            <span id="testResult" style="margin-left:10px;font-size:14px;"></span>
           </div>
         </div>
       </div>
@@ -442,46 +430,6 @@ async function fetchGeotabZones() {
 }
 
 // Fetch Geotab users for email notifications
-async function fetchGeotabUsers() {
-  try {
-    console.log('📧 Fetching Geotab users for email notifications...');
-
-    const users = await callGeotabAPI('Get', {
-      typeName: 'User',
-      resultsLimit: 5000
-    });
-
-    if (users && users.length > 0) {
-      geotabUsers = users.map(user => ({
-        id: user.id,
-        name: user.name || user.Name || 'Unknown',
-        firstName: user.firstName || user.FirstName || '',
-        lastName: user.lastName || user.LastName || '',
-        email: user.email || user.Email || ''
-      })).filter(u => u.id); // Only include users with IDs
-
-      // Sort by name
-      geotabUsers.sort((a, b) => a.name.localeCompare(b.name));
-
-      // Populate the dropdown
-      const userSelect = document.getElementById('geotabUserSelect');
-      userSelect.innerHTML = geotabUsers.map(user => {
-        const displayName = `${user.name}${user.email ? ' (' + user.email + ')' : ''}`;
-        return `<option value="${user.id}">${displayName}</option>`;
-      }).join('');
-
-      console.log(`✓ Loaded ${geotabUsers.length} Geotab users`);
-      return geotabUsers;
-    }
-  } catch (error) {
-    console.error('Error fetching Geotab users:', error);
-    const userSelect = document.getElementById('geotabUserSelect');
-    userSelect.innerHTML = '<option value="" disabled>Error loading users</option>';
-  }
-
-  return [];
-}
-
 // Match inspection coordinates to zones
 function matchCoordinatesToZones(latitude, longitude) {
   if (!latitude || !longitude || !geotabZones.length) {
@@ -1233,33 +1181,20 @@ function renderTableGroupedByZone(rows) {
   resultDiv.innerHTML = html;
 }
 
-// Send email notification using Geotab or console
+// Send email notification via SMTP relay
 async function sendEmailNotification(type, data) {
-  const emailService = document.getElementById('emailService').value;
-
-  // Get recipients from dropdown first, then fall back to manual input
-  const userSelect = document.getElementById('geotabUserSelect');
-  const selectedOptions = Array.from(userSelect.selectedOptions).map(opt => opt.value);
+  // Get manual email recipients
   const manualRecipients = document.getElementById('emailRecipient').value;
 
-  let recipientList = [];
-
-  // Priority 1: Selected users from dropdown
-  if (selectedOptions.length > 0) {
-    recipientList = selectedOptions;
-  }
-  // Priority 2: Manual input
-  else if (manualRecipients) {
-    recipientList = manualRecipients.split(',').map(r => r.trim()).filter(r => r);
-  }
+  let recipientList = manualRecipients.split(',').map(r => r.trim()).filter(r => r);
 
   if (recipientList.length === 0) {
-    console.warn('No email recipients configured. Please select users from dropdown or enter user IDs manually.');
+    console.warn('No email recipients configured. Please enter email addresses.');
     showMessage('infoBanner', '⚠️ No email recipients configured', 'warning');
     return;
   }
 
-  let subject, body;
+  let subject, body, htmlBody;
 
   if (type === 'defect') {
     subject = document.getElementById('emailSubjectDefect').value;
@@ -1270,6 +1205,15 @@ async function sendEmailNotification(type, data) {
            `Location: ${data.resolvedAddress || 'Unknown'}\n` +
            `Defects: ${data.defects}\n\n` +
            `Please review and take appropriate action.`;
+    htmlBody = `
+      <h2>⚠️ Defect Detected</h2>
+      <p><strong>Vehicle:</strong> ${data.vehicleName}</p>
+      <p><strong>Driver:</strong> ${data.driverName}</p>
+      <p><strong>Date/Time:</strong> ${data.dateTime}</p>
+      <p><strong>Location:</strong> ${data.resolvedAddress || 'Unknown'}</p>
+      <p><strong>Defects:</strong> ${data.defects}</p>
+      <p>Please review and take appropriate action.</p>
+    `;
   } else if (type === 'overdue') {
     subject = document.getElementById('emailSubjectOverdue').value;
     body = `⏰ OVERDUE INSPECTION ALERT\n\n` +
@@ -1281,52 +1225,39 @@ async function sendEmailNotification(type, data) {
            `Location: ${data.resolvedAddress || 'Unknown'}\n\n` +
            `This inspection was completed ${data.timeToInspection} minutes after ignition, ` +
            `exceeding the ${document.getElementById('alertWindow').value} minute threshold.`;
+    htmlBody = `
+      <h2>⏰ Overdue Inspection Alert</h2>
+      <p><strong>Vehicle:</strong> ${data.vehicleName}</p>
+      <p><strong>Driver:</strong> ${data.driverName}</p>
+      <p><strong>Ignition Time:</strong> ${new Date(data.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}</p>
+      <p><strong>Inspection Time:</strong> ${data.dateTime}</p>
+      <p><strong>Delay:</strong> ${data.timeToInspection} minutes</p>
+      <p><strong>Location:</strong> ${data.resolvedAddress || 'Unknown'}</p>
+      <p>This inspection was completed ${data.timeToInspection} minutes after ignition, exceeding the ${document.getElementById('alertWindow').value} minute threshold.</p>
+    `;
   }
 
   try {
-    if (emailService === 'geotab') {
-      // Use Geotab's TextMessage API to send notifications
-      for (const recipient of recipientList) {
-        try {
-          await callGeotabAPI('Add', {
-            typeName: 'TextMessage',
-            entity: {
-              messageContent: {
-                message: `${subject}\n\n${body}`,
-                isDirectionToVehicle: false
-              },
-              user: { id: recipient }, // Geotab user ID or email
-              activeFrom: new Date().toISOString(),
-              activeTo: new Date(Date.now() + 24*60*60*1000).toISOString(), // Active for 24 hours
-              isDirectionToVehicle: false
-            }
-          });
-          console.log(`✅ Notification sent to ${recipient} via Geotab`);
-        } catch (err) {
-          console.error(`❌ Failed to send to ${recipient}:`, err);
-        }
-      }
-      showMessage('infoBanner', `📧 Notifications sent to ${recipientList.length} recipient(s)`, 'success');
-    } else {
-      // Console log only (for testing)
-      console.log('');
-      console.log('═══════════════════════════════════════════════════');
-      console.log('📧 EMAIL NOTIFICATION (CONSOLE TEST MODE)');
-      console.log('═══════════════════════════════════════════════════');
-      console.log(`Type: ${type.toUpperCase()}`);
-      console.log(`To: ${recipientList.join(', ')}`);
-      console.log(`Subject: ${subject}`);
-      console.log('───────────────────────────────────────────────────');
-      console.log('Body:');
-      console.log(body);
-      console.log('═══════════════════════════════════════════════════');
-      console.log('NOTE: This is console mode. To send real emails via');
-      console.log('Geotab, change Email Service to "Geotab Notifications"');
-      console.log('and use Geotab user IDs as recipients.');
-      console.log('═══════════════════════════════════════════════════');
-      console.log('');
-      showMessage('infoBanner', `📋 Email notification logged to console (${type}) - Check browser console (F12)`, 'info');
+    // Send via SMTP relay server on localhost:3000
+    const response = await fetch('http://localhost:3000/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: recipientList,
+        subject: subject,
+        body: htmlBody
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Email relay failed');
     }
+
+    const result = await response.json();
+    console.log('✅ Email sent via SMTP relay:', result.messageId);
+    console.log('📧 Recipients:', recipientList);
+    showMessage('infoBanner', `📧 Email sent successfully to ${recipientList.length} recipient(s): ${recipientList.join(', ')}`, 'success');
   } catch (error) {
     console.error('Email notification error:', error);
     showMessage('infoBanner', `Failed to send notification: ${error.message}`, 'error');
@@ -1405,8 +1336,6 @@ document.getElementById('authButton').onclick = async function(){
     updateZoneDropdown();
     // Fetch zone definitions from Geotab for coordinate matching
     await fetchGeotabZones();
-    // Fetch Geotab users for email notifications
-    await fetchGeotabUsers();
   }catch(e){
     showMessage('authResult',`Authentication failed: ${e.message}`,'error');
   }
@@ -1856,32 +1785,56 @@ document.getElementById('enableOverdueEmail').addEventListener('change', functio
   document.getElementById('emailOptions').style.display = (this.checked || defectEnabled) ? 'block' : 'none';
 });
 
-// Test email notification button
-document.getElementById('testEmailBtn').addEventListener('click', async function() {
-  const resultSpan = document.getElementById('testEmailResult');
-  resultSpan.textContent = 'Sending test...';
+// Test defect email button
+document.getElementById('testDefectBtn').addEventListener('click', async function() {
+  const resultSpan = document.getElementById('testResult');
+  resultSpan.textContent = 'Sending test defect email...';
   resultSpan.style.color = '#666';
 
-  const testData = {
-    vehicleName: 'Test Vehicle XYZ',
+  const testDefect = {
+    vehicleName: 'TEST VEHICLE - Dummy Defect',
     driverName: 'Test Driver',
     dateTime: new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
-    resolvedAddress: 'Test Location',
-    ignitionTime: Date.now() - 10*60*1000, // 10 minutes ago
-    timeToInspection: 10,
-    defects: 'Test defect description'
+    resolvedAddress: 'Test Site - Dummy Location',
+    defects: 'Test defect: Brake fluid low, Windshield cracked'
   };
 
   try {
-    await sendEmailNotification('overdue', testData);
-    resultSpan.textContent = '✓ Test sent! Check console for output.';
+    await sendEmailNotification('defect', testDefect);
+    resultSpan.textContent = '✅ Test defect email sent! Check your inbox.';
     resultSpan.style.color = '#38a169';
   } catch (err) {
-    resultSpan.textContent = '✗ Test failed: ' + err.message;
+    resultSpan.textContent = '❌ Test failed: ' + err.message;
     resultSpan.style.color = '#e53e3e';
   }
 });
 
+// Test overdue email button
+document.getElementById('testOverdueBtn').addEventListener('click', async function() {
+  const resultSpan = document.getElementById('testResult');
+  resultSpan.textContent = 'Sending test overdue email...';
+  resultSpan.style.color = '#666';
+
+  const testOverdue = {
+    vehicleName: 'TEST VEHICLE - Overdue Inspection',
+    driverName: 'Test Driver',
+    dateTime: new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
+    resolvedAddress: 'Test Site - Dummy Location',
+    ignitionTime: Date.now() - 15*60*1000, // 15 minutes ago
+    timeToInspection: 15
+  };
+
+  try {
+    await sendEmailNotification('overdue', testOverdue);
+    resultSpan.textContent = '✅ Test overdue email sent! Check your inbox.';
+    resultSpan.style.color = '#38a169';
+  } catch (err) {
+    resultSpan.textContent = '❌ Test failed: ' + err.message;
+    resultSpan.style.color = '#e53e3e';
+  }
+});
+
+// Test email notification button
 document.getElementById('zoneFilter').addEventListener('change', function() {
   if (!mappedDvirData.length) return;
   const selectedZone = this.value;
