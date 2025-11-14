@@ -387,10 +387,10 @@
 
         <!-- Tabs -->
         <div class="tabs">
-            <button class="tab-button active" onclick="showTab('bridges')">Bridge Database</button>
-            <button class="tab-button" onclick="showTab('alerts')">Alert Log</button>
-            <button class="tab-button" onclick="showTab('config')">Configuration</button>
-            <button class="tab-button" onclick="showTab('add-bridge')">Add Bridge</button>
+            <button class="tab-button active" onclick="showTab('bridges', this)">Bridge Database</button>
+            <button class="tab-button" onclick="showTab('alerts', this)">Alert Log</button>
+            <button class="tab-button" onclick="showTab('config', this)">Configuration</button>
+            <button class="tab-button" onclick="showTab('add-bridge', this)">Add Bridge</button>
         </div>
 
         <!-- Bridge Database Tab -->
@@ -699,22 +699,24 @@
             }
         }
 
-        function showTab(tabName) {
+        function showTab(tabName, element) {
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
-            
+
             // Deactivate all buttons
             document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
+
             // Show selected tab
             document.getElementById(tabName + '-tab').classList.add('active');
-            
+
             // Activate button
-            event.target.classList.add('active');
+            if (element) {
+                element.classList.add('active');
+            }
         }
 
         function addBridge(event) {
