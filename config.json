@@ -1,16 +1,16 @@
 {
-    "name": "RUC Remaining",
-    "supportEmail": "Francis@directt.co.nz",
-    "version": "1.0",
+    "name": "Idling Dashboard",
+    "supportEmail": "francis@directt.co.nz",
+    "version": "1.0.0",
     "items": [
         {
-            "url": "https://kikorangee.github.io/UCCL-Dashboard/mainuccl.html",
+            "url": "https://kikorangee.github.io/UCCL-Dashboard/Idling2.html",
+            "path": "SustainabilityId/",
             "menuName": {
-                "en": "RUC Remaining"
+                "en": "Idling Dashboard"
             },
-            "icon": "https://upload.wikimedia.org/wikipedia/commons/0/02/SVG_logo.svg"
+            "icon": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjRkY0OTc5Ii8+Cjwvc3ZnPgo="
         }
     ],
-    "key": "RUC-REMAINING",
     "isSigned": false
 }
