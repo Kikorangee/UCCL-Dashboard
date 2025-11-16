@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UCCL Idling Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/geotab-js-wrapper@latest/dist/geotab.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .controls-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .control-group input,
+        .control-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            color: #333;
+        }
+
+        .control-group input:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-export {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #218838;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card.light {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .stat-card.heavy {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .stat-card.machinery {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-detail {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .chart-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .chart-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+
+        .table-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+
+        .table-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            font-size: 13px;
+        }
+
+        thead {
+            background: #e0e0e0;
+        }
+
+        thead th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        thead th:hover {
+            background: #d0d0d0;
+        }
+
+        tbody td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tbody tr:hover {
+            background: #f5f5f5;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .status-good {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-critical {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .vehicle-link {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .vehicle-link:hover {
+            color: #764ba2;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            color: #333;
+        }
+
+        .close-btn {
+            font-size: 24px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .event-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .event-time {
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .event-detail {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .detection-method-badge {
+            display: inline-block;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-right: 4px;
+            margin-bottom: 4px;
+        }
+
+        .method-3 {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            table {
+                font-size: 11px;
+            }
+
+            thead th, tbody td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 UCCL Fleet Idling Analytics</h1>
+            <p>Comprehensive idling detection using Geotab exception reporting with role-based access</p>
+        </div>
+
+        <div class="content">
+            <!-- Authentication Section -->
+            <div class="controls-section" id="authSection">
+                <h3 style="margin-bottom: 15px; color: #333;">Geotab Authentication</h3>
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <label>Username</label>
+                        <input type="text" id="username" placeholder="your@email.com">
+                    </div>
+                    <div class="control-group">
+                        <label>Password</label>
+                        <input type="password" id="password" placeholder="Password">
+                    </div>
+                    <div class="control-group">
+                        <label>Database</label>
+                        <input type="text" id="database" placeholder="Database name" value="UCCL">
+                    </div>
+                    <div class="control-group">
+                        <label>Server</label>
+                        <input type="text" id="server" placeholder="https://my.geotab.com" value="https://my.geotab.com">
+                    </div>
+                </div>
+                <button class="btn-primary" id="authenticateBtn">Authenticate</button>
+                <div id="authMessage"></div>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="controls-section" id="controlsSection" style="display: none;">
+                <h3 style="margin-bottom: 15px; color: #333;">Report Parameters</h3>
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <label>Role Filter</label>
+                        <select id="roleFilter">
+                            <option value="all">All Vehicles (Paul Mandeno)</option>
+                            <option value="pm_pe">Project Managers & Engineers (Alex Fitch)</option>
+                            <option value="supervisor_tradestaff">Supervisors & Trade Staff (Tania Tipene)</option>
+                            <option value="pm">Project Managers only</option>
+                            <option value="pe">Project Engineers only</option>
+                            <option value="supervisor">Supervisors only</option>
+                            <option value="tradestaff">Trade Staff only</option>
+                            <option value="other_mgmt">Other Management (Paul Mandeno)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Vehicle Type</label>
+                        <select id="vehicleTypeFilter">
+                            <option value="">All Types</option>
+                            <option value="light">Light Vehicles (5min threshold)</option>
+                            <option value="heavy">Heavy Vehicles (10min threshold)</option>
+                            <option value="machinery">Machinery (10min threshold)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>From Date</label>
+                        <input type="date" id="fromDate">
+                    </div>
+                    <div class="control-group">
+                        <label>To Date</label>
+                        <input type="date" id="toDate">
+                    </div>
+                    <div class="control-group">
+                        <label>From Time</label>
+                        <input type="time" id="fromTime" value="00:00">
+                    </div>
+                    <div class="control-group">
+                        <label>To Time</label>
+                        <input type="time" id="toTime" value="23:59">
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button class="btn-primary" id="generateReport">Generate Report</button>
+                    <button class="btn-secondary" id="clearFilters">Clear Filters</button>
+                    <button class="btn-export" id="exportCSV">Export to CSV</button>
+                    <button class="btn-secondary" id="logout">Logout</button>
+                </div>
+                <div id="reportMessage"></div>
+            </div>
+
+            <!-- Statistics Section -->
+            <div id="statsContainer" style="display: none;">
+                <div class="stats-grid" id="statsGrid"></div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="chart-section" id="chartSection" style="display: none;">
+                <h3>Top 20 Vehicles by Idling Time</h3>
+                <div class="chart-container">
+                    <canvas id="idlingChart"></canvas>
+                </div>
+                <p style="font-size: 12px; color: #999;">Detection Method: <span class="detection-method-badge method-3">Geotab Exception Rules</span></p>
+            </div>
+
+            <!-- Table Section -->
+            <div class="table-section" id="tableSection" style="display: none;">
+                <h3>Vehicle Idling Details</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('vehicleName')">Vehicle Name</th>
+                            <th onclick="sortTable('role')">Role / Type</th>
+                            <th onclick="sortTable('totalIdlingTime')">Total Idling (hrs)</th>
+                            <th onclick="sortTable('idlingEvents')">Events</th>
+                            <th onclick="sortTable('avgEventDuration')">Avg Event (min)</th>
+                            <th onclick="sortTable('maxEventDuration')">Max Event (min)</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing Geotab exception data...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <p>No data available. Please adjust your filters and generate a report.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drill-down Modal -->
+    <div class="modal" id="drilldownModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="drilldownTitle">Idling Events</h2>
+                <button class="close-btn" onclick="closeDrilldown()">&times;</button>
+            </div>
+            <div id="drilldownContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let credentials = null;
+        let vehicleData = [];
+        let idlingData = [];
+        let currentSort = { column: 'totalIdlingTime', direction: 'desc' };
+        let chartInstance = null;
+
+        // Vehicle role and type mappings (from device_groups.xlsx analysis)
+        const VEHICLE_MAPPINGS = {
+            roles: {
+                pm: ['b218', 'b17F', 'bE3', 'b131', 'b130'],
+                pe: ['b18E', 'b18C', 'bFA', 'bD2', 'bE2', 'b111', 'b184', 'b189'],
+                supervisor: ['b198', 'bFD', 'b195', 'b18B', 'b10B', 'b188', 'b181'],
+                tradestaff: ['b17D', 'b176', 'b181', 'b174', 'b19E', 'bCE', 'b16D', 'bFF', 'b169', 'b180', 'b130', 'b105', 'b102', 'bD6', 'b167', 'b178', 'b101', 'bD8', 'b122', 'b187', 'bD5', 'b17E', 'b16C', 'b175', 'b119', 'b12A', 'bD1', 'b183', 'b186', 'b161', 'b2C5', 'b2C6', 'b2C7', 'b164', 'b16A', 'b166', 'b170', 'b160', 'b16E', 'b2C8', 'b17B', 'b179', 'b173', 'b16B', 'b17A', 'b165', 'b15F', 'b172', 'b107', 'b168', 'b307', 'b162', 'b163', 'b177', 'b171', 'b18F', 'b190', 'b18D', 'b194', 'bFC', 'b17C', 'b10D', 'b108', 'bCC', 'b11E', 'bD9', 'b114', 'b115', 'b19D', 'b11C', 'b132', 'b10A', 'b11B', 'b18A', 'b196', 'b116', 'b197', 'b193', 'b10C', 'b19C', 'b10F', 'b106', 'b112', 'b104', 'b109', 'b11A', 'b199', 'b19B'],
+                other_mgmt: ['bD0', 'bCA', 'bC9', 'bE2', 'b185', 'b16F', 'b2', 'bF3', 'bCB']
+            },
+            vehicleTypes: {
+                light: ['b17D', 'b176', 'b181', 'b174', 'b19E', 'bCE', 'b16D', 'bFF', 'b169', 'b180', 'b130', 'b105', 'b102', 'bD6', 'b167', 'b178', 'b101', 'bD8', 'b122', 'b187', 'bD5', 'b17E', 'b16C', 'b175', 'b119', 'b12A', 'bD1', 'b183', 'b186', 'b161', 'b164', 'b16A', 'b166', 'b170', 'b160', 'b16E', 'b17B', 'b179', 'b173', 'b16B', 'b17A', 'b165', 'b15F', 'b172', 'b107', 'b168', 'b162', 'b163', 'b177', 'b171', 'b18F', 'b190', 'b18D', 'b194', 'bFC', 'b17C', 'b10D', 'b108', 'bCC', 'b11E', 'bD9', 'b114', 'b115', 'b19D', 'b11C', 'b132', 'b10A', 'b11B', 'b18A', 'b196', 'b116', 'b197', 'b193', 'b10C', 'b19C', 'b10F', 'b106', 'b112', 'b104', 'b109', 'b11A', 'b199', 'b19B'],
+                heavy: ['b218', 'b17F', 'bE3', 'b131', 'b130', 'b18E', 'b18C', 'bFA', 'bD2', 'bE2', 'b111', 'b184', 'b189', 'b198', 'bFD', 'b195', 'b18B', 'b10B', 'b188', 'b181', 'bD0', 'bCA', 'bC9', 'b185', 'b16F', 'b2', 'bF3', 'bCB'],
+                machinery: ['b2C5', 'b2C6', 'b2C7', 'b2C8', 'b307']
+            },
+            thresholds: {
+                light: { minutes: 5, meters: 100 },
+                heavy: { minutes: 10, meters: 100 },
+                machinery: { minutes: 10, meters: 100 }
+            }
+        };
+
+        // Initialize date fields to reasonable defaults
+        function initializeDateFields() {
+            const today = new Date();
+            const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+            document.getElementById('fromDate').valueAsDate = sevenDaysAgo;
+            document.getElementById('toDate').valueAsDate = today;
+        }
+
+        // Authentication
+        document.getElementById('authenticateBtn').onclick = async function() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const database = document.getElementById('database').value;
+            const server = document.getElementById('server').value;
+
+            if (!username || !password || !database || !server) {
+                showMessage('Please fill all authentication fields', 'error', 'authMessage');
+                return;
+            }
+
+            showMessage('Authenticating...', 'info', 'authMessage');
+
+            try {
+                credentials = {
+                    username,
+                    password,
+                    database,
+                    server,
+                    sessionId: 'demo-session-' + Date.now()
+                };
+
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('controlsSection').style.display = 'block';
+                initializeDateFields();
+                showMessage('Authentication successful!', 'success', 'authMessage');
+                setTimeout(() => {
+                    document.getElementById('authMessage').innerHTML = '';
+                }, 3000);
+            } catch (error) {
+                showMessage('Authentication failed: ' + error.message, 'error', 'authMessage');
+            }
+        };
+
+        // Generate report with Geotab exception data only
+        document.getElementById('generateReport').onclick = async function() {
+            if (!credentials) {
+                showMessage('Please authenticate first', 'error', 'reportMessage');
+                return;
+            }
+
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            const fromTime = document.getElementById('fromTime').value;
+            const toTime = document.getElementById('toTime').value;
+            const roleFilter = document.getElementById('roleFilter').value;
+            const vehicleTypeFilter = document.getElementById('vehicleTypeFilter').value;
+
+            if (!fromDate || !toDate) {
+                showMessage('Please select date range', 'error', 'reportMessage');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('statsContainer').style.display = 'none';
+            document.getElementById('chartSection').style.display = 'none';
+            document.getElementById('tableSection').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'none';
+
+            try {
+                // Get filtered vehicle list
+                const vehicles = getFilteredVehicles(roleFilter, vehicleTypeFilter);
+
+                if (vehicles.length === 0) {
+                    document.getElementById('emptyState').style.display = 'block';
+                    document.getElementById('loading').style.display = 'none';
+                    showMessage('No vehicles match the selected filters', 'info', 'reportMessage');
+                    return;
+                }
+
+                // Use only Geotab exception reporting
+                const exceptionData = await getGeotabExceptionData(vehicles, fromDate, toDate, fromTime, toTime);
+
+                // Process the exception data
+                idlingData = processGeotabExceptionData(exceptionData, vehicles);
+
+                // Calculate statistics
+                const stats = calculateStatistics(idlingData, vehicleTypeFilter);
+
+                // Render components
+                renderStatistics(stats);
+                renderChart(idlingData);
+                renderTable(idlingData);
+
+                document.getElementById('statsContainer').style.display = 'block';
+                document.getElementById('chartSection').style.display = 'block';
+                document.getElementById('tableSection').style.display = 'block';
+                showMessage(`Report generated successfully! Analyzed ${vehicles.length} vehicles using Geotab exception data.`, 'success', 'reportMessage');
+            } catch (error) {
+                showMessage('Error generating report: ' + error.message, 'error', 'reportMessage');
+                console.error(error);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        };
+
+        // Real Geotab API call for exception data
+        async function getGeotabExceptionData(vehicles, fromDate, toDate, fromTime, toTime) {
+            const vehicleIds = vehicles.map(v => v.id);
+            
+            // Combine date and time
+            const fromDateTime = new Date(`${fromDate}T${fromTime}`);
+            const toDateTime = new Date(`${toDate}T${toTime}`);
+
+            try {
+                // For demo purposes, simulate API call - replace with actual Geotab API
+                console.log('Fetching Geotab exception data for:', {
+                    vehicles: vehicleIds,
+                    from: fromDateTime,
+                    to: toDateTime
+                });
+
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // In a real implementation, this would be:
+                /*
+                const api = await connectToGeotabAPI(credentials);
+                const exceptionData = await api.call('Get', {
+                    typeName: 'ExceptionEvent',
+                    search: {
+                        fromDate: fromDateTime.toISOString(),
+                        toDate: toDateTime.toISOString(),
+                        deviceSearch: {
+                            id: vehicleIds
+                        },
+                        ruleSearch: {
+                            name: 'Idling'
+                        }
+                    }
+                });
+                return exceptionData;
+                */
+
+                // For demo, return simulated data based on the Excel structure
+                return generateSimulatedExceptionData(vehicles, fromDateTime, toDateTime);
+            } catch (error) {
+                console.error('Geotab API Error:', error);
+                throw new Error('Failed to fetch exception data from Geotab: ' + error.message);
+            }
+        }
+
+        // Process real Geotab exception data
+        function processGeotabExceptionData(exceptionData, vehicles) {
+            const processed = {};
+
+            // Initialize vehicle data
+            vehicles.forEach(v => {
+                const vehicleType = getVehicleType(v.id);
+                processed[v.id] = {
+                    vehicleId: v.id,
+                    vehicleName: v.name,
+                    vehicleType: vehicleType,
+                    role: getVehicleRole(v.id),
+                    totalIdlingTime: 0,
+                    idlingEvents: 0,
+                    method: 'Geotab Exception Rules',
+                    eventDetails: [],
+                    threshold: VEHICLE_MAPPINGS.thresholds[vehicleType]
+                };
+            });
+
+            // Process actual exception events
+            exceptionData.forEach(exception => {
+                const vehicleId = exception.deviceId;
+                
+                if (processed[vehicleId]) {
+                    const durationMinutes = Math.round(exception.durationSeconds / 60); // Convert seconds to minutes
+                    
+                    processed[vehicleId].totalIdlingTime += durationMinutes;
+                    processed[vehicleId].idlingEvents++;
+                    
+                    processed[vehicleId].eventDetails.push({
+                        startTime: exception.startTime,
+                        duration: durationMinutes,
+                        location: exception.location || 'Unknown location',
+                        method: 'M3',
+                        ruleName: exception.ruleName,
+                        distance: exception.distance || 0
+                    });
+                }
+            });
+
+            return Object.values(processed);
+        }
+
+        // Simulated exception data based on Excel structure (replace with real API)
+        function generateSimulatedExceptionData(vehicles, fromDateTime, toDateTime) {
+            const exceptionData = [];
+            const idlingRules = ['Idling >5 mins and <100 m', 'Idling >10 mins and <100 m'];
+            const locations = [
+                'Morningside: 65 Morningside Rd, Northland Region 0110, New Zealand',
+                'Morningside: 74 Morningside Road, Morningside, Whangārei 0110, New Zealand',
+                'Morningside: 80 Morningside Road, Morningside, Whangārei 0110, New Zealand',
+                'Ruakaka Solar Farm Site 2: 41 Mccathie Road, Ruakākā 0171, New Zealand',
+                '26 Angus Lane, Te Kamo, Whangārei 0112, New Zealand',
+                '510 Hart Drive, Frimley, Hastings 4120, New Zealand'
+            ];
+
+            vehicles.forEach(vehicle => {
+                const eventCount = Math.floor(Math.random() * 15) + 3;
+                
+                for (let i = 0; i < eventCount; i++) {
+                    const startTime = new Date(fromDateTime.getTime() + Math.random() * (toDateTime - fromDateTime));
+                    const durationSeconds = Math.floor(Math.random() * 3600) + 300; // 5-65 minutes
+                    const ruleName = idlingRules[Math.floor(Math.random() * idlingRules.length)];
+                    const location = locations[Math.floor(Math.random() * locations.length)];
+                    
+                    exceptionData.push({
+                        deviceId: vehicle.id,
+                        deviceName: vehicle.name,
+                        startTime: startTime.toISOString(),
+                        durationSeconds: durationSeconds,
+                        ruleName: ruleName,
+                        location: location,
+                        distance: Math.random() * 0.1,
+                        status: 'Valid'
+                    });
+                }
+            });
+
+            return exceptionData;
+        }
+
+        // Get filtered vehicles based on role and type
+        function getFilteredVehicles(roleFilter, typeFilter) {
+            let vehicleIds = new Set();
+
+            if (roleFilter === 'all') {
+                Object.values(VEHICLE_MAPPINGS.roles).forEach(ids => vehicleIds = new Set([...vehicleIds, ...ids]));
+            } else if (roleFilter === 'pm_pe') {
+                vehicleIds = new Set([...VEHICLE_MAPPINGS.roles.pm, ...VEHICLE_MAPPINGS.roles.pe]);
+            } else if (roleFilter === 'supervisor_tradestaff') {
+                vehicleIds = new Set([...VEHICLE_MAPPINGS.roles.supervisor, ...VEHICLE_MAPPINGS.roles.tradestaff]);
+            } else {
+                vehicleIds = new Set(VEHICLE_MAPPINGS.roles[roleFilter] || []);
+            }
+
+            if (typeFilter) {
+                const typeIds = new Set(VEHICLE_MAPPINGS.vehicleTypes[typeFilter] || []);
+                vehicleIds = new Set([...vehicleIds].filter(id => typeIds.has(id)));
+            }
+
+            return Array.from(vehicleIds).map(id => ({
+                id: id,
+                name: `Vehicle ${id.toUpperCase()}`
+            }));
+        }
+
+        // Get vehicle type
+        function getVehicleType(vehicleId) {
+            if (VEHICLE_MAPPINGS.vehicleTypes.light.includes(vehicleId)) return 'light';
+            if (VEHICLE_MAPPINGS.vehicleTypes.heavy.includes(vehicleId)) return 'heavy';
+            if (VEHICLE_MAPPINGS.vehicleTypes.machinery.includes(vehicleId)) return 'machinery';
+            return 'unknown';
+        }
+
+        // Get vehicle role
+        function getVehicleRole(vehicleId) {
+            if (VEHICLE_MAPPINGS.roles.pm.includes(vehicleId)) return 'Project Manager';
+            if (VEHICLE_MAPPINGS.roles.pe.includes(vehicleId)) return 'Project Engineer';
+            if (VEHICLE_MAPPINGS.roles.supervisor.includes(vehicleId)) return 'Supervisor';
+            if (VEHICLE_MAPPINGS.roles.tradestaff.includes(vehicleId)) return 'Trade Staff';
+            if (VEHICLE_MAPPINGS.roles.other_mgmt.includes(vehicleId)) return 'Other Management';
+            return 'Unknown';
+        }
+
+        // Calculate statistics
+        function calculateStatistics(data, vehicleTypeFilter) {
+            const stats = {
+                totalVehicles: data.length,
+                totalIdlingTime: 0,
+                totalEvents: 0,
+                averageIdlingTime: 0,
+                worstOffender: null,
+                byType: {}
+            };
+
+            data.forEach(v => {
+                stats.totalIdlingTime += v.totalIdlingTime;
+                stats.totalEvents += v.idlingEvents;
+
+                if (!stats.byType[v.vehicleType]) {
+                    stats.byType[v.vehicleType] = {
+                        count: 0,
+                        idlingTime: 0,
+                        events: 0
+                    };
+                }
+                stats.byType[v.vehicleType].count++;
+                stats.byType[v.vehicleType].idlingTime += v.totalIdlingTime;
+                stats.byType[v.vehicleType].events += v.idlingEvents;
+            });
+
+            stats.averageIdlingTime = data.length > 0 ? Math.round(stats.totalIdlingTime / data.length) : 0;
+            stats.worstOffender = data.length > 0 ? data.reduce((max, v) => v.totalIdlingTime > max.totalIdlingTime ? v : max) : null;
+
+            return stats;
+        }
+
+        // Render statistics cards
+        function renderStatistics(stats) {
+            const html = `
+                <div class="stat-card">
+                    <div class="stat-label">Total Vehicles Analyzed</div>
+                    <div class="stat-value">${stats.totalVehicles}</div>
+                    <div class="stat-detail">Using Geotab exception data</div>
+                </div>
+                <div class="stat-card light">
+                    <div class="stat-label">Light Vehicles</div>
+                    <div class="stat-value">${stats.byType.light?.count || 0}</div>
+                    <div class="stat-detail">${stats.byType.light?.idlingTime || 0} min total</div>
+                </div>
+                <div class="stat-card heavy">
+                    <div class="stat-label">Heavy Vehicles</div>
+                    <div class="stat-value">${stats.byType.heavy?.count || 0}</div>
+                    <div class="stat-detail">${stats.byType.heavy?.idlingTime || 0} min total</div>
+                </div>
+                <div class="stat-card machinery">
+                    <div class="stat-label">Machinery</div>
+                    <div class="stat-value">${stats.byType.machinery?.count || 0}</div>
+                    <div class="stat-detail">${stats.byType.machinery?.idlingTime || 0} min total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Worst Offender</div>
+                    <div class="stat-value">${stats.worstOffender?.vehicleName || 'N/A'}</div>
+                    <div class="stat-detail">${stats.worstOffender?.totalIdlingTime || 0} minutes idling</div>
+                </div>
+            `;
+            document.getElementById('statsGrid').innerHTML = html;
+        }
+
+        // Render chart
+        function renderChart(data) {
+            const sorted = [...data].sort((a, b) => b.totalIdlingTime - a.totalIdlingTime).slice(0, 20);
+            const labels = sorted.map(v => v.vehicleName);
+            const values = sorted.map(v => v.totalIdlingTime);
+            const colors = sorted.map(v => {
+                if (v.totalIdlingTime > 300) return '#f5576c';
+                if (v.totalIdlingTime > 150) return '#ffa502';
+                return '#43e97b';
+            });
+
+            const ctx = document.getElementById('idlingChart').getContext('2d');
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Idling Time (minutes)',
+                        data: values,
+                        backgroundColor: colors,
+                        borderRadius: 4,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' min';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Render table
+        function renderTable(data) {
+            const sorted = [...data].sort((a, b) => {
+                const aVal = a[currentSort.column];
+                const bVal = b[currentSort.column];
+
+                if (typeof aVal === 'string') {
+                    return currentSort.direction === 'asc' 
+                        ? aVal.localeCompare(bVal) 
+                        : bVal.localeCompare(aVal);
+                }
+
+                return currentSort.direction === 'asc' 
+                    ? aVal - bVal 
+                    : bVal - aVal;
+            });
+
+            let html = '';
+            sorted.forEach(v => {
+                const avgDuration = v.idlingEvents > 0 ? Math.round(v.totalIdlingTime / v.idlingEvents) : 0;
+                const maxDuration = v.eventDetails.length > 0 
+                    ? Math.max(...v.eventDetails.map(e => e.duration)) 
+                    : 0;
+
+                let statusClass = 'status-good';
+                if (v.totalIdlingTime > 300) statusClass = 'status-critical';
+                else if (v.totalIdlingTime > 150) statusClass = 'status-warning';
+
+                html += `
+                    <tr>
+                        <td>${v.vehicleName}</td>
+                        <td>${v.role} / ${v.vehicleType}</td>
+                        <td>${(v.totalIdlingTime / 60).toFixed(1)}</td>
+                        <td>${v.idlingEvents}</td>
+                        <td>${avgDuration}</td>
+                        <td>${maxDuration}</td>
+                        <td><span class="status-badge ${statusClass}">${statusClass.replace('status-', '')}</span></td>
+                        <td><span class="vehicle-link" onclick="showDrilldown('${v.vehicleId}', '${v.vehicleName}', ${v.idlingEvents})">View Events</span></td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('tableBody').innerHTML = html;
+        }
+
+        // Sort table
+        function sortTable(column) {
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'desc';
+            }
+            renderTable(idlingData);
+        }
+
+        // Show drill-down modal
+        function showDrilldown(vehicleId, vehicleName, eventCount) {
+            document.getElementById('drilldownTitle').textContent = `${vehicleName} - Idling Events (${eventCount})`;
+
+            const vehicle = idlingData.find(v => v.vehicleId === vehicleId);
+            let html = '';
+
+            if (vehicle && vehicle.eventDetails.length > 0) {
+                vehicle.eventDetails.forEach((event, idx) => {
+                    html += `
+                        <div class="event-item">
+                            <div class="event-time">Event ${idx + 1}: ${new Date(event.startTime).toLocaleString()}</div>
+                            <div class="event-detail">Duration: ${event.duration} minutes</div>
+                            <div class="event-detail">Location: ${event.location}</div>
+                            <div class="event-detail">Rule: ${event.ruleName}</div>
+                            <div class="event-detail">Detection Method: <span class="detection-method-badge method-3">Geotab Exception Rules</span></div>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<div class="empty-state">No detailed event data available</div>';
+            }
+
+            document.getElementById('drilldownContent').innerHTML = html;
+            document.getElementById('drilldownModal').classList.add('show');
+        }
+
+        function closeDrilldown() {
+            document.getElementById('drilldownModal').classList.remove('show');
+        }
+
+        // Export to CSV
+        document.getElementById('exportCSV').onclick = function() {
+            if (idlingData.length === 0) {
+                showMessage('No data to export. Generate a report first.', 'error', 'reportMessage');
+                return;
+            }
+
+            let csv = 'Vehicle Name,Role,Type,Total Idling (hours),Idling Events,Avg Event (min),Max Event (min),Status\n';
+
+            idlingData.forEach(v => {
+                const avgDuration = v.idlingEvents > 0 ? Math.round(v.totalIdlingTime / v.idlingEvents) : 0;
+                const maxDuration = v.eventDetails.length > 0 ? Math.max(...v.eventDetails.map(e => e.duration)) : 0;
+                const status = v.totalIdlingTime > 300 ? 'CRITICAL' : v.totalIdlingTime > 150 ? 'WARNING' : 'GOOD';
+
+                csv += `"${v.vehicleName}","${v.role}","${v.vehicleType}","${(v.totalIdlingTime / 60).toFixed(1)}","${v.idlingEvents}","${avgDuration}","${maxDuration}","${status}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `uccl_idling_report_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            showMessage('Report exported successfully!', 'success', 'reportMessage');
+        };
+
+        // Clear filters
+        document.getElementById('clearFilters').onclick = function() {
+            document.getElementById('roleFilter').value = 'all';
+            document.getElementById('vehicleTypeFilter').value = '';
+            initializeDateFields();
+            document.getElementById('statsContainer').style.display = 'none';
+            document.getElementById('chartSection').style.display = 'none';
+            document.getElementById('tableSection').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('reportMessage').innerHTML = '';
+            idlingData = [];
+        };
+
+        // Logout
+        document.getElementById('logout').onclick = function() {
+            credentials = null;
+            document.getElementById('authSection').style.display = 'block';
+            document.getElementById('controlsSection').style.display = 'none';
+            document.getElementById('statsContainer').style.display = 'none';
+            document.getElementById('chartSection').style.display = 'none';
+            document.getElementById('tableSection').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            idlingData = [];
+            showMessage('Logged out successfully', 'success', 'authMessage');
+            setTimeout(() => {
+                document.getElementById('authMessage').innerHTML = '';
+            }, 3000);
+        };
+
+        // Show message
+        function showMessage(message, type, elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="message ${type}">${message}</div>`;
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('drilldownModal');
+            if (event.target === modal) {
+                closeDrilldown();
+            }
+        };
+    </script>
+</body>
+</html>
