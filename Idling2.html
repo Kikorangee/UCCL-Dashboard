@@ -872,29 +872,34 @@
 
             try {
                 // Initialize Geotab API with authentication
-                api = new GeotabApi((authenticateCallback) => {
-                    authenticateCallback(server, database, username, password, (err) => {
-                        if (err) {
-                            showMessage('Authentication failed: ' + err, 'error', 'authMessage');
-                            api = null;
-                            credentials = null;
-                        } else {
-                            credentials = {
-                                username,
-                                password,
-                                database,
-                                server
-                            };
+                api = new geotab.api({
+                    credentials: {
+                        database: database,
+                        userName: username,
+                        password: password,
+                        server: server
+                    }
+                }, (err) => {
+                    if (err) {
+                        showMessage('Authentication failed: ' + err, 'error', 'authMessage');
+                        api = null;
+                        credentials = null;
+                    } else {
+                        credentials = {
+                            username,
+                            password,
+                            database,
+                            server
+                        };
 
-                            document.getElementById('authSection').style.display = 'none';
-                            document.getElementById('controlsSection').style.display = 'block';
-                            initializeDateFields();
-                            showMessage('Authentication successful!', 'success', 'authMessage');
-                            setTimeout(() => {
-                                document.getElementById('authMessage').innerHTML = '';
-                            }, 3000);
-                        }
-                    });
+                        document.getElementById('authSection').style.display = 'none';
+                        document.getElementById('controlsSection').style.display = 'block';
+                        initializeDateFields();
+                        showMessage('Authentication successful!', 'success', 'authMessage');
+                        setTimeout(() => {
+                            document.getElementById('authMessage').innerHTML = '';
+                        }, 3000);
+                    }
                 });
             } catch (error) {
                 showMessage('Authentication error: ' + error.message, 'error', 'authMessage');
