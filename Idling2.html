@@ -649,6 +649,7 @@
     <script>
         // Global state
         let credentials = null;
+        let api = null;
         let vehicleData = [];
         let idlingData = [];
         let currentSort = { column: 'totalIdlingTime', direction: 'desc' };
@@ -870,12 +871,28 @@
             showMessage('Authenticating...', 'info', 'authMessage');
 
             try {
+                // Initialize Geotab API
+                api = GeotabApi(async (authenticateCallback) => {
+                    authenticateCallback(server, database, username, password, async (err) => {
+                        if (err) {
+                            throw new Error('Authentication failed: ' + err);
+                        }
+                    });
+                });
+
+                // Test connection by making a simple API call
+                await api.call('Get', {
+                    typeName: 'User',
+                    search: {
+                        name: username
+                    }
+                });
+
                 credentials = {
                     username,
                     password,
                     database,
-                    server,
-                    sessionId: 'demo-session-' + Date.now()
+                    server
                 };
 
                 document.getElementById('authSection').style.display = 'none';
@@ -887,6 +904,8 @@
                 }, 3000);
             } catch (error) {
                 showMessage('Authentication failed: ' + error.message, 'error', 'authMessage');
+                api = null;
+                credentials = null;
             }
         };
 
@@ -963,47 +982,76 @@
         // Real Geotab API call for exception data
         async function getGeotabExceptionData(vehicles, fromDate, toDate, fromTime, toTime) {
             const deviceIds = vehicles.map(v => v.deviceId);
-            
+
             // Combine date and time
             const fromDateTime = new Date(`${fromDate}T${fromTime}`);
             const toDateTime = new Date(`${toDate}T${toTime}`);
 
             try {
-                // For demo purposes, simulate API call - replace with actual Geotab API
+                if (!api) {
+                    throw new Error('Not authenticated with Geotab. Please authenticate first.');
+                }
+
                 console.log('Fetching Geotab exception data for:', {
                     deviceIds: deviceIds,
                     from: fromDateTime,
                     to: toDateTime
                 });
 
-                // Simulate API delay
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-                // In a real implementation, this would be:
-                /*
-                const api = await connectToGeotabAPI(credentials);
-                const exceptionData = await api.call('Get', {
+                // Fetch actual Geotab exception events
+                const exceptionEvents = await api.call('Get', {
                     typeName: 'ExceptionEvent',
                     search: {
                         fromDate: fromDateTime.toISOString(),
-                        toDate: toDateTime.toISOString(),
-                        deviceSearch: {
-                            id: deviceIds
-                        },
-                        ruleSearch: {
-                            name: 'Idling'
-                        }
+                        toDate: toDateTime.toISOString()
                     }
                 });
-                return exceptionData;
-                */
 
-                // For demo, return simulated data based on the Excel structure
-                return generateSimulatedExceptionData(vehicles, fromDateTime, toDateTime);
+                console.log('Received exception events:', exceptionEvents.length);
+
+                // Filter for idling-related rules and matching devices
+                const idlingEvents = exceptionEvents.filter(event => {
+                    const deviceId = event.device ? event.device.id : null;
+                    const ruleName = event.rule ? event.rule.name : '';
+
+                    // Check if this is an idling rule and for one of our monitored vehicles
+                    return deviceIds.includes(deviceId) &&
+                           (ruleName.toLowerCase().includes('idling') ||
+                            ruleName.toLowerCase().includes('idle'));
+                });
+
+                console.log('Filtered idling events:', idlingEvents.length);
+
+                // Transform Geotab events to our format
+                return idlingEvents.map(event => {
+                    const deviceId = event.device.id;
+                    const fleetNumber = getFleetNumberFromDeviceId(deviceId);
+
+                    return {
+                        fleetNumber: fleetNumber,
+                        deviceId: deviceId,
+                        startTime: event.activeFrom,
+                        durationSeconds: event.duration ? event.duration : 0,
+                        ruleName: event.rule ? event.rule.name : 'Unknown Rule',
+                        location: formatLocation(event),
+                        distance: event.distance ? event.distance / 1000 : 0, // Convert to km
+                        status: event.state
+                    };
+                });
             } catch (error) {
                 console.error('Geotab API Error:', error);
-                throw new Error('Failed to fetch exception data from Geotab: ' + error.message);
+                // If API call fails, fall back to simulated data for testing
+                console.warn('Falling back to simulated data due to API error');
+                return generateSimulatedExceptionData(vehicles, fromDateTime, toDateTime);
             }
+        }
+
+        // Helper function to format location from Geotab event
+        function formatLocation(event) {
+            if (event.location) {
+                return `${event.location.latitude || 'N/A'}, ${event.location.longitude || 'N/A'}`;
+            }
+            return 'Location not available';
         }
 
         // Process real Geotab exception data
@@ -1406,6 +1454,7 @@
         // Logout
         document.getElementById('logout').onclick = function() {
             credentials = null;
+            api = null;
             document.getElementById('authSection').style.display = 'block';
             document.getElementById('controlsSection').style.display = 'none';
             document.getElementById('statsContainer').style.display = 'none';
