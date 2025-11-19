@@ -478,6 +478,7 @@
         let geotabDevices = [];
         let deviceMapping = {};
         let isGeotabAddIn = false;
+        let currentUrgentVehicles = [];
 
         // Auto-detect if we're inside Geotab and initialize with error handling
         window.addEventListener('load', function() {
@@ -990,18 +991,28 @@
                     </div>
                     
                     <div id="detailedPreview" style="display: none;">
-                        <table style="width: 100%; font-size: 12px;">
+                        <table id="previewDataTable" style="width: 100%; font-size: 12px;">
                             <thead>
                                 <tr style="background: #1976d2; color: white;">
-                                    <th>Fleet #</th>
-                                    <th>Hubo Paid To</th>
-                                    <th>Hubo Reading</th>
-                                    <th>Driver</th>
-                                    <th>Email</th>
+                                    <th onclick="sortPreviewTable('fleetNumber')" style="cursor: pointer; user-select: none;" title="Click to sort">
+                                        Fleet # <span id="previewSort-fleetNumber">⚭</span>
+                                    </th>
+                                    <th onclick="sortPreviewTable('huboPaidTo')" style="cursor: pointer; user-select: none;" title="Click to sort">
+                                        Hubo Paid To <span id="previewSort-huboPaidTo">⚭</span>
+                                    </th>
+                                    <th onclick="sortPreviewTable('huboOdoReading')" style="cursor: pointer; user-select: none;" title="Click to sort">
+                                        Hubo Reading <span id="previewSort-huboOdoReading">⚭</span>
+                                    </th>
+                                    <th onclick="sortPreviewTable('driverName')" style="cursor: pointer; user-select: none;" title="Click to sort">
+                                        Driver <span id="previewSort-driverName">⚭</span>
+                                    </th>
+                                    <th onclick="sortPreviewTable('driverEmail')" style="cursor: pointer; user-select: none;" title="Click to sort">
+                                        Email <span id="previewSort-driverEmail">⚭</span>
+                                    </th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="previewTableBody">
             `;
 
             // Show first 5 rows as preview
@@ -1046,7 +1057,7 @@
         function togglePreview() {
             const detailedPreview = document.getElementById('detailedPreview');
             const toggleBtn = document.getElementById('previewToggle');
-            
+
             if (detailedPreview.style.display === 'none') {
                 detailedPreview.style.display = 'block';
                 toggleBtn.textContent = '👁️ Hide Details';
@@ -1054,6 +1065,68 @@
                 detailedPreview.style.display = 'none';
                 toggleBtn.textContent = '👁️ Show Details';
             }
+        }
+
+        // Sort preview table
+        let previewSortOrder = {};
+        function sortPreviewTable(column) {
+            // Toggle sort order
+            previewSortOrder[column] = previewSortOrder[column] === 'asc' ? 'desc' : 'asc';
+            const isAscending = previewSortOrder[column] === 'asc';
+
+            // Create sorted copy of csvData
+            const sortedData = [...csvData].sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+
+                // Convert to numbers if the column contains numeric data
+                if (column === 'fleetNumber' || column === 'huboPaidTo' || column === 'huboOdoReading') {
+                    aVal = parseInt(String(aVal).replace(/,/g, '')) || 0;
+                    bVal = parseInt(String(bVal).replace(/,/g, '')) || 0;
+                } else {
+                    // String comparison (case-insensitive)
+                    aVal = String(aVal || '').toLowerCase();
+                    bVal = String(bVal || '').toLowerCase();
+                }
+
+                if (aVal < bVal) return isAscending ? -1 : 1;
+                if (aVal > bVal) return isAscending ? 1 : -1;
+                return 0;
+            });
+
+            // Update sort indicators
+            document.querySelectorAll('[id^="previewSort-"]').forEach(el => el.textContent = '⚭');
+            document.getElementById(`previewSort-${column}`).textContent = isAscending ? '▲' : '▼';
+
+            // Regenerate table body
+            let bodyHtml = '';
+            sortedData.slice(0, 5).forEach(row => {
+                const emailStatus = row.driverEmail ? '✅' : '❌';
+                const driverStatus = row.driverName ? '✅' : '❌';
+
+                bodyHtml += `
+                    <tr style="background: white;">
+                        <td><strong>${row.fleetNumber}</strong></td>
+                        <td>${row.huboPaidTo}</td>
+                        <td>${row.huboOdoReading}</td>
+                        <td>${row.driverName || 'No name'}</td>
+                        <td style="font-size: 10px;">${row.driverEmail || 'No email'}</td>
+                        <td>${emailStatus} ${driverStatus}</td>
+                    </tr>
+                `;
+            });
+
+            if (sortedData.length > 5) {
+                bodyHtml += `
+                    <tr style="background: #e3f2fd;">
+                        <td colspan="6" style="text-align: center; font-style: italic;">
+                            ... and ${sortedData.length - 5} more records
+                        </td>
+                    </tr>
+                `;
+            }
+
+            document.getElementById('previewTableBody').innerHTML = bodyHtml;
         }
 
         // Simple CSV line parser
@@ -1955,31 +2028,54 @@
             }, 100);
         }
 
-        // Display due vehicles in a table (MODIFIED to show most urgent first with clear hierarchy)
-        function displayDueVehicles(dueVehicles) {
-            let html = `
-                <div style="background: linear-gradient(135deg, #fee2e2, #fecaca); border: 3px solid #dc2626; border-radius: 15px; padding: 20px; margin-top: 15px;">
-                    <h4 style="color: #7f1d1d; margin-top: 0; font-size: 1.5em;">🚨 VEHICLES REQUIRING RUC LICENSE RENEWAL (${dueVehicles.length})</h4>
-                    <p style="color: #991b1b; font-weight: bold; margin-bottom: 20px;">⚡ SORTED BY URGENCY - MOST CRITICAL FIRST ⚡</p>
-                    
-                    <div style="overflow-x: auto;">
-                        <table style="width: 100%; margin-top: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            <thead>
-                                <tr style="background: #7f1d1d; color: white; font-size: 14px;">
-                                    <th style="padding: 15px;">🚨 URGENCY</th>
-                                    <th style="padding: 15px;">Fleet #</th>
-                                    <th style="padding: 15px;">Driver</th>
-                                    <th style="padding: 15px;">Distance Remaining</th>
-                                    <th style="padding: 15px;">Action Required</th>
-                                    <th style="padding: 15px;">Email Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-            `;
+        // Sort urgent vehicles table
+        let urgentSortOrder = {};
+        function sortUrgentTable(column) {
+            if (currentUrgentVehicles.length === 0) return;
 
-            dueVehicles.forEach((vehicle, index) => {
+            // Toggle sort order
+            urgentSortOrder[column] = urgentSortOrder[column] === 'asc' ? 'desc' : 'asc';
+            const isAscending = urgentSortOrder[column] === 'asc';
+
+            // Sort the data
+            const sortedVehicles = [...currentUrgentVehicles].sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+
+                // Handle different column types
+                if (column === 'fleetNumber' || column === 'distanceRemaining') {
+                    aVal = parseInt(String(aVal).replace(/,/g, '')) || 0;
+                    bVal = parseInt(String(bVal).replace(/,/g, '')) || 0;
+                } else if (column === 'urgency') {
+                    // Sort by urgencyOrder instead
+                    aVal = a.urgencyOrder || 99;
+                    bVal = b.urgencyOrder || 99;
+                } else {
+                    // String comparison
+                    aVal = String(aVal || '').toLowerCase();
+                    bVal = String(bVal || '').toLowerCase();
+                }
+
+                if (aVal < bVal) return isAscending ? -1 : 1;
+                if (aVal > bVal) return isAscending ? 1 : -1;
+                return 0;
+            });
+
+            // Update sort indicators
+            document.querySelectorAll('[id^="urgentSort-"]').forEach(el => el.textContent = '⚭');
+            document.getElementById(`urgentSort-${column}`).textContent = isAscending ? '▲' : '▼';
+
+            // Regenerate table body
+            renderUrgentVehiclesTable(sortedVehicles);
+        }
+
+        // Render urgent vehicles table body
+        function renderUrgentVehiclesTable(vehicles) {
+            let bodyHtml = '';
+
+            vehicles.forEach((vehicle, index) => {
                 let urgencyStyle, urgencyText, actionText;
-                
+
                 if (vehicle.distanceRemaining < 0) {
                     urgencyStyle = 'background: #7f1d1d; color: white;';
                     urgencyText = '🔴 OVERDUE';
@@ -2001,12 +2097,12 @@
                     urgencyText = '⚪ MEDIUM';
                     actionText = 'MONITOR';
                 }
-                
-                const distanceDisplay = vehicle.distanceRemaining < 0 ? 
-                    `${vehicle.distanceRemaining}km (OVERDUE!)` : 
+
+                const distanceDisplay = vehicle.distanceRemaining < 0 ?
+                    `${vehicle.distanceRemaining}km (OVERDUE!)` :
                     `${vehicle.distanceRemaining.toLocaleString()}km`;
-                
-                html += `
+
+                bodyHtml += `
                     <tr style="background: white; border-bottom: 2px solid #fee2e2;">
                         <td style="padding: 12px; ${urgencyStyle} font-weight: bold; text-align: center;">${urgencyText}</td>
                         <td style="padding: 12px; font-weight: bold; font-size: 16px;">${vehicle.fleetNumber}</td>
@@ -2021,6 +2117,42 @@
                 `;
             });
 
+            document.getElementById('urgentVehiclesTableBody').innerHTML = bodyHtml;
+        }
+
+        // Display due vehicles in a table (MODIFIED to show most urgent first with clear hierarchy)
+        function displayDueVehicles(dueVehicles) {
+            // Store vehicles for sorting
+            currentUrgentVehicles = dueVehicles;
+            let html = `
+                <div style="background: linear-gradient(135deg, #fee2e2, #fecaca); border: 3px solid #dc2626; border-radius: 15px; padding: 20px; margin-top: 15px;">
+                    <h4 style="color: #7f1d1d; margin-top: 0; font-size: 1.5em;">🚨 VEHICLES REQUIRING RUC LICENSE RENEWAL (${dueVehicles.length})</h4>
+                    <p style="color: #991b1b; font-weight: bold; margin-bottom: 20px;">⚡ SORTED BY URGENCY - MOST CRITICAL FIRST ⚡</p>
+                    
+                    <div style="overflow-x: auto;">
+                        <table id="urgentVehiclesTable" style="width: 100%; margin-top: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <thead>
+                                <tr style="background: #7f1d1d; color: white; font-size: 14px;">
+                                    <th onclick="sortUrgentTable('urgency')" style="cursor: pointer; padding: 15px; user-select: none;" title="Click to sort">
+                                        🚨 URGENCY <span id="urgentSort-urgency">⚭</span>
+                                    </th>
+                                    <th onclick="sortUrgentTable('fleetNumber')" style="cursor: pointer; padding: 15px; user-select: none;" title="Click to sort">
+                                        Fleet # <span id="urgentSort-fleetNumber">⚭</span>
+                                    </th>
+                                    <th onclick="sortUrgentTable('driverName')" style="cursor: pointer; padding: 15px; user-select: none;" title="Click to sort">
+                                        Driver <span id="urgentSort-driverName">⚭</span>
+                                    </th>
+                                    <th onclick="sortUrgentTable('distanceRemaining')" style="cursor: pointer; padding: 15px; user-select: none;" title="Click to sort">
+                                        Distance Remaining <span id="urgentSort-distanceRemaining">⚭</span>
+                                    </th>
+                                    <th style="padding: 15px;">Action Required</th>
+                                    <th style="padding: 15px;">Email Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="urgentVehiclesTableBody">
+            `;
+
+            // Table body will be populated by renderUrgentVehiclesTable
             html += `
                             </tbody>
                         </table>
@@ -2039,6 +2171,8 @@
             `;
 
             document.getElementById('dueVehiclesList').innerHTML = html;
+            // Render the table body
+            renderUrgentVehiclesTable(dueVehicles);
         }
 
         // Send RUC emails (placeholder function)
