@@ -997,7 +997,7 @@
 
     async function updateMapMarkers(locations) {
       if (!map || typeof L === 'undefined') {
-        updateFallbackMapWithVehicles(locations);
+        await updateFallbackMapWithVehicles(locations);
         return;
       }
 
@@ -1054,7 +1054,7 @@
         }
       } catch (error) {
         console.error('Error updating markers:', error);
-        updateFallbackMapWithVehicles(locations);
+        await updateFallbackMapWithVehicles(locations);
       }
     }
 
@@ -1282,7 +1282,7 @@
 
         // Update map if visible
         if (map) {
-          updateMapMarkers(locations);
+          await updateMapMarkers(locations);
         }
 
         // Update alert panel
