@@ -994,22 +994,22 @@
                         <table id="previewDataTable" style="width: 100%; font-size: 12px;">
                             <thead>
                                 <tr style="background: #1976d2; color: white;">
-                                    <th onclick="sortPreviewTable('fleetNumber')" style="cursor: pointer; user-select: none;" title="Click to sort">
+                                    <th onclick="sortPreviewTable('fleetNumber')" style="cursor: pointer; user-select: none; padding: 12px;" title="Click to sort">
                                         Fleet # <span id="previewSort-fleetNumber">⚭</span>
                                     </th>
-                                    <th onclick="sortPreviewTable('huboPaidTo')" style="cursor: pointer; user-select: none;" title="Click to sort">
+                                    <th onclick="sortPreviewTable('huboPaidTo')" style="cursor: pointer; user-select: none; padding: 12px;" title="Click to sort">
                                         Hubo Paid To <span id="previewSort-huboPaidTo">⚭</span>
                                     </th>
-                                    <th onclick="sortPreviewTable('huboOdoReading')" style="cursor: pointer; user-select: none;" title="Click to sort">
+                                    <th onclick="sortPreviewTable('huboOdoReading')" style="cursor: pointer; user-select: none; padding: 12px;" title="Click to sort">
                                         Hubo Reading <span id="previewSort-huboOdoReading">⚭</span>
                                     </th>
-                                    <th onclick="sortPreviewTable('driverName')" style="cursor: pointer; user-select: none;" title="Click to sort">
+                                    <th onclick="sortPreviewTable('driverName')" style="cursor: pointer; user-select: none; padding: 12px;" title="Click to sort">
                                         Driver <span id="previewSort-driverName">⚭</span>
                                     </th>
-                                    <th onclick="sortPreviewTable('driverEmail')" style="cursor: pointer; user-select: none;" title="Click to sort">
+                                    <th onclick="sortPreviewTable('driverEmail')" style="cursor: pointer; user-select: none; padding: 12px;" title="Click to sort">
                                         Email <span id="previewSort-driverEmail">⚭</span>
                                     </th>
-                                    <th>Status</th>
+                                    <th style="padding: 12px;">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="previewTableBody">
@@ -1019,15 +1019,15 @@
             csvData.slice(0, 5).forEach(row => {
                 const emailStatus = row.driverEmail ? '✅' : '❌';
                 const driverStatus = row.driverName ? '✅' : '❌';
-                
+
                 html += `
                     <tr style="background: white;">
-                        <td><strong>${row.fleetNumber}</strong></td>
-                        <td>${row.huboPaidTo}</td>
-                        <td>${row.huboOdoReading}</td>
-                        <td>${row.driverName || 'No name'}</td>
-                        <td style="font-size: 10px;">${row.driverEmail || 'No email'}</td>
-                        <td>${emailStatus} ${driverStatus}</td>
+                        <td style="padding: 8px;"><strong>${row.fleetNumber}</strong></td>
+                        <td style="padding: 8px;">${row.huboPaidTo}</td>
+                        <td style="padding: 8px;">${row.huboOdoReading}</td>
+                        <td style="padding: 8px;">${row.driverName || 'No name'}</td>
+                        <td style="padding: 8px; font-size: 10px;">${row.driverEmail || 'No email'}</td>
+                        <td style="padding: 8px;">${emailStatus} ${driverStatus}</td>
                     </tr>
                 `;
             });
@@ -1106,12 +1106,12 @@
 
                 bodyHtml += `
                     <tr style="background: white;">
-                        <td><strong>${row.fleetNumber}</strong></td>
-                        <td>${row.huboPaidTo}</td>
-                        <td>${row.huboOdoReading}</td>
-                        <td>${row.driverName || 'No name'}</td>
-                        <td style="font-size: 10px;">${row.driverEmail || 'No email'}</td>
-                        <td>${emailStatus} ${driverStatus}</td>
+                        <td style="padding: 8px;"><strong>${row.fleetNumber}</strong></td>
+                        <td style="padding: 8px;">${row.huboPaidTo}</td>
+                        <td style="padding: 8px;">${row.huboOdoReading}</td>
+                        <td style="padding: 8px;">${row.driverName || 'No name'}</td>
+                        <td style="padding: 8px; font-size: 10px;">${row.driverEmail || 'No email'}</td>
+                        <td style="padding: 8px;">${emailStatus} ${driverStatus}</td>
                     </tr>
                 `;
             });
