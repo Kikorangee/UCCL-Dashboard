@@ -234,10 +234,10 @@
             <div id="authStatus"></div>
         </div>
 
-        <!-- Step 1: Load CSV or Use Hardcoded Data -->
-        <div class="card">
+        <!-- Step 1: Load CSV or Use Hardcoded Data (HIDDEN - now automated) -->
+        <div class="card" id="step1Section" style="display: none;">
             <h3>📄 Step 1: Load Your RUC Data</h3>
-            
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                 <button onclick="loadHardcodedData()" class="btn btn-success" id="hardcodedBtn">
                     ⚡ Load Hardcoded Data (79 Records)
@@ -246,17 +246,17 @@
                     🔄 Refresh All Data
                 </button>
             </div>
-            
+
             <div style="text-align: center; margin: 15px 0; color: #666; font-weight: bold;">
                 OR
             </div>
-            
+
             <div class="file-upload" onclick="document.getElementById('csvFile').click()">
                 <p>📁 Click to select your own RUC file</p>
                 <p><small>Supports: CSV, Excel (.xlsx, .xls)</small></p>
                 <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" style="display: none;" onchange="loadDataFile(event)">
             </div>
-            
+
             <div style="margin: 15px 0; padding: 15px; background: #e3f2fd; border-radius: 8px;">
                 <h4>📊 Hardcoded Data Info:</h4>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
@@ -278,9 +278,32 @@
                     </div>
                 </div>
             </div>
-            
+
             <div id="csvStatus"></div>
             <div id="dataPreview" style="display: none;">
+                <h4>📋 Data Preview</h4>
+                <div id="previewTable"></div>
+            </div>
+        </div>
+
+        <!-- Custom RUC File Upload Option -->
+        <div class="card" style="padding: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <strong>📊 Data loaded automatically</strong>
+                    <div id="csvStatus"></div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="document.getElementById('csvFile').click()" class="btn btn-primary" style="margin: 0;">
+                        📁 Upload Custom RUC File
+                    </button>
+                    <button onclick="refreshData()" class="btn btn-primary" id="refreshBtn" style="margin: 0;">
+                        🔄 Refresh
+                    </button>
+                    <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" style="display: none;" onchange="loadDataFile(event)">
+                </div>
+            </div>
+            <div id="dataPreview" style="display: none; margin-top: 15px;">
                 <h4>📋 Data Preview</h4>
                 <div id="previewTable"></div>
             </div>
@@ -294,9 +317,9 @@
             <div id="deviceMapping"></div>
         </div>
 
-        <!-- Step 3: Update Distances -->
+        <!-- Step 1: Update Distances -->
         <div class="card" id="updateSection" style="display: none;">
-            <h3>⚡ Step 3: Update Distances with Real Odometer Data</h3>
+            <h3>⚡ Step 1: Update Distances with Real Odometer Data</h3>
             <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                 <h4>ℹ️ Important Note:</h4>
                 <p><strong>Negative distances:</strong> When odometer exceeds RUC paid to, the system will show negative km (indicating RUC overdue)</p>
@@ -312,9 +335,9 @@
             </div>
         </div>
 
-        <!-- Step 4: Email Notifications -->
+        <!-- Step 2: Email Notifications -->
         <div class="card" id="emailSection" style="display: none;">
-            <h3>📧 Step 4: RUC License Renewal Alerts</h3>
+            <h3>📧 Step 2: RUC License Renewal Alerts</h3>
             <p><strong>🚨 URGENT MONITORING:</strong> Vehicles requiring immediate RUC license attention</p>
             
             <div style="margin: 15px 0; padding: 20px; background: #fff3cd; border-radius: 8px; border-left: 5px solid #f59e0b;">
@@ -344,9 +367,9 @@
             <div id="dueVehiclesList"></div>
         </div>
 
-        <!-- Step 5: Download Updated CSV -->
+        <!-- Step 3: Download Updated CSV -->
         <div class="card" id="downloadSection" style="display: none;">
-            <h3>💾 Step 5: Download Updated CSV</h3>
+            <h3>💾 Step 3: Download Updated CSV</h3>
             <button onclick="downloadUpdatedCSV()" class="btn btn-success">📥 Download Updated RUC CSV</button>
             <div id="tableContainer"></div>
         </div>
@@ -483,9 +506,14 @@
                         credentials = { internal: true };
                         
                         // Show success message
-                        showStatus('csvStatus', 
-                            '✅ Geotab Add-In loaded successfully! You can now upload your RUC CSV file.', 
+                        showStatus('csvStatus',
+                            '✅ Geotab Add-In loaded successfully! Loading hardcoded data automatically...',
                             'success');
+
+                        // Automatically load hardcoded data
+                        setTimeout(() => {
+                            loadHardcodedData();
+                        }, 500);
                     })
                     .catch((error) => {
                         console.error('❌ Geotab Add-In initialization failed:', error);
@@ -693,8 +721,13 @@
                 });
 
                 credentials = result.credentials;
-                showStatus('authStatus', '✅ Successfully connected to Geotab!', 'success');
+                showStatus('authStatus', '✅ Successfully connected to Geotab! Loading hardcoded data automatically...', 'success');
                 document.getElementById('authBtn').textContent = 'Connected ✅';
+
+                // Automatically load hardcoded data
+                setTimeout(() => {
+                    loadHardcodedData();
+                }, 500);
 
             } catch (error) {
                 showStatus('authStatus', '❌ Failed to connect: ' + error.message, 'error');
@@ -731,14 +764,18 @@
             setTimeout(() => {
                 document.getElementById('hardcodedBtn').disabled = false;
                 document.getElementById('hardcodedBtn').innerHTML = '⚡ Load Hardcoded Data (79 Records)';
-                
+
                 const emailCount = csvData.filter(row => row.driverEmail && row.driverEmail.includes('@')).length;
-                showStatus('csvStatus', 
-                    `✅ Successfully loaded ${csvData.length} hardcoded RUC records (${emailCount} with valid email addresses)`, 
+                showStatus('csvStatus',
+                    `✅ Successfully loaded ${csvData.length} hardcoded RUC records (${emailCount} with valid email addresses). Fetching devices automatically...`,
                     'success');
-                
+
                 showDataPreview();
-                document.getElementById('deviceSection').style.display = 'block';
+
+                // Automatically fetch devices and create mapping
+                setTimeout(() => {
+                    getGeotabDevices();
+                }, 500);
             }, 500);
         }
 
@@ -907,15 +944,19 @@
 
             if (csvData.length > 0) {
                 const emailCount = csvData.filter(row => row.driverEmail).length;
-                showStatus('csvStatus', 
-                    `✅ Successfully loaded ${csvData.length} RUC records (${emailCount} with email addresses)`, 
+                showStatus('csvStatus',
+                    `✅ Successfully loaded ${csvData.length} RUC records (${emailCount} with email addresses). Fetching devices automatically...`,
                     'success');
-                
+
                 showDataPreview();
-                document.getElementById('deviceSection').style.display = 'block';
+
+                // Automatically fetch devices and create mapping
+                setTimeout(() => {
+                    getGeotabDevices();
+                }, 500);
             } else {
-                showStatus('csvStatus', 
-                    '❌ No valid data found. Please check your file format and ensure it contains Fleet #, Hubo Paid To, and Hubo/Odo Reading columns.', 
+                showStatus('csvStatus',
+                    '❌ No valid data found. Please check your file format and ensure it contains Fleet #, Hubo Paid To, and Hubo/Odo Reading columns.',
                     'error');
             }
         }
