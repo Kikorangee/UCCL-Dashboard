@@ -451,14 +451,26 @@
     ];
 
     // Enhanced environment detection
+    let isGeotabEnvironment = false;
+
     function detectEnvironment() {
       console.log('=== Environment Detection ===');
-      console.log('Geotab Add-In:', window.parent !== window);
-      console.log('Leaflet Available:', typeof L !== 'undefined');
+      const geotabDetected = window.parent !== window;
+      const leafletAvailable = typeof L !== 'undefined';
+      console.log('Geotab Add-In:', geotabDetected);
+      console.log('Leaflet Available:', leafletAvailable);
       console.log('User Agent:', navigator.userAgent);
+
+      isGeotabEnvironment = geotabDetected;
+
+      if (isGeotabEnvironment && !leafletAvailable) {
+        console.warn('⚠️ Geotab environment detected with CDN-blocked resources');
+        console.log('💡 Using fallback map mode (Google Maps links)');
+      }
+
       return {
-        isGeotab: window.parent !== window,
-        leafletAvailable: typeof L !== 'undefined'
+        isGeotab: geotabDetected,
+        leafletAvailable: leafletAvailable
       };
     }
 
@@ -712,6 +724,13 @@
     function initializeMap() {
       const mapContainer = document.getElementById('mapContainer');
       mapContainer.style.display = 'block';
+
+      // In Geotab environments, skip Leaflet entirely and use fallback mode
+      if (isGeotabEnvironment) {
+        console.log('🔧 Geotab environment detected - using fallback map mode');
+        showFallbackMap();
+        return null;
+      }
 
       // Check if Leaflet is available
       if (typeof L === 'undefined') {
