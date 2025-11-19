@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Northland Geofence Monitoring System</title>
   
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+  <!-- Leaflet CSS - Local Files (works in Geotab plugin environment) -->
+  <link rel="stylesheet" href="js/leaflet/leaflet.min.css" />
+  <link rel="stylesheet" href="js/leaflet/leaflet.draw.css" />
   
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -353,9 +353,9 @@
     </div>
   </div>
 
-  <!-- Leaflet JS -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+  <!-- Leaflet JS - Local Files (works in Geotab plugin environment) -->
+  <script src="js/leaflet/leaflet.min.js"></script>
+  <script src="js/leaflet/leaflet.draw.js"></script>
 
   <script>
     let credentials = null;
@@ -725,20 +725,15 @@
       const mapContainer = document.getElementById('mapContainer');
       mapContainer.style.display = 'block';
 
-      // In Geotab environments, skip Leaflet entirely and use fallback mode
-      if (isGeotabEnvironment) {
-        console.log('🔧 Geotab environment detected - using fallback map mode');
+      // Check if Leaflet is available (loaded from local js/leaflet/ directory)
+      if (typeof L === 'undefined') {
+        console.warn('Leaflet not available - using fallback map view');
+        console.log('Leaflet not loaded, switching to fallback Google Maps mode');
         showFallbackMap();
         return null;
       }
 
-      // Check if Leaflet is available
-      if (typeof L === 'undefined') {
-        console.warn('Leaflet not available - using fallback map view');
-        console.log('Leaflet availability check failed, switching to fallback');
-        showFallbackMap();
-        return null;
-      }
+      console.log('✅ Leaflet library loaded successfully from local files');
 
       try {
         if (map) {
