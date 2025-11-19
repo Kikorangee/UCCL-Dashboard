@@ -371,6 +371,7 @@
     let drawnItems = null;
     let tempGeofenceCoords = null;
     let isDrawingMode = false;
+    let deviceToVehicleMap = new Map(); // Cache for device ID to vehicle number mapping
 
     // Vehicle Policy Groups
     const VEHICLE_GROUPS = {
@@ -541,9 +542,48 @@
       return 'unknown';
     }
 
-    function getVehicleNumberFromDevice(deviceId) {
-      // This would need to be mapped from your Geotab data
-      // For now, return a placeholder - you'll need to implement device-vehicle mapping
+    async function getVehicleNumberFromDevice(deviceId) {
+      // Check cache first
+      if (deviceToVehicleMap.has(deviceId)) {
+        return deviceToVehicleMap.get(deviceId);
+      }
+
+      try {
+        // Fetch device details to get the vehicle number
+        const devices = await callGeotabAPI('Get', {
+          typeName: 'Device',
+          search: { id: deviceId }
+        });
+
+        if (devices && devices.length > 0) {
+          const device = devices[0];
+          // Try to extract vehicle number from device name or serial number
+          let vehicleNumber = 'unknown';
+
+          // Try to match device name to vehicle number
+          if (device.name) {
+            // Extract number from device name (e.g., "Vehicle 520" -> "520")
+            const match = device.name.match(/\d+/);
+            if (match) {
+              vehicleNumber = match[0];
+            } else if (device.serialNumber) {
+              // Fallback to serial number if available
+              const serialMatch = device.serialNumber.match(/\d+/);
+              if (serialMatch) {
+                vehicleNumber = serialMatch[0];
+              }
+            }
+          }
+
+          // Cache the mapping
+          deviceToVehicleMap.set(deviceId, vehicleNumber);
+          console.log(`Device ${deviceId} mapped to vehicle ${vehicleNumber}`);
+          return vehicleNumber;
+        }
+      } catch (error) {
+        console.warn(`Could not fetch device details for ${deviceId}:`, error);
+      }
+
       return 'unknown';
     }
 
@@ -955,7 +995,7 @@
       tempGeofenceCoords = null;
     }
 
-    function updateMapMarkers(locations) {
+    async function updateMapMarkers(locations) {
       if (!map || typeof L === 'undefined') {
         updateFallbackMapWithVehicles(locations);
         return;
@@ -971,13 +1011,14 @@
 
         const timeout = parseInt(document.getElementById('defaultTimeout').value) || 30;
 
-        locations.forEach(location => {
+        // Process each location asynchronously
+        for (const location of locations) {
           const isInside = isInGeofence(location.latitude, location.longitude, activeGeofence);
-          const vehicleNumber = getVehicleNumberFromDevice(location.deviceId);
+          const vehicleNumber = await getVehicleNumberFromDevice(location.deviceId);
           const timePermitted = checkTimeRestrictions(vehicleNumber);
-          
+
           let markerColor, statusText;
-          
+
           if (!isInside && !timePermitted) {
             markerColor = '#e53e3e';
             statusText = 'Policy Violation ⚠️';
@@ -1000,7 +1041,7 @@
 
           const popupContent = `
             <div style="min-width:200px;">
-              <h4 style="margin:0 0 8px 0;">${location.deviceName}</h4>
+              <h4 style="margin:0 0 8px 0;">${location.deviceName} (Vehicle ${vehicleNumber})</h4>
               <p style="margin:4px 0;color:${markerColor};font-weight:600;">${statusText}</p>
               <p style="margin:4px 0;">📍 ${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}</p>
               <p style="margin:4px 0;">🕐 ${location.timestamp.toLocaleTimeString()}</p>
@@ -1010,26 +1051,26 @@
 
           marker.bindPopup(popupContent);
           markers.set(location.deviceId, marker);
-        });
+        }
       } catch (error) {
         console.error('Error updating markers:', error);
         updateFallbackMapWithVehicles(locations);
       }
     }
 
-    function updateFallbackMapWithVehicles(locations) {
+    async function updateFallbackMapWithVehicles(locations) {
       const content = document.getElementById('fallbackMapContent');
       if (!content) return;
 
       const activeGeofence = getActiveGeofence();
 
       let html = '<div style="text-align:left;width:100%;">';
-      
+
       // Show active geofence
       if (activeGeofence) {
         const center = calculateCenter(activeGeofence.coordinates);
         const mapLink = `https://www.google.com/maps?q=${center[0]},${center[1]}&z=10`;
-        
+
         html += '<div style="background:white;padding:20px;border-radius:10px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">';
         html += '<h4 style="margin-bottom:15px;color:#1e3c72;">📍 Active Policy Boundary:</h4>';
         html += `
@@ -1045,19 +1086,20 @@
         `;
         html += '</div>';
       }
-      
+
       // Show vehicles
       if (locations && locations.length > 0) {
         html += '<div style="background:white;padding:20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">';
         html += '<h4 style="margin-bottom:15px;color:#1e3c72;">🚗 Vehicle Policy Compliance:</h4>';
-        
-        locations.forEach(location => {
+
+        // Process each location asynchronously
+        for (const location of locations) {
           const isInside = activeGeofence ? isInGeofence(location.latitude, location.longitude, activeGeofence) : false;
-          const vehicleNumber = getVehicleNumberFromDevice(location.deviceId);
+          const vehicleNumber = await getVehicleNumberFromDevice(location.deviceId);
           const timePermitted = checkTimeRestrictions(vehicleNumber);
-          
+
           let statusColor, statusText;
-          
+
           if (!isInside && !timePermitted) {
             statusColor = '#e53e3e';
             statusText = '🚨 Policy Violation';
@@ -1068,14 +1110,14 @@
             statusColor = '#48bb78';
             statusText = '✓ Compliant';
           }
-          
+
           const mapLink = `https://www.google.com/maps?q=${location.latitude},${location.longitude}&z=15`;
-          
+
           html += `
             <div style="background:#f8f9fa;padding:15px;margin:10px 0;border-radius:8px;border-left:4px solid ${statusColor};">
               <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:10px;">
                 <div style="flex:1;">
-                  <strong style="font-size:16px;">${location.deviceName}</strong><br>
+                  <strong style="font-size:16px;">${location.deviceName} (Vehicle ${vehicleNumber})</strong><br>
                   <span style="color:${statusColor};font-weight:600;font-size:14px;">${statusText}</span><br>
                   <span style="color:#718096;font-size:13px;">📍 ${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}</span><br>
                   <span style="color:#718096;font-size:13px;">🕐 ${location.timestamp.toLocaleString()}</span>
@@ -1084,14 +1126,14 @@
               </div>
             </div>
           `;
-        });
+        }
         html += '</div>';
       } else if (activeGeofence) {
         html += '<div style="background:white;padding:20px;border-radius:10px;text-align:center;">';
         html += '<p style="color:#718096;">No vehicle locations available. Click "Check Policy Compliance" to refresh.</p>';
         html += '</div>';
       }
-      
+
       html += '</div>';
       content.innerHTML = html;
     }
@@ -1150,12 +1192,13 @@
 
         const tableRows = [];
 
-        locations.forEach(location => {
+        // Process each location and map devices to vehicles
+        for (const location of locations) {
           totalMonitored++;
           const isInside = isInGeofence(location.latitude, location.longitude, activeGeofence);
-          const vehicleNumber = getVehicleNumberFromDevice(location.deviceId);
+          const vehicleNumber = await getVehicleNumberFromDevice(location.deviceId);
           const timePermitted = checkTimeRestrictions(vehicleNumber);
-          
+
           if (isInside) {
             insideCount++;
             // Remove from violations if back inside
@@ -1164,18 +1207,19 @@
             }
           } else {
             outsideCount++;
-            
+
             const violationKey = location.deviceId;
-            
+
             if (!activeViolations.has(violationKey)) {
               activeViolations.set(violationKey, {
                 deviceId: location.deviceId,
                 deviceName: location.deviceName,
+                vehicleNumber: vehicleNumber,
                 startTime: now,
                 location: location,
                 violationType: timePermitted ? 'boundary' : 'time-boundary'
               });
-              
+
               // Trigger appropriate alert
               if (timePermitted) {
                 triggerBoundaryViolationAlert(location, vehicleNumber);
@@ -1183,7 +1227,7 @@
                 triggerTimeViolationAlert(location, vehicleNumber);
               }
             }
-            
+
             violationCount++;
           }
 
@@ -1198,16 +1242,16 @@
             statusClass = 'status-inside';
             statusText = 'Inside Boundary ✓';
           }
-          
+
           tableRows.push(`
             <tr>
-              <td><strong>${location.deviceName}</strong></td>
+              <td><strong>${location.deviceName}</strong> (Vehicle ${vehicleNumber})</td>
               <td>${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}</td>
               <td><span class="${statusClass}">${statusText}</span></td>
               <td>${location.timestamp.toLocaleString()}</td>
             </tr>
           `);
-        });
+        }
 
         // Update statistics
         document.getElementById('totalMonitored').textContent = totalMonitored;
@@ -1233,7 +1277,7 @@
             </tbody>
           </table>
         `;
-        
+
         document.getElementById('monitoringResult').innerHTML = resultHTML;
 
         // Update map if visible
@@ -1602,25 +1646,25 @@
     document.getElementById('showMap').onclick = async function(){
       try {
         showMessage('infoBanner', '🗺️ Loading policy map...', 'info');
-        
+
         initializeMap();
-        
+
         // Always try to load locations when showing map
         const locations = await getCurrentLocations();
-        
+
         if (map && typeof L !== 'undefined') {
-          updateMapMarkers(locations);
+          await updateMapMarkers(locations);
           showMessage('infoBanner', `✅ Interactive map showing ${locations.length} vehicles and ${geofences.length} policy geofences`, 'success');
         } else {
           // In fallback mode, show geofences and vehicles
-          updateFallbackMapWithVehicles(locations);
+          await updateFallbackMapWithVehicles(locations);
           showMessage('infoBanner', `✅ Showing ${geofences.length} policy geofences and ${locations.length} vehicles`, 'info');
         }
-        
+
       } catch (error) {
         console.error('Show map error:', error);
         showMessage('infoBanner', `Error loading locations: ${error.message}`, 'error');
-        
+
         // Still show the map container with geofences even if vehicle loading fails
         if (!map || typeof L === 'undefined') {
           showFallbackMap();
