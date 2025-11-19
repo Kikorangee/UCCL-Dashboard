@@ -132,6 +132,14 @@
         th {
             background: #f8f9fa;
             font-weight: bold;
+            font-size: 14px;
+            color: #333;
+        }
+        thead th {
+            background: #2d3748 !important;
+            color: white !important;
+            font-weight: bold !important;
+            padding: 15px !important;
         }
         .updated {
             background: #d4edda !important;
@@ -1264,17 +1272,79 @@
             const total = csvData.length;
 
             if (mapped === 0) {
-                showStatus('deviceStatus', 
-                    `ℹ️ No devices mapped - all ${total} vehicles will use CSV odometer readings for distance calculation`, 
+                showStatus('deviceStatus',
+                    `ℹ️ No devices mapped - all ${total} vehicles will use CSV odometer readings for distance calculation`,
                     'info');
             } else {
-                showStatus('deviceStatus', 
-                    `✅ Ready to update! ${mapped} vehicles mapped to Geotab, ${total - mapped} will use CSV readings`, 
+                showStatus('deviceStatus',
+                    `✅ Ready to update! ${mapped} vehicles mapped to Geotab, ${total - mapped} will use CSV readings`,
                     'success');
             }
 
             // Make sure update section is visible
             document.getElementById('updateSection').style.display = 'block';
+        }
+
+        // Fetch latest Hubbo KM readings from DVIRLog
+        async function fetchHubboReadings() {
+            try {
+                // Get DVIRLogs from the last 30 days
+                const toDate = new Date().toISOString();
+                const fromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+                console.log('📋 Fetching DVIRLog data for Hubbo KM readings...');
+
+                const dvirLogs = await callGeotabAPI('Get', {
+                    typeName: 'DVIRLog',
+                    search: {
+                        fromDate: fromDate,
+                        toDate: toDate
+                    }
+                });
+
+                console.log(`✅ Fetched ${dvirLogs.length} DVIR logs`);
+
+                // Group DVIRLogs by device and get the latest one for each
+                const latestDVIRByDevice = {};
+
+                dvirLogs.forEach(log => {
+                    if (log.device && log.device.id) {
+                        const deviceId = log.device.id;
+                        const logDate = new Date(log.dateTime || log.logDateTime);
+
+                        if (!latestDVIRByDevice[deviceId] ||
+                            logDate > new Date(latestDVIRByDevice[deviceId].dateTime || latestDVIRByDevice[deviceId].logDateTime)) {
+                            latestDVIRByDevice[deviceId] = log;
+                        }
+                    }
+                });
+
+                // Extract Hubbo KM from driverRemark or certifyRemark
+                csvData.forEach(row => {
+                    if (row.geotabDeviceId && latestDVIRByDevice[row.geotabDeviceId]) {
+                        const dvir = latestDVIRByDevice[row.geotabDeviceId];
+                        const hubboKM = dvir.driverRemark || dvir.certifyRemark || '';
+
+                        // Store the Hubbo KM reading
+                        row.hubboKM = hubboKM.trim();
+                        row.hubboKMDate = dvir.dateTime || dvir.logDateTime;
+
+                        console.log(`Vehicle ${row.fleetNumber}: Hubbo KM = ${row.hubboKM}`);
+                    } else {
+                        row.hubboKM = '';
+                        row.hubboKMDate = null;
+                    }
+                });
+
+                const hubboCount = csvData.filter(row => row.hubboKM).length;
+                console.log(`✅ Found Hubbo KM readings for ${hubboCount} vehicles`);
+
+                return hubboCount;
+
+            } catch (error) {
+                console.error('❌ Error fetching Hubbo KM readings:', error);
+                return 0;
+            }
         }
 
         // Update distances with real odometer data (MODIFIED to allow negative distances)
@@ -1358,17 +1428,42 @@
                     }
                 });
 
+                // Fetch Hubbo KM readings from DVIRLog
+                showProgress(90, 'Fetching Hubbo KM readings from Asset Inspect...');
+                const hubboCount = await fetchHubboReadings();
+
+                // Recalculate distances using Hubbo KM where available (prioritize manual readings)
+                showProgress(95, 'Recalculating distances with Hubbo KM priority...');
+                let hubboUsedCount = 0;
+                csvData.forEach(row => {
+                    const huboPaidKm = parseInt(row.huboPaidTo.replace(/,/g, '')) || 0;
+
+                    // Priority 1: Use Hubbo KM (manual reading from Asset Inspect) if available
+                    if (row.hubboKM && row.hubboKM.trim() !== '') {
+                        const hubboKm = parseInt(row.hubboKM.replace(/[,\s]/g, '')) || 0;
+                        row.calculatedDistance = huboPaidKm - hubboKm;
+                        row.usedHubboKM = true;
+                        hubboUsedCount++;
+                    }
+                    // Priority 2: Use device odometer (already set above for mapped devices)
+                    // Priority 3: Use CSV readings (already set above for unmapped devices)
+                    else {
+                        row.usedHubboKM = false;
+                    }
+                });
+
                 hideProgress();
-                
+
                 const mappedCount = mappedDevices.length;
                 const successCount = mappedDevices.filter(row => typeof row.calculatedDistance === 'number').length;
-                
-                showStatus('updateStatus', 
+
+                showStatus('updateStatus',
                     `✅ Distance calculation complete!<br>
-                    • <strong>Geotab mapped:</strong> ${successCount} of ${mappedCount} updated<br>
+                    • <strong>Hubbo KM (Manual):</strong> ${hubboUsedCount} vehicles using manual readings<br>
+                    • <strong>Device Odometer:</strong> ${successCount - hubboUsedCount} vehicles using Geotab readings<br>
                     • <strong>CSV readings:</strong> ${csvProcessedCount} processed<br>
-                    • <strong>Note:</strong> Negative distances indicate RUC overdue<br>
-                    <small>Geotab odometer readings converted from meters to kilometers for accurate RUC calculation.</small>`, 
+                    • <strong>Note:</strong> Hubbo KM prioritized when available, negative distances indicate RUC overdue<br>
+                    <small>Manual Hubbo KM readings take priority over device odometer for accurate RUC calculation.</small>`,
                     'success');
 
                 displayUpdatedData();
@@ -1411,8 +1506,11 @@
                                     Hubo Paid To (km) <span id="sort-huboPaidTo">⚭</span>
                                 </th>
                                 <th style="padding: 15px;">Edit</th>
+                                <th onclick="sortTable('hubboKM')" style="cursor: pointer; padding: 15px; user-select: none; background: #38a169;" title="Click to sort - Manual entry from Asset Inspect">
+                                    Hubbo KM <span id="sort-hubboKM">⚭</span>
+                                </th>
                                 <th onclick="sortTable('huboOdoReading')" style="cursor: pointer; padding: 15px; user-select: none;" title="Click to sort">
-                                    Hubo/Odo Reading (km) <span id="sort-huboOdoReading">⚭</span>
+                                    Device Odometer (km) <span id="sort-huboOdoReading">⚭</span>
                                 </th>
                                 <th style="padding: 15px;">Edit</th>
                                 <th onclick="sortTable('distanceRemaining')" style="cursor: pointer; padding: 15px; user-select: none;" title="Click to sort">
@@ -1457,9 +1555,16 @@
             
             csvData.forEach((row, index) => {
                 const statusClass = row.calculatedDistance !== null && typeof row.calculatedDistance === 'number' ? 'updated' : '';
-                const status = row.geotabDeviceId ? 
-                    (typeof row.calculatedDistance === 'number' ? '✅ Geotab' : '⚠️ No data') : 
-                    '⏸️ CSV data';
+
+                // Determine status based on data source priority
+                let status;
+                if (row.usedHubboKM) {
+                    status = '📋 Hubbo KM';
+                } else if (row.geotabDeviceId) {
+                    status = typeof row.calculatedDistance === 'number' ? '✅ Geotab' : '⚠️ No data';
+                } else {
+                    status = '⏸️ CSV data';
+                }
 
                 // Store original values if not already stored
                 if (!row.originalHuboPaidTo) {
@@ -1510,19 +1615,26 @@
                 row.urgencyLevel = urgencyLevel;
                 row.urgencyOrder = urgencyOrder;
 
+                // Format Hubbo KM display
+                const hubboKMDisplay = row.hubboKM || '<em style="color: #999;">Not entered</em>';
+                const hubboKMStyle = row.hubboKM ? 'background: #c6f6d5; color: #22543d; font-weight: bold;' : '';
+
                 html += `
                     <tr class="${statusClass}" data-index="${index}">
                         <td style="padding: 12px; font-weight: bold; font-size: 16px;">${row.fleetNumber}</td>
                         <td id="huboPaidTo_${index}" style="padding: 8px; min-width: 100px;">${row.huboPaidTo}</td>
                         <td style="padding: 8px;">
-                            <button onclick="editField(${index}, 'huboPaidTo')" class="btn" 
+                            <button onclick="editField(${index}, 'huboPaidTo')" class="btn"
                                     style="background: #667eea; color: white; padding: 4px 8px; font-size: 12px;">
                                 ✏️ Edit
                             </button>
                         </td>
+                        <td style="padding: 12px; ${hubboKMStyle}" title="Manual entry from Asset Inspect DVIR">
+                            ${hubboKMDisplay}
+                        </td>
                         <td id="huboOdoReading_${index}" style="padding: 8px; min-width: 100px;">${row.huboOdoReading}</td>
                         <td style="padding: 8px;">
-                            <button onclick="editField(${index}, 'huboOdoReading')" class="btn" 
+                            <button onclick="editField(${index}, 'huboOdoReading')" class="btn"
                                     style="background: #667eea; color: white; padding: 4px 8px; font-size: 12px;">
                                 ✏️ Edit
                             </button>
@@ -1573,6 +1685,10 @@
                     case 'huboPaidTo':
                         aVal = parseInt(a.huboPaidTo.replace(/[,\s]/g, '')) || 0;
                         bVal = parseInt(b.huboPaidTo.replace(/[,\s]/g, '')) || 0;
+                        break;
+                    case 'hubboKM':
+                        aVal = parseInt((a.hubboKM || '0').replace(/[,\s]/g, '')) || 0;
+                        bVal = parseInt((b.hubboKM || '0').replace(/[,\s]/g, '')) || 0;
                         break;
                     case 'huboOdoReading':
                         aVal = parseInt(a.huboOdoReading.replace(/[,\s]/g, '')) || 0;
@@ -2180,29 +2296,29 @@
             showStatus('emailStatus', 'ℹ️ Email functionality is a placeholder. In a real implementation, this would send notifications to drivers and administrators.', 'info');
         }
 
-        // Download updated CSV with driver information and manual override tracking (MODIFIED to include negative distances)
+        // Download updated CSV with driver information and manual override tracking (MODIFIED to include negative distances and Hubbo KM)
         function downloadUpdatedCSV() {
-            let csvContent = ', ROAD USER (RUC) ,,, ,,\n';
-            csvContent += 'Fleet #, Hubo Paid To , Hubo/Odo Reading ,distance remaining,Driver,Driver Email,RUC Admin\n';
+            let csvContent = ', ROAD USER (RUC) ,,, ,,,\n';
+            csvContent += 'Fleet #, Hubo Paid To , Hubbo KM (Manual), Device Odometer ,distance remaining,Driver,Driver Email,RUC Admin\n';
 
             let manualEditCount = 0;
             let negativeDistanceCount = 0;
-            
+
             csvData.forEach(row => {
                 // Check if values were manually edited
-                if (row.originalHuboPaidTo && 
+                if (row.originalHuboPaidTo &&
                     (row.huboPaidTo !== row.originalHuboPaidTo || row.huboOdoReading !== row.originalHuboOdoReading)) {
                     manualEditCount++;
                 }
-                
+
                 const distanceRemaining = row.calculatedDistance !== null ? row.calculatedDistance : row.distanceRemaining;
-                
+
                 // Count negative distances
                 if (typeof distanceRemaining === 'number' && distanceRemaining < 0) {
                     negativeDistanceCount++;
                 }
-                
-                csvContent += `${row.fleetNumber},"${row.huboPaidTo}","${row.huboOdoReading}","${distanceRemaining}","${row.driverName || ''}","${row.driverEmail || ''}","${row.rucAdminEmail || ''}"\n`;
+
+                csvContent += `${row.fleetNumber},"${row.huboPaidTo}","${row.hubboKM || ''}","${row.huboOdoReading}","${distanceRemaining}","${row.driverName || ''}","${row.driverEmail || ''}","${row.rucAdminEmail || ''}"\n`;
             });
 
             const blob = new Blob([csvContent], { type: 'text/csv' });
