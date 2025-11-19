@@ -716,6 +716,7 @@
       // Check if Leaflet is available
       if (typeof L === 'undefined') {
         console.warn('Leaflet not available - using fallback map view');
+        console.log('Leaflet availability check failed, switching to fallback');
         showFallbackMap();
         return null;
       }
@@ -732,14 +733,18 @@
           return null;
         }
 
+        console.log('Creating Leaflet map instance...');
         map = L.map('map').setView([-35.5, 173.8], 8);
+        console.log('Leaflet map created successfully');
 
         // Add tile layer with error handling
         try {
+          console.log('Adding tile layer...');
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors',
             maxZoom: 18
           }).addTo(map);
+          console.log('Tile layer added successfully');
         } catch (tileError) {
           console.warn('Tile layer failed, using fallback:', tileError);
           showFallbackMap();
@@ -752,11 +757,12 @@
 
         // Draw all geofences
         drawAllGeofences();
-        
+
         console.log('Map initialized successfully');
         return map;
       } catch (error) {
         console.error('Map initialization failed:', error);
+        console.error('Error details:', error.message, error.stack);
         showFallbackMap();
         return null;
       }
@@ -765,10 +771,12 @@
     function showFallbackMap() {
       const mapContainer = document.getElementById('mapContainer');
       const mapDiv = document.getElementById('map');
-      
+
+      console.log('Initializing fallback map display');
+
       // Make sure container is visible
       mapContainer.style.display = 'block';
-      
+
       mapDiv.innerHTML = `
         <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:30px;background:#f8f9fa;overflow-y:auto;">
           <h3 style="color:#2d3748;margin-bottom:20px;">📍 Policy Geofences & Vehicle Locations</h3>
@@ -779,7 +787,9 @@
           <div id="fallbackMapContent" style="width:100%;max-width:900px;"></div>
         </div>
       `;
-      
+
+      console.log('Fallback map container displayed');
+
       // Show geofences and any existing data
       updateFallbackMap();
     }
@@ -1060,9 +1070,14 @@
 
     async function updateFallbackMapWithVehicles(locations) {
       const content = document.getElementById('fallbackMapContent');
-      if (!content) return;
+      if (!content) {
+        console.warn('Fallback map content element not found');
+        return;
+      }
 
+      console.log('Updating fallback map with vehicles:', locations.length, 'locations');
       const activeGeofence = getActiveGeofence();
+      console.log('Active geofence:', activeGeofence?.name);
 
       let html = '<div style="text-align:left;width:100%;">';
 
