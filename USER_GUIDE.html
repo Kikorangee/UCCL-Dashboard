@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Northland Geofence Monitoring System - User Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1e3c72;
+            border-bottom: 3px solid #2a5298;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #2a5298;
+            border-left: 4px solid #1e3c72;
+            padding-left: 15px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            page-break-after: avoid;
+        }
+        h3 {
+            color: #1e3c72;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            page-break-after: avoid;
+        }
+        h4 {
+            color: #4a5568;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+        .toc {
+            background-color: #f8f9fa;
+            border-left: 4px solid #2a5298;
+            padding: 20px;
+            margin: 30px 0;
+            page-break-inside: avoid;
+        }
+        .toc ol {
+            margin-left: 20px;
+        }
+        .toc li {
+            margin-bottom: 8px;
+        }
+        .toc a {
+            color: #2a5298;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        .section {
+            margin-bottom: 40px;
+            page-break-inside: avoid;
+        }
+        .feature-list {
+            list-style: none;
+            margin: 15px 0;
+        }
+        .feature-list li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #48bb78;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .policy-group {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #4299e1;
+            page-break-inside: avoid;
+        }
+        .policy-group strong {
+            color: #1e3c72;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        th {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #eef2f7;
+        }
+        .button-reference {
+            background-color: #f0f4ff;
+            border-left: 4px solid #4299e1;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .code-block {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+        .alert {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .alert-info {
+            background-color: #ebf8ff;
+            border-color: #4299e1;
+            color: #2b6cb0;
+        }
+        .alert-warning {
+            background-color: #fefcbf;
+            border-color: #d69e2e;
+            color: #744210;
+        }
+        .alert-success {
+            background-color: #c6f6d5;
+            border-color: #38a169;
+            color: #22543d;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        .header-info {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            margin: -40px -40px 40px -40px;
+            border-radius: 0;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+        @media print {
+            body {
+                background-color: white;
+            }
+            .container {
+                box-shadow: none;
+                max-width: 100%;
+                padding: 0;
+            }
+            .header-info {
+                margin: 0;
+            }
+            h2 {
+                page-break-after: avoid;
+                page-break-before: always;
+            }
+            a {
+                color: #2a5298;
+            }
+        }
+        .intro-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid #e2e8f0;
+        }
+        .step-list {
+            list-style: none;
+            counter-reset: step-counter;
+            margin: 20px 0;
+        }
+        .step-list li {
+            counter-increment: step-counter;
+            margin: 15px 0;
+            padding-left: 40px;
+            position: relative;
+        }
+        .step-list li:before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-info">
+            <h1>Northland Geofence Monitoring System</h1>
+            <p class="subtitle">Complete Vehicle Policy Enforcement & Real-Time Boundary Monitoring</p>
+        </div>
+
+        <h2>Table of Contents</h2>
+        <div class="toc">
+            <ol>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#getting-started">Getting Started</a></li>
+                <li><a href="#authentication">Authentication</a></li>
+                <li><a href="#dashboard-features">Dashboard Features</a></li>
+                <li><a href="#vehicle-policy-groups">Vehicle Policy Groups</a></li>
+                <li><a href="#geofence-management">Geofence Management</a></li>
+                <li><a href="#policy-monitoring">Policy Monitoring</a></li>
+                <li><a href="#compliance-checking">Compliance Checking</a></li>
+                <li><a href="#map-viewing">Map Viewing</a></li>
+                <li><a href="#alert-management">Alert Management</a></li>
+                <li><a href="#configuration">Configuration</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+            </ol>
+        </div>
+
+        <div class="page-break"></div>
+
+        <!-- Overview Section -->
+        <h2 id="overview">1. Overview</h2>
+        <p>The <strong>Northland Geofence Monitoring System</strong> is a comprehensive vehicle policy enforcement platform that monitors vehicle locations in real-time against defined geographic boundaries and time-based restrictions.</p>
+
+        <h3>Key Features</h3>
+        <ul class="feature-list">
+            <li>Real-time vehicle tracking for 50+ vehicles simultaneously</li>
+            <li>Automatic policy enforcement with boundary and time-based restrictions</li>
+            <li>Interactive Leaflet maps for geofence and vehicle visualization</li>
+            <li>Instant alerts for policy violations with audio notifications</li>
+            <li>Comprehensive geofence management tools</li>
+            <li>Detailed compliance reporting and statistics</li>
+            <li>Support for 6 distinct vehicle policy groups</li>
+        </ul>
+
+        <h3>Supported Policies</h3>
+        <p>The system enforces 6 vehicle policy groups across the Northland region:</p>
+        <table>
+            <tr>
+                <th>Policy Group</th>
+                <th>Description</th>
+                <th>Vehicle Count</th>
+            </tr>
+            <tr>
+                <td>Full Use</td>
+                <td>Unrestricted vehicle access</td>
+                <td>6</td>
+            </tr>
+            <tr>
+                <td>Northland Region Only</td>
+                <td>Limited to Northland boundaries</td>
+                <td>10</td>
+            </tr>
+            <tr>
+                <td>Whangarei District + 30km</td>
+                <td>Limited to Whangarei area</td>
+                <td>18</td>
+            </tr>
+            <tr>
+                <td>Hawkes Bay Region</td>
+                <td>Limited to Hawkes Bay area</td>
+                <td>1</td>
+            </tr>
+            <tr>
+                <td>Napier District + 30km</td>
+                <td>Limited to Napier area</td>
+                <td>3</td>
+            </tr>
+            <tr>
+                <td>Time-Restricted Trade Staff</td>
+                <td>Restricted hours (after 6pm, before 4am)</td>
+                <td>24</td>
+            </tr>
+        </table>
+
+        <!-- Getting Started Section -->
+        <h2 id="getting-started">2. Getting Started</h2>
+
+        <h3>System Requirements</h3>
+        <ul class="feature-list">
+            <li>Modern web browser (Chrome, Firefox, Edge, Safari)</li>
+            <li>Geotab account with API access enabled</li>
+            <li>JavaScript enabled in browser settings</li>
+            <li>Stable internet connection</li>
+        </ul>
+
+        <h3>Accessing the Dashboard</h3>
+        <p>The dashboard is available as a Geotab add-in. To access it:</p>
+        <ol class="step-list">
+            <li>Log into your Geotab account at <strong>my.geotab.com</strong></li>
+            <li>Navigate to the <strong>Add-Ins</strong> section</li>
+            <li>Search for <strong>"Northland Geofence Monitoring System"</strong></li>
+            <li>Click to launch the dashboard</li>
+        </ol>
+
+        <div class="page-break"></div>
+
+        <!-- Authentication Section -->
+        <h2 id="authentication">3. Authentication</h2>
+
+        <h3>Logging In</h3>
+        <p>The dashboard requires valid Geotab API credentials to access vehicle data. Follow these steps to authenticate:</p>
+
+        <ol class="step-list">
+            <li>Fill in the <strong>Authentication</strong> card fields:
+                <div class="code-block">
+Server: my.geotab.com
+Database: uccnz
+Username: your.email@company.com
+Password: ••••••••
+                </div>
+            </li>
+            <li>Click the <span class="button-reference">🔐 Authenticate</span> button</li>
+            <li>Wait for the success message: <strong>"✅ Authentication successful!"</strong></li>
+            <li>The <strong>Vehicle Policy Enforcement</strong> section now appears</li>
+        </ol>
+
+        <div class="alert alert-info">
+            <strong>💡 Note:</strong> Credentials are stored only in your current browser session and are never saved to disk.
+        </div>
+
+        <h3>Session Management</h3>
+        <p>Your session remains active until you:</p>
+        <ul class="feature-list">
+            <li>Click the <span class="button-reference">🚪 Logout</span> button (recommended)</li>
+            <li>Close the browser tab or window</li>
+            <li>Refresh the page (credentials must be re-entered)</li>
+        </ul>
+
+        <!-- Dashboard Features Section -->
+        <h2 id="dashboard-features">4. Dashboard Features</h2>
+
+        <h3>Main Interface Components</h3>
+
+        <h4>🔐 Authentication Card</h4>
+        <p>Enter your Geotab credentials to access the system. This is required for all other features.</p>
+
+        <h4>🚗 Vehicle Policy Enforcement Card</h4>
+        <p>Displays all 6 vehicle policy groups with:</p>
+        <ul class="feature-list">
+            <li>Complete vehicle list for each policy group</li>
+            <li>Policy restrictions description</li>
+            <li>Geographic and time-based constraints</li>
+        </ul>
+
+        <h4>🗺️ Geofence Manager</h4>
+        <p>Manage policy and custom geofences:</p>
+        <div class="button-reference">➕ Create New Geofence</div>
+        <div class="button-reference">📥 Import</div>
+        <div class="button-reference">🚗 Load Policy Geofences</div>
+
+        <h4>⚙️ Monitoring Configuration</h4>
+        <p>Fine-tune monitoring parameters:</p>
+        <table>
+            <tr>
+                <th>Setting</th>
+                <th>Default</th>
+                <th>Range</th>
+                <th>Purpose</th>
+            </tr>
+            <tr>
+                <td>Active Geofence</td>
+                <td>None</td>
+                <td>Select from loaded geofences</td>
+                <td>Which boundary to monitor</td>
+            </tr>
+            <tr>
+                <td>Timeout (minutes)</td>
+                <td>30</td>
+                <td>1-1000</td>
+                <td>How long to track violations</td>
+            </tr>
+            <tr>
+                <td>Check Interval (seconds)</td>
+                <td>30</td>
+                <td>5-3600</td>
+                <td>How often to check locations</td>
+            </tr>
+            <tr>
+                <td>Results Limit</td>
+                <td>50</td>
+                <td>1-1000</td>
+                <td>Max vehicles to monitor</td>
+            </tr>
+        </table>
+
+        <h4>Control Buttons</h4>
+        <div class="button-reference">🚀 Start Policy Monitoring</div>
+        <p>Begin continuous monitoring of selected geofence. System checks vehicle compliance at regular intervals.</p>
+
+        <div class="button-reference">⏹️ Stop Monitoring</div>
+        <p>Stop the monitoring session. Violations remain displayed but no new checks occur.</p>
+
+        <div class="button-reference">🔍 Check Policy Compliance</div>
+        <p>Manually check vehicle compliance immediately instead of waiting for next scheduled check.</p>
+
+        <div class="button-reference">🗺️ Show Policy Map</div>
+        <p>Display interactive map with geofence boundaries and vehicle locations.</p>
+
+        <div class="button-reference">🚪 Logout</div>
+        <p>End your session and clear all data from the dashboard.</p>
+
+        <div class="page-break"></div>
+
+        <!-- Vehicle Policy Groups Section -->
+        <h2 id="vehicle-policy-groups">5. Vehicle Policy Groups</h2>
+        <p>The system enforces 6 distinct policy groups with specific geographic and time-based restrictions:</p>
+
+        <div class="policy-group">
+            <strong>Group 1: Full Use (No Restrictions)</strong><br>
+            Vehicles: 520, 529, 541, 543, 544, 546<br>
+            Policy: Full access to vehicle across North Island or NZ-wide
+        </div>
+
+        <div class="policy-group">
+            <strong>Group 2: Northland Region Only</strong><br>
+            Vehicles: 490, 517, 518, 519, 530, 534, 535, 542, 552, 553<br>
+            Policy: Vehicles restricted to Northland Region boundaries
+        </div>
+
+        <div class="policy-group">
+            <strong>Group 3: Whangarei District + 30km Radius</strong><br>
+            Vehicles: 471, 502, 508, 510, 513, 515, 516, 522, 526, 527, 533, 537, 538, 539, 540, 545, 549, 550<br>
+            Policy: Limited to Whangarei District or 30km from residence
+        </div>
+
+        <div class="policy-group">
+            <strong>Group 4: Hawkes Bay Region</strong><br>
+            Vehicles: 536 (Tony Abiad)<br>
+            Policy: Restricted to Hawkes Bay Region only
+        </div>
+
+        <div class="policy-group">
+            <strong>Group 5: Napier District + 30km Radius</strong><br>
+            Vehicles: 521, 523, 551<br>
+            Policy: Limited to Napier District or 30km from residence
+        </div>
+
+        <div class="policy-group">
+            <strong>Group 6: Time-Restricted Trade Staff</strong><br>
+            Vehicles: 465, 470, 476, 487, 488, 489, 491, 492, 493, 494, 495, 496, 500, 501, 503, 505, 511, 512, 514, 524, 525, 528, 531, 532<br>
+            Policy: <strong>Weekdays</strong> - After 6pm &amp; before 4am | <strong>Weekends</strong> - All hours permitted
+        </div>
+
+        <!-- Geofence Management Section -->
+        <h2 id="geofence-management">6. Geofence Management</h2>
+
+        <h3>Available Policy Geofences</h3>
+        <p>The system includes 5 pre-configured geofences representing key policy boundaries:</p>
+        <ul class="feature-list">
+            <li><strong>Northland Region</strong> - Full regional boundary</li>
+            <li><strong>Whangarei District</strong> - Whangarei city area</li>
+            <li><strong>Hawkes Bay Region</strong> - Hawkes Bay regional area</li>
+            <li><strong>Napier District</strong> - Napier city area</li>
+            <li><strong>Far North Boundary Line</strong> - Northern boundary line</li>
+        </ul>
+
+        <h3>Loading Policy Geofences</h3>
+        <ol class="step-list">
+            <li>Click the <span class="button-reference">🚗 Load Policy Geofences</span> button</li>
+            <li>All 5 policy geofences load automatically</li>
+            <li>Geofences appear in the list below the button</li>
+            <li>Select any geofence from the "Active Geofence" dropdown to monitor it</li>
+        </ol>
+
+        <h3>Creating Custom Geofences</h3>
+
+        <h4>Method 1: Draw on Map</h4>
+        <ol class="step-list">
+            <li>Click <span class="button-reference">➕ Create New Geofence</span></li>
+            <li>Enter a descriptive name (e.g., "Auckland Central")</li>
+            <li>Select a display color</li>
+            <li>Click <span class="button-reference">🖊️ Draw on Map</span></li>
+            <li>Use map tools to draw polygon or rectangle</li>
+            <li>Click <span class="button-reference">💾 Save Geofence</span></li>
+        </ol>
+
+        <h4>Method 2: Enter Coordinates</h4>
+        <ol class="step-list">
+            <li>Click <span class="button-reference">➕ Create New Geofence</span></li>
+            <li>Enter a descriptive name</li>
+            <li>Click <span class="button-reference">📍 Enter Coordinates</span></li>
+            <li>Enter coordinates as <code>latitude, longitude</code> (one pair per line)</li>
+            <li>Minimum 3 coordinate pairs required</li>
+            <li>Click <span class="button-reference">💾 Save Geofence</span></li>
+        </ol>
+
+        <p><strong>Coordinate Format Example:</strong></p>
+        <div class="code-block">
+-35.525, 174.255
+-35.525, 174.355
+-35.625, 174.355
+-35.625, 174.255
+        </div>
+
+        <h3>Managing Geofences</h3>
+        <p>Each geofence in the list has three action buttons:</p>
+        <table>
+            <tr>
+                <th>Button</th>
+                <th>Action</th>
+            </tr>
+            <tr>
+                <td><span class="button-reference">👁️ View</span></td>
+                <td>Zoom to geofence on interactive map</td>
+            </tr>
+            <tr>
+                <td><span class="button-reference">📤 Export</span></td>
+                <td>Download geofence as JSON file for backup or sharing</td>
+            </tr>
+            <tr>
+                <td><span class="button-reference">🗑️ Delete</span></td>
+                <td>Remove geofence from system (requires confirmation)</td>
+            </tr>
+        </table>
+
+        <h3>Importing Geofences</h3>
+        <ol class="step-list">
+            <li>Click <span class="button-reference">📥 Import</span></li>
+            <li>Paste geofence JSON into the text area</li>
+            <li>Click <span class="button-reference">Import</span> to add to system</li>
+        </ol>
+
+        <p><strong>Expected JSON Format:</strong></p>
+        <div class="code-block">
+{
+  "name": "My Geofence",
+  "coordinates": [
+    [-35.5, 174.2],
+    [-35.5, 174.4],
+    [-35.6, 174.4],
+    [-35.6, 174.2]
+  ],
+  "color": "#1e3c72"
+}
+        </div>
+
+        <div class="page-break"></div>
+
+        <!-- Policy Monitoring Section -->
+        <h2 id="policy-monitoring">7. Policy Monitoring</h2>
+
+        <h3>Starting a Monitoring Session</h3>
+        <ol class="step-list">
+            <li>Select a geofence from the <strong>"Active Geofence"</strong> dropdown</li>
+            <li>Configure monitoring settings:
+                <ul>
+                    <li><strong>Timeout:</strong> Minutes before violation removed (default: 30)</li>
+                    <li><strong>Check Interval:</strong> Seconds between location checks (default: 30)</li>
+                    <li><strong>Results Limit:</strong> Maximum vehicles to monitor (default: 50)</li>
+                </ul>
+            </li>
+            <li>Enable desired options:
+                <ul>
+                    <li>☑️ <strong>Enable Real-time Monitoring</strong> - System continuously checks locations</li>
+                    <li>☑️ <strong>Enable Audio Alerts</strong> - Sound plays on violations</li>
+                    <li>☑️ <strong>Enforce Time-Based Restrictions</strong> - Apply time policies</li>
+                </ul>
+            </li>
+            <li>Click <span class="button-reference">🚀 Start Policy Monitoring</span></li>
+            <li>Button changes to "⏹️ Stop Monitoring" indicating monitoring is active</li>
+        </ol>
+
+        <h3>Monitoring in Progress</h3>
+        <p>While monitoring is active:</p>
+        <ul class="feature-list">
+            <li>System checks vehicle locations every 30 seconds (configurable)</li>
+            <li>Statistics panel updates with real-time data</li>
+            <li>Results table shows current vehicle status</li>
+            <li>Violations appear in alert panel on right side</li>
+            <li>Audio alerts sound when violations occur (if enabled)</li>
+        </ul>
+
+        <h3>Stopping Monitoring</h3>
+        <p>Click <span class="button-reference">⏹️ Stop Monitoring</span> to end the monitoring session. Violations remain displayed but no new checks occur.</p>
+
+        <!-- Compliance Checking Section -->
+        <h2 id="compliance-checking">8. Compliance Checking</h2>
+
+        <h3>Manual Compliance Check</h3>
+        <p>To check vehicle compliance immediately without starting continuous monitoring, click <span class="button-reference">🔍 Check Policy Compliance</span>.</p>
+
+        <h3>Results Table</h3>
+        <p>The compliance results display in a table with columns:</p>
+        <table>
+            <tr>
+                <th>Column</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td><strong>Vehicle</strong></td>
+                <td>Device name and vehicle number</td>
+            </tr>
+            <tr>
+                <td><strong>Location</strong></td>
+                <td>GPS coordinates (latitude, longitude)</td>
+            </tr>
+            <tr>
+                <td><strong>Compliance Status</strong></td>
+                <td>Inside Boundary ✓ / Outside Boundary / Policy Violation 🚨</td>
+            </tr>
+            <tr>
+                <td><strong>Last Update</strong></td>
+                <td>Timestamp of last location update</td>
+            </tr>
+        </table>
+
+        <h3>Status Indicators</h3>
+        <div class="alert alert-success">
+            <strong>✓ Inside Boundary</strong> - Vehicle within policy boundary (compliant)
+        </div>
+        <div class="alert alert-warning">
+            <strong>⚠️ Outside Boundary</strong> - Vehicle outside boundary (but allowed by time rules)
+        </div>
+        <div class="alert alert-info">
+            <strong>🚨 Policy Violation</strong> - Vehicle violates boundary AND time restrictions
+        </div>
+
+        <div class="page-break"></div>
+
+        <!-- Map Viewing Section -->
+        <h2 id="map-viewing">9. Map Viewing</h2>
+
+        <h3>Opening the Map</h3>
+        <ol class="step-list">
+            <li>Click <span class="button-reference">🗺️ Show Policy Map</span> button</li>
+            <li>Map container appears showing geofence boundaries and vehicle locations</li>
+            <li>Load policy geofences first for best results</li>
+        </ol>
+
+        <h3>Interactive Map Features</h3>
+        <ul class="feature-list">
+            <li><strong>Geofence Boundaries:</strong> Colored polygons representing policy areas</li>
+            <li><strong>Vehicle Markers:</strong> Colored circles showing vehicle current locations</li>
+            <li><strong>Popup Information:</strong> Click markers to view vehicle details</li>
+            <li><strong>Map Controls:</strong> Zoom, pan, and fit-to-bounds controls</li>
+            <li><strong>Google Maps Links:</strong> Click to view full location context</li>
+        </ul>
+
+        <h3>Marker Colors</h3>
+        <table>
+            <tr>
+                <th>Color</th>
+                <th>Status</th>
+                <th>Meaning</th>
+            </tr>
+            <tr>
+                <td style="background-color: #48bb78;"> 🟢</td>
+                <td>Inside Boundary</td>
+                <td>Vehicle compliant with policy</td>
+            </tr>
+            <tr>
+                <td style="background-color: #ed8936;"> 🟠</td>
+                <td>Outside Boundary</td>
+                <td>Vehicle outside boundary area</td>
+            </tr>
+            <tr>
+                <td style="background-color: #e53e3e;"> 🔴</td>
+                <td>Policy Violation</td>
+                <td>Boundary and/or time violation</td>
+            </tr>
+        </table>
+
+        <h3>Marker Popup Details</h3>
+        <p>Click any vehicle marker to view:</p>
+        <ul class="feature-list">
+            <li>Device name and vehicle number</li>
+            <li>Current compliance status</li>
+            <li>Exact GPS coordinates</li>
+            <li>Last location update timestamp</li>
+            <li>Current monitoring timeout setting</li>
+        </ul>
+
+        <h3>Fallback Map Mode</h3>
+        <p>If the interactive Leaflet map is unavailable, the system automatically displays a fallback view showing:</p>
+        <ul class="feature-list">
+            <li>Geofences as clickable information cards</li>
+            <li>Vehicle locations as list items</li>
+            <li>Google Maps links for each location</li>
+            <li>Full compliance details for each vehicle</li>
+        </ul>
+
+        <!-- Alert Management Section -->
+        <h2 id="alert-management">10. Alert Management</h2>
+
+        <h3>Violation Alerts</h3>
+        <p>When policy violations occur, an alert panel appears on the right side of the screen displaying:</p>
+        <ul class="feature-list">
+            <li><strong>Vehicle Name:</strong> Device identifier</li>
+            <li><strong>Violation Type:</strong> Boundary / Time &amp; Boundary</li>
+            <li><strong>Duration:</strong> How long violation has been active</li>
+            <li><strong>Location:</strong> GPS coordinates of violation</li>
+        </ul>
+
+        <h3>Alert Actions</h3>
+        <table>
+            <tr>
+                <th>Button</th>
+                <th>Action</th>
+            </tr>
+            <tr>
+                <td><span class="button-reference">✅ Acknowledge All</span></td>
+                <td>Clear all active violations from the system</td>
+            </tr>
+            <tr>
+                <td><span class="button-reference">✖️ Close Panel</span></td>
+                <td>Hide the alert panel (violations remain tracked)</td>
+            </tr>
+        </table>
+
+        <h3>Audio Alerts</h3>
+        <p>When <strong>"Enable Audio Alerts for Violations"</strong> is checked:</p>
+        <ul class="feature-list">
+            <li>Audible sound plays when a violation occurs</li>
+            <li>One alert per violation</li>
+            <li>Can be disabled in configuration</li>
+            <li>Volume controlled by system sound settings</li>
+        </ul>
+
+        <div class="page-break"></div>
+
+        <!-- Configuration Section -->
+        <h2 id="configuration">11. Configuration</h2>
+
+        <h3>Monitoring Settings</h3>
+
+        <h4>Timeout (minutes)</h4>
+        <ul class="feature-list">
+            <li><strong>Default:</strong> 30 minutes</li>
+            <li><strong>Range:</strong> 1 - 1000 minutes</li>
+            <li><strong>Purpose:</strong> How long a vehicle stays in violation before automatic removal</li>
+            <li><strong>Recommendation:</strong> 30-60 minutes for typical enforcement</li>
+        </ul>
+
+        <h4>Check Interval (seconds)</h4>
+        <ul class="feature-list">
+            <li><strong>Default:</strong> 30 seconds</li>
+            <li><strong>Range:</strong> 5 - 3600 seconds</li>
+            <li><strong>Purpose:</strong> How frequently system checks vehicle locations</li>
+            <li><strong>Note:</strong> Lower values = faster detection but higher API usage</li>
+            <li><strong>Recommendation:</strong> 30-60 seconds for balance</li>
+        </ul>
+
+        <h4>Assets Limit</h4>
+        <ul class="feature-list">
+            <li><strong>Default:</strong> 50 vehicles</li>
+            <li><strong>Range:</strong> 1 - 1000 vehicles</li>
+            <li><strong>Purpose:</strong> Maximum vehicles to monitor per check</li>
+            <li><strong>Note:</strong> Larger limits increase response time</li>
+            <li><strong>Recommendation:</strong> Match your fleet size</li>
+        </ul>
+
+        <h3>Feature Toggles</h3>
+
+        <h4>☑️ Enable Real-time Monitoring</h4>
+        <p>When enabled, system continuously monitors the selected geofence. When disabled, only manual checks occur.</p>
+
+        <h4>☑️ Enable Audio Alerts for Violations</h4>
+        <p>When enabled, an audible alert sounds when violations occur. Useful for active monitoring sessions.</p>
+
+        <h4>☑️ Enforce Time-Based Restrictions</h4>
+        <p>When enabled, time-based policies are enforced (e.g., trade staff restrictions). Uncheck to ignore time rules and focus only on boundary enforcement.</p>
+
+        <!-- Troubleshooting Section -->
+        <h2 id="troubleshooting">12. Troubleshooting</h2>
+
+        <h3>Map Not Showing</h3>
+        <div class="alert alert-warning">
+            <strong>Problem:</strong> Map container visible but no map displays.
+        </div>
+        <p><strong>Solutions:</strong></p>
+        <ol>
+            <li>Check browser console (Press F12) for JavaScript errors</li>
+            <li>Verify Leaflet files exist: Check <code>js/leaflet/</code> directory contains:
+                <ul>
+                    <li>leaflet.min.js</li>
+                    <li>leaflet.min.css</li>
+                    <li>leaflet.draw.js</li>
+                    <li>leaflet.draw.css</li>
+                </ul>
+            </li>
+            <li>Clear browser cache (Ctrl+Shift+Delete) and reload</li>
+            <li>Try different browser (Chrome, Firefox, Edge)</li>
+            <li>Disable browser extensions that might interfere</li>
+        </ol>
+
+        <h3>No Vehicles Displaying on Map</h3>
+        <div class="alert alert-warning">
+            <strong>Problem:</strong> Map shows but no vehicle markers visible.
+        </div>
+        <p><strong>Solutions:</strong></p>
+        <ol>
+            <li>Click <span class="button-reference">🔍 Check Policy Compliance</span> first to fetch locations</li>
+            <li>Verify a geofence is selected in the "Active Geofence" dropdown</li>
+            <li>Check Geotab credentials are correct by trying authentication again</li>
+            <li>Increase "Results Limit" in configuration (default 50 may be insufficient)</li>
+            <li>Verify vehicles have recent location data (within last 24 hours)</li>
+            <li>Check that vehicles belong to monitored geofence area</li>
+        </ol>
+
+        <h3>Authentication Fails</h3>
+        <div class="alert alert-warning">
+            <strong>Problem:</strong> "❌ Authentication failed" message appears.
+        </div>
+        <p><strong>Solutions:</strong></p>
+        <ol>
+            <li>Verify username and password are correct (case-sensitive)</li>
+            <li>Confirm database name matches your Geotab database (e.g., "uccnz")</li>
+            <li>Check Geotab account has API access enabled</li>
+            <li>Log in to Geotab web app directly to verify credentials work</li>
+            <li>Check network connection is stable</li>
+            <li>Clear cookies and try again</li>
+        </ol>
+
+        <h3>Alerts Not Triggering</h3>
+        <div class="alert alert-warning">
+            <strong>Problem:</strong> Violations not detected when vehicles outside boundary.
+        </div>
+        <p><strong>Solutions:</strong></p>
+        <ol>
+            <li>Verify <span class="button-reference">🚀 Start Policy Monitoring</span> was clicked</li>
+            <li>Check that button shows "⏹️ Stop Monitoring" (indicating active monitoring)</li>
+            <li>Ensure correct geofence selected in dropdown</li>
+            <li>Click <span class="button-reference">🔍 Check Policy Compliance</span> manually to test</li>
+            <li>Verify vehicle assignment to policy group</li>
+            <li>Check if time restrictions prevent violation (e.g., vehicle allowed at that time)</li>
+            <li>Increase "Check Interval" if system is behind</li>
+        </ol>
+
+        <h3>Slow Performance</h3>
+        <div class="alert alert-warning">
+            <strong>Problem:</strong> Dashboard responds slowly or lags.
+        </div>
+        <p><strong>Solutions:</strong></p>
+        <ol>
+            <li>Reduce "Results Limit" to fewer vehicles (try 25-30)</li>
+            <li>Increase "Check Interval" to 60+ seconds</li>
+            <li>Close other browser tabs to free memory</li>
+            <li>Clear browser cache and cookies</li>
+            <li>Try Firefox or Edge instead of Chrome</li>
+            <li>Disable audio alerts temporarily</li>
+            <li>Check network connection speed</li>
+        </ol>
+
+        <h3>Map Drawing Not Working</h3>
+        <div class="alert alert-warning">
+            <strong>Problem:</strong> Cannot draw geofences on map.
+        </div>
+        <p><strong>Solutions:</strong></p>
+        <ol>
+            <li>Verify Leaflet.draw library loaded (check js/leaflet/leaflet.draw.js exists)</li>
+            <li>Try "Enter Coordinates" method instead of drawing</li>
+            <li>Refresh page completely (Ctrl+Shift+R hard refresh)</li>
+            <li>Clear browser cache and cookies</li>
+            <li>Try different browser</li>
+            <li>Check browser console for specific errors</li>
+        </ol>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Northland Geofence Monitoring System - User Guide</strong></p>
+            <p>Version 2.0 | November 2024</p>
+            <p>For the latest version and source code, visit:<br>
+            <a href="https://github.com/Kikorangee/UCCL-Dashboard/" target="_blank">https://github.com/Kikorangee/UCCL-Dashboard/</a></p>
+            <p>© 2024 All Rights Reserved</p>
+        </div>
+    </div>
+
+    <script>
+        // Enable print functionality
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+        });
+    </script>
+</body>
+</html>
