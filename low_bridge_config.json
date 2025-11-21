@@ -3,45 +3,5 @@
   "buzzer_duration": 5,
   "poll_interval": 2,
   "require_ignition": true,
-  "bridges": [
-    {
-      "id": "penrose_bridge",
-      "name": "Penrose Bridge (Southern Motorway)",
-      "location": "Penrose, Auckland",
-      "clearance_height": "4.57m",
-      "latitude": -36.9166,
-      "longitude": 174.8333,
-      "geofence_name": "Low_Bridge_Penrose",
-      "description": "Lowest clearance bridge on Auckland motorway network",
-      "road": "State Highway 1",
-      "severity": "HIGH",
-      "radius_meters": 100
-    },
-    {
-      "id": "rust_avenue_whangarei",
-      "name": "Rust Avenue Railway Bridge",
-      "location": "Rust Avenue, Whangarei",
-      "clearance_height": "3.44m",
-      "latitude": -35.7242,
-      "longitude": 174.3197,
-      "geofence_name": "Low_Bridge_Rust_Avenue",
-      "description": "Hit over 15 times since 2004. Extremely low clearance",
-      "road": "Rust Avenue",
-      "severity": "CRITICAL",
-      "radius_meters": 100
-    },
-    {
-      "id": "ellerslie_panmure",
-      "name": "Ellerslie-Panmure Highway Bridge",
-      "location": "Ellerslie, Auckland",
-      "clearance_height": "4.3m",
-      "latitude": -36.8883,
-      "longitude": 174.8297,
-      "geofence_name": "Low_Bridge_Ellerslie",
-      "description": "Railway overbridge on major highway route",
-      "road": "Ellerslie-Panmure Highway",
-      "severity": "HIGH",
-      "radius_meters": 100
-    }
-  ]
+  "bridges": []
 }
