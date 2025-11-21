@@ -115,6 +115,45 @@ class WebfleetAPI:
         response = self._make_request('showVehiclesInGeofence', params)
         return response
 
+    def create_geofence(self, name: str, lat: float, lon: float, radius: int, color: str = "red") -> Dict:
+        """
+        Create a circular geofence in Webfleet
+
+        Args:
+            name: Geofence name (e.g., 'Low_Bridge_Penrose')
+            lat: Latitude
+            lon: Longitude
+            radius: Radius in meters
+            color: Geofence color (default: red)
+
+        Returns:
+            API response
+        """
+        params = {
+            'geofencename': name,
+            'latitude': lat,
+            'longitude': lon,
+            'radius': radius,
+            'color': color
+        }
+        print(f"Creating geofence: {name} at ({lat}, {lon}) with radius {radius}m")
+        response = self._make_request('insertGeofenceExtern', params)
+        return response
+
+    def delete_geofence(self, name: str) -> Dict:
+        """Delete a geofence from Webfleet"""
+        params = {
+            'geofencename': name
+        }
+        print(f"Deleting geofence: {name}")
+        response = self._make_request('deleteGeofenceExtern', params)
+        return response
+
+    def list_geofences(self) -> Dict:
+        """List all geofences"""
+        response = self._make_request('showGeofenceReportExtern', {})
+        return response
+
 
 class LowBridgeMonitor:
     """Monitor vehicles and trigger alerts when approaching low bridges"""
@@ -200,6 +239,94 @@ class LowBridgeMonitor:
             json.dump(self.alert_log, indent=2, fp=f)
         print(f"Alert log saved to {filename}")
 
+    def create_all_geofences(self):
+        """Create geofences for all bridges in configuration"""
+        print("\n" + "="*60)
+        print("CREATING GEOFENCES FOR ALL BRIDGES")
+        print("="*60 + "\n")
+
+        bridges = self.config.get('bridges', [])
+        if not bridges:
+            print("No bridges configured!")
+            return
+
+        success_count = 0
+        fail_count = 0
+
+        for bridge in bridges:
+            name = bridge.get('geofence_name')
+            lat = bridge.get('latitude')
+            lon = bridge.get('longitude')
+            radius = bridge.get('radius_meters', 100)
+
+            if not all([name, lat, lon]):
+                print(f"⚠ Skipping {bridge.get('name', 'Unknown')} - missing data")
+                fail_count += 1
+                continue
+
+            result = self.api.create_geofence(name, lat, lon, radius, color='red')
+
+            if 'error' in result:
+                print(f"✗ Failed: {name} - {result.get('error')}")
+                fail_count += 1
+            else:
+                print(f"✓ Created: {name}")
+                success_count += 1
+
+        print(f"\n{'='*60}")
+        print(f"Summary: {success_count} created, {fail_count} failed")
+        print(f"{'='*60}\n")
+
+    def delete_all_geofences(self):
+        """Delete all bridge geofences"""
+        print("\n" + "="*60)
+        print("DELETING ALL BRIDGE GEOFENCES")
+        print("="*60 + "\n")
+
+        bridges = self.config.get('bridges', [])
+        if not bridges:
+            print("No bridges configured!")
+            return
+
+        confirm = input(f"Are you sure you want to delete {len(bridges)} geofences? (yes/no): ")
+        if confirm.lower() != 'yes':
+            print("Cancelled")
+            return
+
+        success_count = 0
+        fail_count = 0
+
+        for bridge in bridges:
+            name = bridge.get('geofence_name')
+            if not name:
+                continue
+
+            result = self.api.delete_geofence(name)
+
+            if 'error' in result:
+                print(f"✗ Failed: {name}")
+                fail_count += 1
+            else:
+                print(f"✓ Deleted: {name}")
+                success_count += 1
+
+        print(f"\n{'='*60}")
+        print(f"Summary: {success_count} deleted, {fail_count} failed")
+        print(f"{'='*60}\n")
+
+    def list_all_geofences(self):
+        """List all geofences in Webfleet"""
+        print("\n" + "="*60)
+        print("ALL GEOFENCES IN WEBFLEET")
+        print("="*60 + "\n")
+
+        result = self.api.list_geofences()
+
+        if 'error' in result:
+            print(f"✗ Error: {result.get('error')}")
+        else:
+            print(json.dumps(result, indent=2))
+
     def monitor_geofences(self):
         """Main monitoring loop - checks geofences and triggers alerts"""
         print("\n" + "="*60)
@@ -267,13 +394,18 @@ def main():
 
     # Menu
     while True:
-        print("\nSelect an option:")
+        print("\n" + "="*60)
+        print("MAIN MENU")
+        print("="*60)
         print("1. Test buzzer activation")
-        print("2. Start monitoring geofences")
-        print("3. View configuration")
-        print("4. Exit")
+        print("2. Create all geofences")
+        print("3. Delete all geofences")
+        print("4. List all geofences")
+        print("5. Start monitoring geofences")
+        print("6. View configuration")
+        print("7. Exit")
 
-        choice = input("\nEnter choice (1-4): ").strip()
+        choice = input("\nEnter choice (1-7): ").strip()
 
         if choice == "1":
             vehicle_id = input("Enter vehicle object number: ").strip()
@@ -281,13 +413,22 @@ def main():
                 monitor.trigger_buzzer(vehicle_id, "Test Bridge", "Manual test")
 
         elif choice == "2":
-            monitor.monitor_geofences()
+            monitor.create_all_geofences()
 
         elif choice == "3":
+            monitor.delete_all_geofences()
+
+        elif choice == "4":
+            monitor.list_all_geofences()
+
+        elif choice == "5":
+            monitor.monitor_geofences()
+
+        elif choice == "6":
             print("\nCurrent Configuration:")
             print(json.dumps(monitor.config, indent=2))
 
-        elif choice == "4":
+        elif choice == "7":
             print("Exiting...")
             break
 
