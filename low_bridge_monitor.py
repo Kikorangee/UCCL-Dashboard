@@ -203,6 +203,25 @@ class WebfleetAPI:
         response = self._make_request('showGeofenceReportExtern', {})
         return response
 
+    def get_event_report(self, range_pattern: str = "today") -> Dict:
+        """
+        Get event report for geofence entries and other events
+
+        Args:
+            range_pattern: Time range for events
+                - "today" - events from today
+                - "yesterday" - events from yesterday
+                - Can also use date range with rangefrom/rangeto params
+
+        Returns:
+            API response with events
+        """
+        params = {
+            'range': range_pattern
+        }
+        response = self._make_request('showEventReportExtern', params)
+        return response
+
 
 class LowBridgeMonitor:
     """Monitor vehicles and trigger alerts when approaching low bridges"""
@@ -377,7 +396,7 @@ class LowBridgeMonitor:
             print(json.dumps(result, indent=2))
 
     def monitor_geofences(self):
-        """Main monitoring loop - polls message queue for Alarm 1 geofence notifications"""
+        """Main monitoring loop - polls event report for geofence entry events"""
         print("\n" + "="*60)
         print("LOW BRIDGE ALERT SYSTEM - MONITORING ACTIVE")
         print("="*60)
@@ -387,23 +406,11 @@ class LowBridgeMonitor:
         print(f"Bridges Monitored: {len(self.config.get('bridges', []))}")
         print("="*60 + "\n")
 
-        # Create message queue for status messages (msgclass 7)
-        print("Creating message queue...")
-        queue_result = self.api.create_queue(msgclass=7)
+        print("Monitoring for geofence entry events...")
+        print("Watching for 'Low Bridge' and 'Low Roof' geofences\n")
 
-        if 'error' in queue_result:
-            print(f"✗ Failed to create queue: {queue_result.get('error')}")
-            return
-
-        # Extract queue UID from response
-        queue_uid = queue_result.get('queueuid')
-        if not queue_uid:
-            print("✗ No queue UID returned")
-            print(f"Response: {json.dumps(queue_result, indent=2)}")
-            return
-
-        print(f"✓ Queue created: {queue_uid}")
-        print("Monitoring for Alarm 1 notifications...\n")
+        # Track processed events to avoid duplicates
+        processed_events = set()  # Set of event IDs we've already handled
 
         # Track vehicles we've already alerted (debouncing)
         alerted_vehicles = {}  # {vehicle_id: timestamp}
@@ -411,24 +418,51 @@ class LowBridgeMonitor:
 
         try:
             while True:
-                # Poll the message queue
-                messages_result = self.api.pop_queue_messages(queue_uid)
+                # Get today's event report
+                events_result = self.api.get_event_report(range_pattern='today')
 
-                if 'error' not in messages_result:
-                    # Parse messages
-                    messages = messages_result.get('messages', [])
+                if 'error' not in events_result:
+                    # Parse events - the structure may vary, adjust based on actual response
+                    events = []
 
-                    for message in messages:
-                        # Look for Alarm 1 notifications from Low Bridge/Low Roof geofences
-                        msg_type = message.get('msgtype', '')
-                        msg_text = message.get('msgtext', '')
-                        vehicle_id = message.get('objectno', '')
+                    # Try different possible response structures
+                    if isinstance(events_result, list):
+                        events = events_result
+                    elif isinstance(events_result, dict):
+                        events = events_result.get('events', [])
+                        if not events:
+                            events = events_result.get('data', [])
 
-                        # Check if this is an Alarm 1 notification
-                        if 'Alarm 1' in msg_text or 'alarm 1' in msg_text.lower():
-                            # Check if it's from a Low Bridge or Low Roof geofence
-                            if 'Low Bridge' in msg_text or 'Low Roof' in msg_text or \
-                               'low bridge' in msg_text.lower() or 'low roof' in msg_text.lower():
+                    for event in events:
+                        # Create unique event ID from timestamp + vehicle + type
+                        event_time = event.get('eventtime', event.get('timestamp', ''))
+                        event_type = event.get('eventtype', event.get('type', ''))
+                        vehicle_id = event.get('objectno', event.get('vehicle', ''))
+                        event_desc = event.get('description', event.get('desc', ''))
+
+                        # Create unique ID for this event
+                        event_id = f"{vehicle_id}_{event_time}_{event_type}"
+
+                        # Skip if we've already processed this event
+                        if event_id in processed_events:
+                            continue
+
+                        # Look for geofence entry events
+                        # Event type might be "geofence_entry", "alarm", or similar
+                        is_geofence_event = (
+                            'geofence' in event_type.lower() or
+                            'alarm' in event_type.lower() or
+                            'Alarm 1' in event_desc or
+                            'geofence' in event_desc.lower()
+                        )
+
+                        if is_geofence_event:
+                            # Check if it's a Low Bridge or Low Roof geofence
+                            event_text = f"{event_type} {event_desc}".lower()
+
+                            if 'low bridge' in event_text or 'low roof' in event_text:
+                                # Mark as processed
+                                processed_events.add(event_id)
 
                                 # Check cooldown - don't re-alert same vehicle within X minutes
                                 now = datetime.now()
@@ -440,23 +474,30 @@ class LowBridgeMonitor:
                                         print(f"⏸️  Skipping {vehicle_id} - alerted {time_diff:.1f}min ago (cooldown: {cooldown_minutes}min)")
                                         continue
 
-                                # Extract bridge name from message
+                                # Extract bridge name from event description
                                 bridge_name = "Unknown Bridge"
                                 for bridge in self.config.get('bridges', []):
-                                    if bridge.get('geofence_name', '') in msg_text:
+                                    geofence_name = bridge.get('geofence_name', '')
+                                    if geofence_name.lower() in event_text:
                                         bridge_name = bridge.get('name', 'Unknown Bridge')
                                         break
 
                                 print(f"\n🚨 GEOFENCE ENTRY DETECTED!")
+                                print(f"   Time: {event_time}")
                                 print(f"   Vehicle: {vehicle_id}")
                                 print(f"   Bridge: {bridge_name}")
-                                print(f"   Message: {msg_text}")
+                                print(f"   Event: {event_desc}")
 
                                 # Trigger buzzer
-                                self.trigger_buzzer(vehicle_id, bridge_name, reason="Geofence entry - Alarm 1")
+                                self.trigger_buzzer(vehicle_id, bridge_name, reason="Geofence entry detected")
 
                                 # Record alert time for cooldown
                                 alerted_vehicles[vehicle_id] = now
+
+                # Clean up old processed events (keep last 1000)
+                if len(processed_events) > 1000:
+                    # Convert to list, keep last 500
+                    processed_events = set(list(processed_events)[-500:])
 
                 # Wait before next poll
                 time.sleep(self.config.get('poll_interval', 2))
@@ -464,10 +505,6 @@ class LowBridgeMonitor:
         except KeyboardInterrupt:
             print("\n\nMonitoring stopped by user")
             self.save_alert_log()
-
-            # Clean up: delete the queue
-            print("\nCleaning up message queue...")
-            self.api.delete_queue(queue_uid)
 
 
 def main():
