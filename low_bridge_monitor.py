@@ -99,7 +99,7 @@ class WebfleetAPI:
 
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Triggering output '{output_name}' on vehicle {object_uid} for {duration}s")
 
-        response = self._make_request('switchoutputextern', params)
+        response = self._make_request('switchoutput', params)
         return response
 
     def get_object_positions(self) -> Dict:
@@ -251,7 +251,7 @@ def main():
     # Configuration
     ACCOUNT = "Phoenix"
     USERNAME = "francisw"
-    PASSWORD = ""  # Add your API password here
+    PASSWORD = "@wynn5Fr4nc1s"  # Webfleet API password
 
     if not PASSWORD:
         print("ERROR: Please set your Webfleet API password in the script")
