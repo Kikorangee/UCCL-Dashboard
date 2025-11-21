@@ -142,14 +142,14 @@ api.switch_output_extern(
 
 ## Workflow
 
-### Event-Based Monitoring (Message Queue)
+### Event-Based Monitoring (Event Report Polling)
 
 1. **Setup**: Create geofences in Webfleet with "Alarm 1" trigger on entry
-2. **Queue**: Script creates message queue for status messages (msgclass 7)
-3. **Monitor**: Polls queue every 2 seconds for Alarm 1 notifications
-4. **Detect**: When vehicle enters "Low Bridge" or "Low Roof" geofence
+2. **Monitor**: Script polls `showEventReportExtern` API every 2 seconds
+3. **Detect**: Finds geofence entry events for "Low Bridge" or "Low Roof" geofences
+4. **Filter**: Checks if event was already processed (duplicate prevention)
 5. **Alert**: Buzzer activates via Digital Output 5 using `switchoutput` API
-6. **Cooldown**: 5-minute debounce prevents repeated alerts
+6. **Cooldown**: 5-minute debounce prevents repeated alerts per vehicle
 7. **Log**: Event recorded in `alert_log.json`
 
 ### How It Works
@@ -159,11 +159,13 @@ Vehicle enters geofence
     ↓
 Webfleet triggers Alarm 1
     ↓
-Notification posted to message queue
+Event logged in Webfleet system
     ↓
-Script polls queue (every 2s)
+Script polls event report (every 2s)
     ↓
-Detects "Low Bridge" + "Alarm 1" in message
+Detects "Low Bridge"/"Low Roof" + geofence entry
+    ↓
+Checks if event already processed
     ↓
 Checks cooldown (5 min since last alert)
     ↓
