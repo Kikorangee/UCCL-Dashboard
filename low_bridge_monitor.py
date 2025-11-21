@@ -203,7 +203,7 @@ class WebfleetAPI:
         response = self._make_request('showGeofenceReportExtern', {})
         return response
 
-    def get_event_report(self, range_pattern: str = "today") -> Dict:
+    def get_event_report(self, range_pattern: str = "today", event_level: int = None) -> Dict:
         """
         Get event report for geofence entries and other events
 
@@ -212,6 +212,13 @@ class WebfleetAPI:
                 - "today" - events from today
                 - "yesterday" - events from yesterday
                 - Can also use date range with rangefrom/rangeto params
+            event_level: Filter by event level (optional)
+                - 0: Message
+                - 1: Notice/Information
+                - 2: Warning
+                - 3: Alarm 1
+                - 4: Alarm 2
+                - 5: Alarm 3
 
         Returns:
             API response with events
@@ -219,6 +226,10 @@ class WebfleetAPI:
         params = {
             'range': range_pattern
         }
+
+        if event_level is not None:
+            params['eventlevel_cur'] = event_level
+
         response = self._make_request('showEventReportExtern', params)
         return response
 
@@ -396,18 +407,18 @@ class LowBridgeMonitor:
             print(json.dumps(result, indent=2))
 
     def monitor_geofences(self):
-        """Main monitoring loop - polls event report for geofence entry events"""
+        """Main monitoring loop - polls event report for Warning level geofence events"""
         print("\n" + "="*60)
         print("LOW BRIDGE ALERT SYSTEM - MONITORING ACTIVE")
         print("="*60)
         print(f"Buzzer Output: {self.config.get('buzzer_output_name')}")
         print(f"Duration: {self.config.get('buzzer_duration')}s")
         print(f"Poll Interval: {self.config.get('poll_interval')}s")
-        print(f"Bridges Monitored: {len(self.config.get('bridges', []))}")
+        print(f"Event Level: WARNING (level 2)")
         print("="*60 + "\n")
 
-        print("Monitoring for geofence entry events...")
-        print("Watching for 'Low Bridge' and 'Low Roof' geofences\n")
+        print("Monitoring for WARNING level geofence entry events...")
+        print("Configure geofences with 'Warning' severity in Webfleet\n")
 
         # Track processed events to avoid duplicates
         processed_events = set()  # Set of event IDs we've already handled
@@ -418,8 +429,8 @@ class LowBridgeMonitor:
 
         try:
             while True:
-                # Get today's event report
-                events_result = self.api.get_event_report(range_pattern='today')
+                # Get today's event report - filter for WARNING level events only
+                events_result = self.api.get_event_report(range_pattern='today', event_level=2)
 
                 if 'error' not in events_result:
                     # Parse events - the structure may vary, adjust based on actual response
@@ -434,65 +445,54 @@ class LowBridgeMonitor:
                             events = events_result.get('data', [])
 
                     for event in events:
-                        # Create unique event ID from timestamp + vehicle + type
-                        event_time = event.get('eventtime', event.get('timestamp', ''))
-                        event_type = event.get('eventtype', event.get('type', ''))
-                        vehicle_id = event.get('objectno', event.get('vehicle', ''))
-                        event_desc = event.get('description', event.get('desc', ''))
-
-                        # Create unique ID for this event
-                        event_id = f"{vehicle_id}_{event_time}_{event_type}"
+                        # Extract event details
+                        event_id = event.get('eventid', '')
+                        event_time = event.get('eventtime', '')
+                        msg_time = event.get('msgtime', '')
+                        vehicle_id = event.get('objectno', '')
+                        msg_text = event.get('msgtext', '')
+                        pos_text = event.get('postext', '')
+                        event_level = event.get('eventlevel_cur', '')
 
                         # Skip if we've already processed this event
                         if event_id in processed_events:
                             continue
 
-                        # Look for geofence entry events
-                        # Event type might be "geofence_entry", "alarm", or similar
-                        is_geofence_event = (
-                            'geofence' in event_type.lower() or
-                            'alarm' in event_type.lower() or
-                            'Alarm 1' in event_desc or
-                            'geofence' in event_desc.lower()
-                        )
+                        # Verify this is a Warning level event (should be filtered already, but double-check)
+                        if event_level != 'W':
+                            continue
 
-                        if is_geofence_event:
-                            # Check if it's a Low Bridge or Low Roof geofence
-                            event_text = f"{event_type} {event_desc}".lower()
+                        # Mark as processed
+                        processed_events.add(event_id)
 
-                            if 'low bridge' in event_text or 'low roof' in event_text:
-                                # Mark as processed
-                                processed_events.add(event_id)
+                        # Check cooldown - don't re-alert same vehicle within X minutes
+                        now = datetime.now()
+                        last_alert = alerted_vehicles.get(vehicle_id)
 
-                                # Check cooldown - don't re-alert same vehicle within X minutes
-                                now = datetime.now()
-                                last_alert = alerted_vehicles.get(vehicle_id)
+                        if last_alert:
+                            time_diff = (now - last_alert).total_seconds() / 60
+                            if time_diff < cooldown_minutes:
+                                print(f"⏸️  Skipping {vehicle_id} - alerted {time_diff:.1f}min ago (cooldown: {cooldown_minutes}min)")
+                                continue
 
-                                if last_alert:
-                                    time_diff = (now - last_alert).total_seconds() / 60
-                                    if time_diff < cooldown_minutes:
-                                        print(f"⏸️  Skipping {vehicle_id} - alerted {time_diff:.1f}min ago (cooldown: {cooldown_minutes}min)")
-                                        continue
+                        # Extract bridge/location name from message or position text
+                        bridge_name = pos_text if pos_text else msg_text
+                        if not bridge_name:
+                            bridge_name = "Unknown Location"
 
-                                # Extract bridge name from event description
-                                bridge_name = "Unknown Bridge"
-                                for bridge in self.config.get('bridges', []):
-                                    geofence_name = bridge.get('geofence_name', '')
-                                    if geofence_name.lower() in event_text:
-                                        bridge_name = bridge.get('name', 'Unknown Bridge')
-                                        break
+                        print(f"\n🚨 WARNING EVENT DETECTED!")
+                        print(f"   Event ID: {event_id}")
+                        print(f"   Time: {event_time or msg_time}")
+                        print(f"   Vehicle: {vehicle_id}")
+                        print(f"   Location: {bridge_name}")
+                        print(f"   Message: {msg_text}")
+                        print(f"   Level: {event_level} (Warning)")
 
-                                print(f"\n🚨 GEOFENCE ENTRY DETECTED!")
-                                print(f"   Time: {event_time}")
-                                print(f"   Vehicle: {vehicle_id}")
-                                print(f"   Bridge: {bridge_name}")
-                                print(f"   Event: {event_desc}")
+                        # Trigger buzzer
+                        self.trigger_buzzer(vehicle_id, bridge_name, reason="Warning event - Geofence entry")
 
-                                # Trigger buzzer
-                                self.trigger_buzzer(vehicle_id, bridge_name, reason="Geofence entry detected")
-
-                                # Record alert time for cooldown
-                                alerted_vehicles[vehicle_id] = now
+                        # Record alert time for cooldown
+                        alerted_vehicles[vehicle_id] = now
 
                 # Clean up old processed events (keep last 1000)
                 if len(processed_events) > 1000:
