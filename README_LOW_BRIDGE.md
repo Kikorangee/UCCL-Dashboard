@@ -142,23 +142,55 @@ api.switch_output_extern(
 
 ## Workflow
 
-1. **Setup**: Create geofences in Webfleet for each bridge location
-2. **Configure**: Add bridge details to `low_bridge_config.json`
-3. **Monitor**: Script polls Webfleet API every 2 seconds
-4. **Detect**: When vehicle enters a bridge geofence
-5. **Alert**: Buzzer activates via Digital Output 5
-6. **Log**: Event recorded in `alert_log.json`
+### Event-Based Monitoring (Message Queue)
+
+1. **Setup**: Create geofences in Webfleet with "Alarm 1" trigger on entry
+2. **Queue**: Script creates message queue for status messages (msgclass 7)
+3. **Monitor**: Polls queue every 2 seconds for Alarm 1 notifications
+4. **Detect**: When vehicle enters "Low Bridge" or "Low Roof" geofence
+5. **Alert**: Buzzer activates via Digital Output 5 using `switchoutput` API
+6. **Cooldown**: 5-minute debounce prevents repeated alerts
+7. **Log**: Event recorded in `alert_log.json`
+
+### How It Works
+
+```
+Vehicle enters geofence
+    ↓
+Webfleet triggers Alarm 1
+    ↓
+Notification posted to message queue
+    ↓
+Script polls queue (every 2s)
+    ↓
+Detects "Low Bridge" + "Alarm 1" in message
+    ↓
+Checks cooldown (5 min since last alert)
+    ↓
+Triggers buzzer via switchoutput API
+    ↓
+Logs alert to alert_log.json
+```
 
 ## Geofence Setup
 
-You need to create geofences in Webfleet for each bridge:
+### Requirements
 
-1. Log into Webfleet web interface
-2. Go to **Configuration > Geofences**
-3. Create circular geofence at bridge location
-4. Set radius (recommended: 100m)
-5. Name it (e.g., "Low_Bridge_Penrose")
-6. Add the geofence name to your bridge configuration
+Geofences must be configured in Webfleet with specific settings:
+
+1. **Name prefix**: Must start with "Low Bridge" or "Low Roof"
+   - Example: "Low Bridge - Penrose"
+   - Example: "Low Roof - Rust Avenue"
+
+2. **Alarm configuration**: Set to trigger **Alarm 1** on geofence entry
+
+3. **Setup steps**:
+   - Log into Webfleet web interface
+   - Go to **Configuration > Geofences**
+   - Create circular geofence at bridge location
+   - Set radius (recommended: 100m)
+   - Configure **Alarm 1** to trigger on entry
+   - Name with "Low Bridge" or "Low Roof" prefix
 
 ## Troubleshooting
 
