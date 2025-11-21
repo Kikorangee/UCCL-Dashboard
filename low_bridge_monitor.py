@@ -107,12 +107,61 @@ class WebfleetAPI:
         response = self._make_request('showObjectReportExtern', {})
         return response
 
-    def get_vehicles_in_geofence(self, geofence_name: str) -> Dict:
-        """Get vehicles currently in a specific geofence"""
+    def create_queue(self, msgclass: int = 7) -> Dict:
+        """
+        Create a message queue to receive notifications
+
+        Args:
+            msgclass: Message class to receive
+                0 - All messages
+                2 - All except position messages
+                4 - Order related messages
+                5 - Driver related messages
+                7 - Status messages (includes geofence alerts)
+                8 - Text messages
+                15 - Third party messages
+
+        Returns:
+            API response with queue ID
+        """
         params = {
-            'geofencename': geofence_name
+            'msgclass': msgclass
         }
-        response = self._make_request('showVehiclesInGeofence', params)
+        print(f"Creating message queue for message class {msgclass}...")
+        response = self._make_request('createQueueExtern', params)
+        return response
+
+    def pop_queue_messages(self, queue_uid: str) -> Dict:
+        """
+        Retrieve messages from the queue
+
+        Args:
+            queue_uid: Queue ID returned from createQueueExtern
+
+        Returns:
+            API response with messages
+        """
+        params = {
+            'queueuid': queue_uid
+        }
+        response = self._make_request('popQueueMessagesExtern', params)
+        return response
+
+    def delete_queue(self, queue_uid: str) -> Dict:
+        """
+        Delete a message queue
+
+        Args:
+            queue_uid: Queue ID to delete
+
+        Returns:
+            API response
+        """
+        params = {
+            'queueuid': queue_uid
+        }
+        print(f"Deleting message queue {queue_uid}...")
+        response = self._make_request('deleteQueueExtern', params)
         return response
 
     def create_geofence(self, name: str, lat: float, lon: float, radius: int, color: str = "red") -> Dict:
@@ -328,7 +377,7 @@ class LowBridgeMonitor:
             print(json.dumps(result, indent=2))
 
     def monitor_geofences(self):
-        """Main monitoring loop - checks geofences and triggers alerts"""
+        """Main monitoring loop - polls message queue for Alarm 1 geofence notifications"""
         print("\n" + "="*60)
         print("LOW BRIDGE ALERT SYSTEM - MONITORING ACTIVE")
         print("="*60)
@@ -338,28 +387,76 @@ class LowBridgeMonitor:
         print(f"Bridges Monitored: {len(self.config.get('bridges', []))}")
         print("="*60 + "\n")
 
+        # Create message queue for status messages (msgclass 7)
+        print("Creating message queue...")
+        queue_result = self.api.create_queue(msgclass=7)
+
+        if 'error' in queue_result:
+            print(f"✗ Failed to create queue: {queue_result.get('error')}")
+            return
+
+        # Extract queue UID from response
+        queue_uid = queue_result.get('queueuid')
+        if not queue_uid:
+            print("✗ No queue UID returned")
+            print(f"Response: {json.dumps(queue_result, indent=2)}")
+            return
+
+        print(f"✓ Queue created: {queue_uid}")
+        print("Monitoring for Alarm 1 notifications...\n")
+
+        # Track vehicles we've already alerted (debouncing)
+        alerted_vehicles = {}  # {vehicle_id: timestamp}
+        cooldown_minutes = 5
+
         try:
             while True:
-                # Monitor each configured bridge
-                for bridge in self.config.get('bridges', []):
-                    geofence_name = bridge.get('geofence_name')
-                    bridge_name = bridge.get('name')
+                # Poll the message queue
+                messages_result = self.api.pop_queue_messages(queue_uid)
 
-                    if not geofence_name:
-                        continue
+                if 'error' not in messages_result:
+                    # Parse messages
+                    messages = messages_result.get('messages', [])
 
-                    # Check for vehicles in this geofence
-                    result = self.api.get_vehicles_in_geofence(geofence_name)
+                    for message in messages:
+                        # Look for Alarm 1 notifications from Low Bridge/Low Roof geofences
+                        msg_type = message.get('msgtype', '')
+                        msg_text = message.get('msgtext', '')
+                        vehicle_id = message.get('objectno', '')
 
-                    # Process vehicles in geofence
-                    # This will depend on the actual API response format
-                    # You may need to adjust based on real API responses
+                        # Check if this is an Alarm 1 notification
+                        if 'Alarm 1' in msg_text or 'alarm 1' in msg_text.lower():
+                            # Check if it's from a Low Bridge or Low Roof geofence
+                            if 'Low Bridge' in msg_text or 'Low Roof' in msg_text or \
+                               'low bridge' in msg_text.lower() or 'low roof' in msg_text.lower():
 
-                    if 'vehicles' in result:
-                        for vehicle in result['vehicles']:
-                            vehicle_id = vehicle.get('objectno')
-                            if vehicle_id:
-                                self.trigger_buzzer(vehicle_id, bridge_name)
+                                # Check cooldown - don't re-alert same vehicle within X minutes
+                                now = datetime.now()
+                                last_alert = alerted_vehicles.get(vehicle_id)
+
+                                if last_alert:
+                                    time_diff = (now - last_alert).total_seconds() / 60
+                                    if time_diff < cooldown_minutes:
+                                        print(f"⏸️  Skipping {vehicle_id} - alerted {time_diff:.1f}min ago (cooldown: {cooldown_minutes}min)")
+                                        continue
+
+                                # Extract bridge name from message
+                                bridge_name = "Unknown Bridge"
+                                for bridge in self.config.get('bridges', []):
+                                    if bridge.get('geofence_name', '') in msg_text:
+                                        bridge_name = bridge.get('name', 'Unknown Bridge')
+                                        break
+
+                                print(f"\n🚨 GEOFENCE ENTRY DETECTED!")
+                                print(f"   Vehicle: {vehicle_id}")
+                                print(f"   Bridge: {bridge_name}")
+                                print(f"   Message: {msg_text}")
+
+                                # Trigger buzzer
+                                self.trigger_buzzer(vehicle_id, bridge_name, reason="Geofence entry - Alarm 1")
+
+                                # Record alert time for cooldown
+                                alerted_vehicles[vehicle_id] = now
 
                 # Wait before next poll
                 time.sleep(self.config.get('poll_interval', 2))
@@ -367,6 +464,10 @@ class LowBridgeMonitor:
         except KeyboardInterrupt:
             print("\n\nMonitoring stopped by user")
             self.save_alert_log()
+
+            # Clean up: delete the queue
+            print("\nCleaning up message queue...")
+            self.api.delete_queue(queue_uid)
 
 
 def main():
