@@ -479,14 +479,13 @@ class LowBridgeMonitor:
                         msg_text = event.get('msgtext', '')
                         pos_text = event.get('postext', '')
                         event_level_cur = event.get('eventlevel_cur', '')
-                        event_level = event.get('eventlevel', '')
 
                         # Skip if we've already processed this event
                         if event_id in processed_events:
                             continue
 
-                        # Verify this is a Warning level event - check both eventlevel and eventlevel_cur
-                        if event_level_cur != 'W' and event_level != 'W':
+                        # Verify this is a Warning level event
+                        if event_level_cur != 'W':
                             continue
 
                         # Mark as processed
@@ -513,7 +512,7 @@ class LowBridgeMonitor:
                         print(f"   Vehicle: {vehicle_id}")
                         print(f"   Location: {bridge_name}")
                         print(f"   Message: {msg_text}")
-                        print(f"   Level: eventlevel={event_level}, eventlevel_cur={event_level_cur}")
+                        print(f"   Level: {event_level_cur} (Warning)")
 
                         # Trigger buzzer
                         self.trigger_buzzer(vehicle_id, bridge_name, reason="Warning event - Geofence entry")
