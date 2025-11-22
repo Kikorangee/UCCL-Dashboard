@@ -455,6 +455,9 @@ class LowBridgeMonitor:
                 # Get today's event report - filter for WARNING level events only
                 events_result = self.api.get_event_report(range_pattern='d0', event_level=2)
 
+                # Debug: Print raw API response
+                print(f"[DEBUG] API Response: {json.dumps(events_result, indent=2)}")
+
                 if 'error' not in events_result:
                     # Parse events - the structure may vary, adjust based on actual response
                     events = []
