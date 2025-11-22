@@ -77,15 +77,14 @@ class WebfleetAPI:
             print(f"API request failed: {e}")
             return {'error': str(e)}
 
-    def switch_output_extern(self, object_uid: str, output_name: str, state: int, duration: int = 5) -> Dict:
+    def switch_output_extern(self, object_uid: str, output_name: str, status: int) -> Dict:
         """
         Activate or deactivate an external output (buzzer)
 
         Args:
             object_uid: Vehicle object UID or object number
             output_name: Name of the output (e.g., 'Low Bridge')
-            state: 0 = deactivate, 1 = activate
-            duration: Duration in seconds (default: 5)
+            status: 0 = deactivate, 1 = activate
 
         Returns:
             API response
@@ -93,11 +92,11 @@ class WebfleetAPI:
         params = {
             'objectno': object_uid,
             'outputname': output_name,
-            'state': state,
-            'duration': duration
+            'status': status
         }
 
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Triggering output '{output_name}' on vehicle {object_uid} for {duration}s")
+        status_text = "ON" if status == 1 else "OFF"
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Setting output '{output_name}' on vehicle {object_uid} to {status_text}")
 
         response = self._make_request('switchoutput', params)
         return response
@@ -203,14 +202,14 @@ class WebfleetAPI:
         response = self._make_request('showGeofenceReportExtern', {})
         return response
 
-    def get_event_report(self, range_pattern: str = "today", event_level: int = None) -> Dict:
+    def get_event_report(self, range_pattern: str = "d0", event_level: int = None) -> Dict:
         """
         Get event report for geofence entries and other events
 
         Args:
             range_pattern: Time range for events
-                - "today" - events from today
-                - "yesterday" - events from yesterday
+                - "d0" - today (default)
+                - "d1" - yesterday
                 - Can also use date range with rangefrom/rangeto params
             event_level: Filter by event level (optional)
                 - 0: Message
@@ -224,7 +223,7 @@ class WebfleetAPI:
             API response with events
         """
         params = {
-            'range': range_pattern
+            'range_pattern': range_pattern
         }
 
         if event_level is not None:
@@ -287,12 +286,41 @@ class LowBridgeMonitor:
         output_name = self.config.get('buzzer_output_name', 'Low Bridge')
         duration = self.config.get('buzzer_duration', 5)
 
-        response = self.api.switch_output_extern(
+        # Turn buzzer ON
+        response_on = self.api.switch_output_extern(
             object_uid=vehicle_id,
             output_name=output_name,
-            state=1,  # Activate
-            duration=duration
+            status=1  # Activate
         )
+
+        # Check if ON command successful
+        if 'error' in response_on:
+            print(f"✗ Failed to activate buzzer: {response_on.get('error')}")
+            # Log the failed attempt
+            alert = {
+                'timestamp': datetime.now().isoformat(),
+                'vehicle': vehicle_id,
+                'bridge': bridge_name,
+                'reason': reason,
+                'response': response_on,
+                'success': False
+            }
+            self.alert_log.append(alert)
+            return False
+
+        print(f"✓ Buzzer ON for vehicle {vehicle_id} - {bridge_name} (duration: {duration}s)")
+
+        # Wait for duration
+        time.sleep(duration)
+
+        # Turn buzzer OFF
+        response_off = self.api.switch_output_extern(
+            object_uid=vehicle_id,
+            output_name=output_name,
+            status=0  # Deactivate
+        )
+
+        print(f"✓ Buzzer OFF for vehicle {vehicle_id}")
 
         # Log the alert
         alert = {
@@ -300,17 +328,14 @@ class LowBridgeMonitor:
             'vehicle': vehicle_id,
             'bridge': bridge_name,
             'reason': reason,
-            'response': response
+            'duration': duration,
+            'response_on': response_on,
+            'response_off': response_off,
+            'success': True
         }
         self.alert_log.append(alert)
 
-        # Check if successful
-        if 'error' not in response:
-            print(f"✓ Buzzer activated for vehicle {vehicle_id} - {bridge_name}")
-            return True
-        else:
-            print(f"✗ Failed to activate buzzer: {response.get('error')}")
-            return False
+        return True
 
     def save_alert_log(self, filename: str = 'alert_log.json'):
         """Save alert log to file"""
@@ -430,7 +455,7 @@ class LowBridgeMonitor:
         try:
             while True:
                 # Get today's event report - filter for WARNING level events only
-                events_result = self.api.get_event_report(range_pattern='today', event_level=2)
+                events_result = self.api.get_event_report(range_pattern='d0', event_level=2)
 
                 if 'error' not in events_result:
                     # Parse events - the structure may vary, adjust based on actual response
@@ -516,16 +541,16 @@ def main():
     # Configuration
     ACCOUNT = "Phoenix"
     USERNAME = "francisw"
-    PASSWORD = "@wynn5Fr4nc1s"  # Webfleet API password
+    APIKEY = "752a57e4-877d-4dbf-bc99-b2c356f774f1"  # Webfleet API key
 
-    if not PASSWORD:
-        print("ERROR: Please set your Webfleet API password in the script")
-        print("Edit low_bridge_monitor.py and update the PASSWORD variable")
+    if not APIKEY:
+        print("ERROR: Please set your Webfleet API key in the script")
+        print("Edit low_bridge_monitor.py and update the APIKEY variable")
         return
 
     # Initialize API
     print("Initializing Webfleet API...")
-    api = WebfleetAPI(ACCOUNT, USERNAME, PASSWORD)
+    api = WebfleetAPI(ACCOUNT, USERNAME, APIKEY)
 
     # Initialize monitor
     monitor = LowBridgeMonitor(api)
@@ -541,9 +566,10 @@ def main():
         print("4. List all geofences")
         print("5. Start monitoring geofences")
         print("6. View configuration")
-        print("7. Exit")
+        print("7. Configure buzzer duration")
+        print("8. Exit")
 
-        choice = input("\nEnter choice (1-7): ").strip()
+        choice = input("\nEnter choice (1-8): ").strip()
 
         if choice == "1":
             vehicle_id = input("Enter vehicle object number: ").strip()
@@ -567,6 +593,20 @@ def main():
             print(json.dumps(monitor.config, indent=2))
 
         elif choice == "7":
+            current_duration = monitor.config.get('buzzer_duration', 5)
+            print(f"\nCurrent buzzer duration: {current_duration} seconds")
+            try:
+                new_duration = int(input("Enter new duration (seconds): ").strip())
+                if new_duration > 0 and new_duration <= 60:
+                    monitor.config['buzzer_duration'] = new_duration
+                    monitor.save_config(monitor.config)
+                    print(f"✓ Buzzer duration updated to {new_duration} seconds")
+                else:
+                    print("✗ Duration must be between 1 and 60 seconds")
+            except ValueError:
+                print("✗ Invalid input - must be a number")
+
+        elif choice == "8":
             print("Exiting...")
             break
 
