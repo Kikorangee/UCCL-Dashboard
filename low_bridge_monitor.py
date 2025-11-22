@@ -259,9 +259,7 @@ class LowBridgeMonitor:
             default_config = {
                 'buzzer_output_name': 'Low Bridge',
                 'buzzer_duration': 5,
-                'poll_interval': 2,
-                'require_ignition': True,
-                'bridges': []
+                'poll_interval': 2
             }
             self.save_config(default_config)
             return default_config
@@ -561,38 +559,26 @@ def main():
         print("MAIN MENU")
         print("="*60)
         print("1. Test buzzer activation")
-        print("2. Create all geofences")
-        print("3. Delete all geofences")
-        print("4. List all geofences")
-        print("5. Start monitoring geofences")
-        print("6. View configuration")
-        print("7. Configure buzzer duration")
-        print("8. Exit")
+        print("2. Start monitoring warnings")
+        print("3. View configuration")
+        print("4. Configure buzzer duration")
+        print("5. Exit")
 
-        choice = input("\nEnter choice (1-8): ").strip()
+        choice = input("\nEnter choice (1-5): ").strip()
 
         if choice == "1":
             vehicle_id = input("Enter vehicle object number: ").strip()
             if vehicle_id:
-                monitor.trigger_buzzer(vehicle_id, "Test Bridge", "Manual test")
+                monitor.trigger_buzzer(vehicle_id, "Test Location", "Manual test")
 
         elif choice == "2":
-            monitor.create_all_geofences()
-
-        elif choice == "3":
-            monitor.delete_all_geofences()
-
-        elif choice == "4":
-            monitor.list_all_geofences()
-
-        elif choice == "5":
             monitor.monitor_geofences()
 
-        elif choice == "6":
+        elif choice == "3":
             print("\nCurrent Configuration:")
             print(json.dumps(monitor.config, indent=2))
 
-        elif choice == "7":
+        elif choice == "4":
             current_duration = monitor.config.get('buzzer_duration', 5)
             print(f"\nCurrent buzzer duration: {current_duration} seconds")
             try:
@@ -606,7 +592,7 @@ def main():
             except ValueError:
                 print("✗ Invalid input - must be a number")
 
-        elif choice == "8":
+        elif choice == "5":
             print("Exiting...")
             break
 

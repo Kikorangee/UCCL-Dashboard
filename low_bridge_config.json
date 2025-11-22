@@ -1,7 +1,5 @@
 {
   "buzzer_output_name": "Low Bridge",
   "buzzer_duration": 5,
-  "poll_interval": 2,
-  "require_ignition": true,
-  "bridges": []
+  "poll_interval": 2
 }
