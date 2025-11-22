@@ -226,9 +226,6 @@ class WebfleetAPI:
             'range_pattern': range_pattern
         }
 
-        if event_level is not None:
-            params['eventlevel'] = event_level
-
         response = self._make_request('showEventReportExtern', params)
         return response
 
@@ -452,8 +449,8 @@ class LowBridgeMonitor:
 
         try:
             while True:
-                # Get today's event report - filter for WARNING level events only
-                events_result = self.api.get_event_report(range_pattern='d0', event_level=2)
+                # Get today's event report - filter in code for Warning events
+                events_result = self.api.get_event_report(range_pattern='d0')
 
                 # Debug: Print raw API response
                 print(f"[DEBUG] API Response: {json.dumps(events_result, indent=2)}")
