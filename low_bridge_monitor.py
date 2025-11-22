@@ -77,14 +77,14 @@ class WebfleetAPI:
             print(f"API request failed: {e}")
             return {'error': str(e)}
 
-    def switch_output_extern(self, object_uid: str, output_name: str, state: int, duration: int = 5) -> Dict:
+    def switch_output_extern(self, object_uid: str, output_name: str, status: int, duration: int = 5) -> Dict:
         """
         Activate or deactivate an external output (buzzer)
 
         Args:
             object_uid: Vehicle object UID or object number
             output_name: Name of the output (e.g., 'Low Bridge')
-            state: 0 = deactivate, 1 = activate
+            status: 0 = deactivate, 1 = activate
             duration: Duration in seconds (default: 5)
 
         Returns:
@@ -93,7 +93,7 @@ class WebfleetAPI:
         params = {
             'objectno': object_uid,
             'outputname': output_name,
-            'state': state,
+            'status': status,
             'duration': duration
         }
 
@@ -290,7 +290,7 @@ class LowBridgeMonitor:
         response = self.api.switch_output_extern(
             object_uid=vehicle_id,
             output_name=output_name,
-            state=1,  # Activate
+            status=1,  # Activate
             duration=duration
         )
 
