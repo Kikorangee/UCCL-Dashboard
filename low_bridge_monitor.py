@@ -202,14 +202,14 @@ class WebfleetAPI:
         response = self._make_request('showGeofenceReportExtern', {})
         return response
 
-    def get_event_report(self, range_pattern: str = "today", event_level: int = None) -> Dict:
+    def get_event_report(self, range_pattern: str = "d0", event_level: int = None) -> Dict:
         """
         Get event report for geofence entries and other events
 
         Args:
             range_pattern: Time range for events
-                - "today" - events from today
-                - "yesterday" - events from yesterday
+                - "d0" - today (default)
+                - "d1" - yesterday
                 - Can also use date range with rangefrom/rangeto params
             event_level: Filter by event level (optional)
                 - 0: Message
@@ -223,7 +223,7 @@ class WebfleetAPI:
             API response with events
         """
         params = {
-            'range': range_pattern
+            'range_pattern': range_pattern
         }
 
         if event_level is not None:
@@ -455,7 +455,7 @@ class LowBridgeMonitor:
         try:
             while True:
                 # Get today's event report - filter for WARNING level events only
-                events_result = self.api.get_event_report(range_pattern='today', event_level=2)
+                events_result = self.api.get_event_report(range_pattern='d0', event_level=2)
 
                 if 'error' not in events_result:
                     # Parse events - the structure may vary, adjust based on actual response
