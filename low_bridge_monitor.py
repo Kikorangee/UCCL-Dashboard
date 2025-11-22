@@ -516,16 +516,16 @@ def main():
     # Configuration
     ACCOUNT = "Phoenix"
     USERNAME = "francisw"
-    PASSWORD = "@wynn5Fr4nc1s"  # Webfleet API password
+    APIKEY = "752a57e4-877d-4dbf-bc99-b2c356f774f1"  # Webfleet API key
 
-    if not PASSWORD:
-        print("ERROR: Please set your Webfleet API password in the script")
-        print("Edit low_bridge_monitor.py and update the PASSWORD variable")
+    if not APIKEY:
+        print("ERROR: Please set your Webfleet API key in the script")
+        print("Edit low_bridge_monitor.py and update the APIKEY variable")
         return
 
     # Initialize API
     print("Initializing Webfleet API...")
-    api = WebfleetAPI(ACCOUNT, USERNAME, PASSWORD)
+    api = WebfleetAPI(ACCOUNT, USERNAME, APIKEY)
 
     # Initialize monitor
     monitor = LowBridgeMonitor(api)
