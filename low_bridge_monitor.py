@@ -566,9 +566,10 @@ def main():
         print("4. List all geofences")
         print("5. Start monitoring geofences")
         print("6. View configuration")
-        print("7. Exit")
+        print("7. Configure buzzer duration")
+        print("8. Exit")
 
-        choice = input("\nEnter choice (1-7): ").strip()
+        choice = input("\nEnter choice (1-8): ").strip()
 
         if choice == "1":
             vehicle_id = input("Enter vehicle object number: ").strip()
@@ -592,6 +593,20 @@ def main():
             print(json.dumps(monitor.config, indent=2))
 
         elif choice == "7":
+            current_duration = monitor.config.get('buzzer_duration', 5)
+            print(f"\nCurrent buzzer duration: {current_duration} seconds")
+            try:
+                new_duration = int(input("Enter new duration (seconds): ").strip())
+                if new_duration > 0 and new_duration <= 60:
+                    monitor.config['buzzer_duration'] = new_duration
+                    monitor.save_config(monitor.config)
+                    print(f"✓ Buzzer duration updated to {new_duration} seconds")
+                else:
+                    print("✗ Duration must be between 1 and 60 seconds")
+            except ValueError:
+                print("✗ Invalid input - must be a number")
+
+        elif choice == "8":
             print("Exiting...")
             break
 
