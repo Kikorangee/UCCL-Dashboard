@@ -227,7 +227,7 @@ class WebfleetAPI:
         }
 
         if event_level is not None:
-            params['eventlevel_cur'] = event_level
+            params['eventlevel'] = event_level
 
         response = self._make_request('showEventReportExtern', params)
         return response
@@ -486,6 +486,14 @@ class LowBridgeMonitor:
 
                         # Verify this is a Warning level event
                         if event_level_cur != 'W':
+                            continue
+
+                        # Filter for geofence entry events only - ignore output status changes
+                        if 'Output' in msg_text or 'output' in msg_text:
+                            continue
+
+                        # Only process geofence entry events
+                        if 'Entering area' not in msg_text and 'entering area' not in msg_text:
                             continue
 
                         # Mark as processed
