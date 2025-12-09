@@ -395,18 +395,31 @@
 
         console.log(`Received ${statusData.length} ignition status records`);
 
+        // Log first status to see structure
+        if (statusData.length > 0) {
+          console.log('Sample StatusData record:', statusData[0]);
+          console.log('Properties:', Object.keys(statusData[0]));
+        }
+
         // Process ignition data by device
         const ignitionData = {};
         statusData.forEach(status => {
-          if (status.device && status.data !== undefined && status.datetime) {
-            const deviceId = extractId(status.device);
-            if (!ignitionData[deviceId]) {
-              ignitionData[deviceId] = [];
+          // Handle both lowercase and capitalized property names
+          const device = status.device || status.Device;
+          const data = status.data !== undefined ? status.data : status.Data;
+          const datetime = status.datetime || status.dateTime || status.DateTime;
+
+          if (device && data !== undefined && datetime) {
+            const deviceId = extractId(device);
+            if (deviceId) {
+              if (!ignitionData[deviceId]) {
+                ignitionData[deviceId] = [];
+              }
+              ignitionData[deviceId].push({
+                timestamp: new Date(datetime),
+                isIgnitionOn: data > 0
+              });
             }
-            ignitionData[deviceId].push({
-              timestamp: new Date(status.datetime),
-              isIgnitionOn: status.data > 0
-            });
           }
         });
 
