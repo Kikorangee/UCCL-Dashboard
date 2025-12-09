@@ -622,6 +622,28 @@ function findRelevantIgnitionTime(deviceId, inspectionTime) {
   return relevantIgnitionTime;
 }
 
+// Filter to only include active defects (exclude completed and not necessary)
+function filterActiveDefects(defects) {
+  if (!Array.isArray(defects)) return defects;
+
+  return defects.filter(def => {
+    const repairStatus = (def.repairStatus || def.RepairStatus || '').toLowerCase();
+
+    // Exclude completed and not necessary defects
+    const isCompleted = repairStatus.includes('completed') ||
+                       repairStatus.includes('complete') ||
+                       repairStatus.includes('repaired') ||
+                       repairStatus.includes('fixed');
+
+    const isNotNecessary = repairStatus.includes('not necessary') ||
+                          repairStatus.includes('unnecessary') ||
+                          repairStatus.includes('no action');
+
+    // Keep defect if it's not completed and not marked as not necessary
+    return !isCompleted && !isNotNecessary;
+  });
+}
+
 // Check for overdue inspections using proper ignition time comparison
 function checkOverdueInspections(rows) {
   const alertWindow = parseInt(document.getElementById('alertWindow').value) || 5;
@@ -1385,12 +1407,22 @@ document.getElementById('getDvir').onclick = async function(){
     // Map defects from dVIRDefects property (the actual defect objects)
     let defectMap = {};
     let totalDefects = 0;
+    let totalDefectsBeforeFilter = 0;
+    let filteredDefectsCount = 0;
 
     dvirLogs.forEach(log => {
       // Use dVIRDefects property which contains the actual defect objects
       if (log.dVIRDefects && Array.isArray(log.dVIRDefects) && log.dVIRDefects.length > 0) {
-        defectMap[log.id] = log.dVIRDefects;
-        totalDefects += log.dVIRDefects.length;
+        totalDefectsBeforeFilter += log.dVIRDefects.length;
+
+        // Filter to only include active defects (exclude completed and not necessary)
+        const activeDefects = filterActiveDefects(log.dVIRDefects);
+        filteredDefectsCount += (log.dVIRDefects.length - activeDefects.length);
+
+        if (activeDefects.length > 0) {
+          defectMap[log.id] = activeDefects;
+          totalDefects += activeDefects.length;
+        }
       }
     });
 
@@ -1399,7 +1431,9 @@ document.getElementById('getDvir').onclick = async function(){
     console.log('=== DEFECT MAPPING COMPLETE ===');
     console.log(`Logs with remarks: ${dvirLogs.filter(l => l.driverRemark || l.certifyRemark).length}`);
     console.log(`Logs with defects: ${logsWithDefects}`);
-    console.log(`Total defects: ${totalDefects}`);
+    console.log(`Total defects (before filtering): ${totalDefectsBeforeFilter}`);
+    console.log(`Filtered out (completed/not necessary): ${filteredDefectsCount}`);
+    console.log(`Active defects remaining: ${totalDefects}`);
 
     if (totalDefects > 0) {
       const firstDefect = Object.values(defectMap)[0][0];
@@ -1408,9 +1442,10 @@ document.getElementById('getDvir').onclick = async function(){
     }
 
     if (logsWithDefects > 0) {
-      showMessage('infoBanner', `✅ Loaded ${totalDefects} defect records from ${logsWithDefects} inspections`, 'success');
+      const filterMsg = filteredDefectsCount > 0 ? ` (${filteredDefectsCount} completed/resolved defects hidden)` : '';
+      showMessage('infoBanner', `✅ Loaded ${totalDefects} active defect(s) from ${logsWithDefects} inspections${filterMsg}`, 'success');
     } else {
-      showMessage('infoBanner', `✅ No defects found in this date range`, 'success');
+      showMessage('infoBanner', `✅ No active defects found in this date range`, 'success');
     }
 
     const driverIds = new Set(), deviceIds = new Set();
@@ -1439,12 +1474,25 @@ document.getElementById('getDvir').onclick = async function(){
       }
       // Otherwise, try the defects field from the DVIR log itself
       else if (l.defects) {
+        let parsedDefects = null;
         if (typeof l.defects === 'string') {
-          defectsString = l.defects;
+          try {
+            parsedDefects = JSON.parse(l.defects);
+          } catch (e) {
+            defectsString = l.defects;
+          }
         } else if (Array.isArray(l.defects)) {
-          defectsString = JSON.stringify(l.defects);
+          parsedDefects = l.defects;
         } else if (typeof l.defects === 'object') {
-          defectsString = JSON.stringify(l.defects);
+          parsedDefects = [l.defects];
+        }
+
+        // Filter out completed and not necessary defects from fallback source
+        if (parsedDefects && Array.isArray(parsedDefects)) {
+          const activeDefects = filterActiveDefects(parsedDefects);
+          if (activeDefects.length > 0) {
+            defectsString = JSON.stringify(activeDefects);
+          }
         }
       }
 
