@@ -671,18 +671,12 @@ function checkOverdueInspections(rows) {
       row.ignitionTime = ignitionTime;
       const timeDiff = (inspectionTime - ignitionTime) / (1000 * 60);
       row.timeToInspection = Math.round(timeDiff);
-      
-      if (row.isInspectedByDriver && timeDiff > alertWindow) {
+
+      // Check if inspection was overdue regardless of who performed it
+      if (timeDiff > alertWindow) {
         row.isOverdue = true;
         // Send email notification for overdue inspection
         sendOverdueEmail(row).catch(err => console.error('Failed to send overdue email:', err));
-      } else if (!row.isInspectedByDriver) {
-        const timeSinceIgnition = (now - ignitionTime) / (1000 * 60);
-        if (timeSinceIgnition > alertWindow) {
-          row.isOverdue = true;
-          // Send email notification for overdue inspection
-          sendOverdueEmail(row).catch(err => console.error('Failed to send overdue email:', err));
-        }
       }
     }
 
