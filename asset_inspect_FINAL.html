@@ -579,7 +579,10 @@ async function getIgnitionData(fromDate, toDate) {
     Object.keys(ignitionData).forEach(deviceId => {
       ignitionData[deviceId].sort((a, b) => a.timestamp - b.timestamp);
     });
-    
+
+    console.log(`✅ Loaded ignition data for ${Object.keys(ignitionData).length} devices`);
+    console.log(`Total ignition events: ${Object.values(ignitionData).reduce((sum, arr) => sum + arr.length, 0)}`);
+
     return ignitionData;
     
   } catch (error) {
@@ -649,8 +652,15 @@ function checkOverdueInspections(rows) {
   const alertWindow = parseInt(document.getElementById('alertWindow').value) || 5;
   const assetType = document.getElementById('assetType').value;
   const enableAlerts = document.getElementById('enableOverdueAlerts').checked;
-  
+
+  console.log(`=== OVERDUE INSPECTION CHECK ===`);
+  console.log(`Alert window: ${alertWindow} minutes`);
+  console.log(`Alerts enabled: ${enableAlerts}`);
+  console.log(`Asset type filter: ${assetType}`);
+  console.log(`Ignition data available for ${Object.keys(ignitionData).length} devices`);
+
   if (!enableAlerts) {
+    console.log('⚠️ Overdue alerts are disabled');
     return rows.map(row => {
       row.isOverdue = false;
       row.ignitionTime = null;
@@ -672,15 +682,16 @@ function checkOverdueInspections(rows) {
       row.vehicleName.toLowerCase().includes('roller') ||
       row.vehicleName.toLowerCase().includes('backhoe')
     );
-    
+
     if (assetType === 'heavy' && !isHeavyEquipment) {
       row.isOverdue = false;
       row.ignitionTime = null;
       row.timeToInspection = null;
       return row;
     }
-    
-    const inspectionTime = new Date(row.dateTime);
+
+    // Use rawDateTime (timestamp) instead of dateTime (localized string)
+    const inspectionTime = new Date(row.rawDateTime);
     const deviceId = row.deviceId;
     
     row.isOverdue = false;
@@ -704,6 +715,26 @@ function checkOverdueInspections(rows) {
 
     return row;
   });
+}
+
+// Add summary logging after checkOverdueInspections
+function logOverdueResults(rows) {
+  const withIgnition = rows.filter(r => r.ignitionTime !== null);
+  const overdueRows = rows.filter(r => r.isOverdue);
+
+  console.log(`=== OVERDUE CHECK RESULTS ===`);
+  console.log(`Total inspections: ${rows.length}`);
+  console.log(`Inspections with ignition data: ${withIgnition.length}`);
+  console.log(`Inspections flagged as overdue: ${overdueRows.length}`);
+
+  if (overdueRows.length > 0) {
+    console.log('Sample overdue inspection:', {
+      vehicle: overdueRows[0].vehicleName,
+      ignitionTime: overdueRows[0].ignitionTime,
+      inspectionTime: overdueRows[0].dateTime,
+      minutesDelay: overdueRows[0].timeToInspection
+    });
+  }
 }
 
 // Generate zone statistics
@@ -1521,6 +1552,7 @@ document.getElementById('getDvir').onclick = async function(){
     });
 
     mappedDvirData = checkOverdueInspections(mappedDvirData);
+    logOverdueResults(mappedDvirData);
 
     // Apply default sort (latest inspections first)
     currentSortColumn = 'dateTime';
