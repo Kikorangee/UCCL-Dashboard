@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overdue Inspection Monitor</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #fff;
+      font-size: 32px;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    h2 {
+      color: #2d3748;
+      font-size: 24px;
+      margin-bottom: 20px;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 10px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    input, select, button {
+      padding: 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: all 0.3s ease;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    button {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #f7fafc, #edf2f7);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      border-left: 4px solid #667eea;
+    }
+    .stat-card.overdue {
+      border-left-color: #f56565;
+      background: linear-gradient(135deg, #fff5f5, #fed7d7);
+    }
+    .stat-card.ontime {
+      border-left-color: #48bb78;
+      background: linear-gradient(135deg, #f0fff4, #c6f6d5);
+    }
+    .stat-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 5px;
+    }
+    .stat-label {
+      font-size: 14px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .message {
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-weight: 500;
+      display: none;
+    }
+    .message.info { background: #bee3f8; color: #2c5282; border-left: 4px solid #4299e1; display: block; }
+    .message.success { background: #c6f6d5; color: #22543d; border-left: 4px solid #38a169; display: block; }
+    .message.error { background: #fed7d7; color: #742a2a; border-left: 4px solid #e53e3e; display: block; }
+    .message.warning { background: #fefcbf; color: #744210; border-left: 4px solid #d69e2e; display: block; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 15px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 15px;
+    }
+    tr:hover {
+      background: #f7fafc;
+    }
+    tr.overdue {
+      background: #fff5f5;
+    }
+    tr.on-time {
+      background: #f0fff4;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge.overdue {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+    .badge.on-time {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .delay {
+      font-weight: 700;
+      font-size: 18px;
+    }
+    .delay.overdue {
+      color: #e53e3e;
+    }
+    .delay.on-time {
+      color: #38a169;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #718096;
+      font-size: 18px;
+    }
+    .spinner {
+      border: 4px solid #e2e8f0;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #authSection { display: block; }
+    #monitorSection { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⏰ Overdue Inspection Monitor</h1>
+
+    <!-- Authentication Section -->
+    <div id="authSection" class="card">
+      <h2>🔐 Geotab Authentication</h2>
+      <div id="authMessage"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="server">Server</label>
+          <input type="text" id="server" value="my.geotab.com" placeholder="my.geotab.com">
+        </div>
+        <div class="form-group">
+          <label for="database">Database</label>
+          <input type="text" id="database" placeholder="Database Name">
+        </div>
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="Username">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Password">
+        </div>
+      </div>
+      <button id="authButton">Authenticate</button>
+    </div>
+
+    <!-- Monitor Section -->
+    <div id="monitorSection">
+      <div class="card">
+        <h2>⚙️ Configuration</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fromDate">From Date</label>
+            <input type="date" id="fromDate">
+          </div>
+          <div class="form-group">
+            <label for="toDate">To Date</label>
+            <input type="date" id="toDate">
+          </div>
+          <div class="form-group">
+            <label for="alertWindow">Alert Window (minutes)</label>
+            <input type="number" id="alertWindow" value="5" min="1" max="60">
+            <small style="color: #718096; margin-top: 5px;">Inspections done after this many minutes are marked overdue</small>
+          </div>
+        </div>
+        <button id="fetchButton">🔍 Check Overdue Inspections</button>
+      </div>
+
+      <div id="statsSection" style="display: none;" class="card">
+        <h2>📊 Statistics</h2>
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-value" id="totalInspections">0</div>
+            <div class="stat-label">Total Inspections</div>
+          </div>
+          <div class="stat-card ontime">
+            <div class="stat-value" id="onTimeCount">0</div>
+            <div class="stat-label">On Time</div>
+          </div>
+          <div class="stat-card overdue">
+            <div class="stat-value" id="overdueCount">0</div>
+            <div class="stat-label">Overdue</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="noDataCount">0</div>
+            <div class="stat-label">No Ignition Data</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="statusMessage"></div>
+        <div id="resultsTable"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let credentials = null;
+    let serverUsed = null;
+
+    // Set default dates (today and last 7 days)
+    function setDefaultDates() {
+      const today = new Date();
+      const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      document.getElementById('toDate').value = today.toISOString().split('T')[0];
+      document.getElementById('fromDate').value = lastWeek.toISOString().split('T')[0];
+    }
+    setDefaultDates();
+
+    // Helper to show messages
+    function showMessage(elementId, message, type) {
+      const el = document.getElementById(elementId);
+      el.className = `message ${type}`;
+      el.textContent = message;
+      el.style.display = 'block';
+    }
+
+    // Helper to extract ID from Geotab object
+    function extractId(obj) {
+      if (!obj) return null;
+      if (typeof obj === 'string') return obj;
+      return obj.id || obj.Id || null;
+    }
+
+    // Call Geotab API
+    async function callGeotabAPI(method, params = {}) {
+      if (window.geotab && typeof window.geotab.call === 'function') {
+        return new Promise((resolve, reject) => window.geotab.call(method, params, resolve, reject));
+      }
+      if (window.api && typeof window.api.call === 'function') {
+        return new Promise((resolve, reject) => window.api.call(method, params, resolve, reject));
+      }
+      const requestBody = { method, params: credentials ? { ...params, credentials } : params };
+      const res = await fetch(`https://${serverUsed}/apiv1`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message || 'API Error');
+      return data.result;
+    }
+
+    // Authentication
+    document.getElementById('authButton').onclick = async function() {
+      const server = document.getElementById('server').value.trim();
+      const database = document.getElementById('database').value.trim();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!server || !database || !username || !password) {
+        showMessage('authMessage', 'Please fill in all fields', 'error');
+        return;
+      }
+
+      try {
+        showMessage('authMessage', 'Authenticating...', 'info');
+        serverUsed = server;
+        const res = await callGeotabAPI('Authenticate', { userName: username, password, database });
+        if (res.path && res.path !== 'ThisServer') {
+          serverUsed = res.path;
+          const res2 = await callGeotabAPI('Authenticate', { userName: username, password, database });
+          credentials = res2.credentials;
+        } else {
+          credentials = res.credentials;
+        }
+        showMessage('authMessage', '✅ Authentication successful!', 'success');
+        document.getElementById('authSection').style.display = 'none';
+        document.getElementById('monitorSection').style.display = 'block';
+      } catch (e) {
+        showMessage('authMessage', `Authentication failed: ${e.message}`, 'error');
+      }
+    };
+
+    // Fetch and check overdue inspections
+    document.getElementById('fetchButton').onclick = async function() {
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      const alertWindow = parseInt(document.getElementById('alertWindow').value) || 5;
+
+      if (!fromDate || !toDate) {
+        showMessage('statusMessage', 'Please select both from and to dates', 'error');
+        return;
+      }
+
+      try {
+        document.getElementById('fetchButton').disabled = true;
+        document.getElementById('resultsTable').innerHTML = '<div class="loading"><div class="spinner"></div>Loading inspection and ignition data...</div>';
+        showMessage('statusMessage', '🔍 Fetching inspection and ignition data...', 'info');
+
+        // Fetch ignition data
+        console.log('Fetching ignition data...');
+        const statusData = await callGeotabAPI('Get', {
+          typeName: 'StatusData',
+          search: {
+            fromDate: fromDate + 'T00:00:00.000Z',
+            toDate: toDate + 'T23:59:59.999Z',
+            diagnosticSearch: {
+              id: 'DiagnosticIgnitionId'
+            }
+          }
+        });
+
+        console.log(`Received ${statusData.length} ignition status records`);
+
+        // Process ignition data by device
+        const ignitionData = {};
+        statusData.forEach(status => {
+          if (status.device && status.data !== undefined && status.datetime) {
+            const deviceId = extractId(status.device);
+            if (!ignitionData[deviceId]) {
+              ignitionData[deviceId] = [];
+            }
+            ignitionData[deviceId].push({
+              timestamp: new Date(status.datetime),
+              isIgnitionOn: status.data > 0
+            });
+          }
+        });
+
+        // Sort ignition events by timestamp
+        Object.keys(ignitionData).forEach(deviceId => {
+          ignitionData[deviceId].sort((a, b) => a.timestamp - b.timestamp);
+        });
+
+        console.log(`Processed ignition data for ${Object.keys(ignitionData).length} devices`);
+
+        // Fetch DVIR logs
+        console.log('Fetching DVIR logs...');
+        const dvirLogs = await callGeotabAPI('Get', {
+          typeName: 'DVIRLog',
+          search: {
+            fromDate: fromDate + 'T00:00:00.000Z',
+            toDate: toDate + 'T23:59:59.999Z'
+          }
+        });
+
+        console.log(`Received ${dvirLogs.length} DVIR logs`);
+
+        if (dvirLogs.length === 0) {
+          showMessage('statusMessage', 'No inspections found for this date range', 'warning');
+          document.getElementById('resultsTable').innerHTML = '';
+          document.getElementById('fetchButton').disabled = false;
+          return;
+        }
+
+        // Get driver and device names
+        const driverIds = new Set();
+        const deviceIds = new Set();
+        dvirLogs.forEach(log => {
+          const driverId = extractId(log.driver);
+          const deviceId = extractId(log.device);
+          if (driverId) driverIds.add(driverId);
+          if (deviceId) deviceIds.add(deviceId);
+        });
+
+        const calls = [];
+        Array.from(driverIds).forEach(id => calls.push({ method: 'Get', params: { typeName: 'User', search: { id } } }));
+        Array.from(deviceIds).forEach(id => calls.push({ method: 'Get', params: { typeName: 'Device', search: { id } } }));
+
+        const lookup = await callGeotabAPI('ExecuteMultiCall', { calls });
+        const driverNames = {};
+        const deviceNames = {};
+        let idx = 0;
+        Array.from(driverIds).forEach(id => {
+          const r = lookup[idx++];
+          driverNames[id] = (r && r[0] && (r[0].name || `${r[0].firstName || ''} ${r[0].lastName || ''}`.trim())) || `Driver ${id}`;
+        });
+        Array.from(deviceIds).forEach(id => {
+          const r = lookup[idx++];
+          deviceNames[id] = (r && r[0] && r[0].name) || `Device ${id}`;
+        });
+
+        // Process each inspection
+        const inspections = [];
+        dvirLogs.forEach(log => {
+          const deviceId = extractId(log.device);
+          const driverId = extractId(log.driver);
+          const inspectionTime = new Date(log.dateTime);
+
+          // Find relevant ignition time
+          let ignitionTime = null;
+          let timeDiff = null;
+
+          if (ignitionData[deviceId] && ignitionData[deviceId].length > 0) {
+            const deviceIgnitions = ignitionData[deviceId];
+
+            // Find last ignition ON before inspection
+            for (let i = deviceIgnitions.length - 1; i >= 0; i--) {
+              const event = deviceIgnitions[i];
+              if (event.timestamp <= inspectionTime && event.isIgnitionOn) {
+                ignitionTime = event.timestamp;
+                timeDiff = Math.round((inspectionTime - ignitionTime) / (1000 * 60));
+                break;
+              }
+            }
+          }
+
+          inspections.push({
+            vehicleName: deviceNames[deviceId] || 'Unknown Vehicle',
+            driverName: driverNames[driverId] || 'Unknown Driver',
+            inspectionTime: inspectionTime,
+            ignitionTime: ignitionTime,
+            timeDiff: timeDiff,
+            isOverdue: timeDiff !== null && timeDiff > alertWindow,
+            isInspectedByDriver: log.isInspectedByDriver
+          });
+        });
+
+        // Calculate statistics
+        const total = inspections.length;
+        const withIgnition = inspections.filter(i => i.ignitionTime !== null).length;
+        const onTime = inspections.filter(i => i.ignitionTime !== null && !i.isOverdue).length;
+        const overdue = inspections.filter(i => i.isOverdue).length;
+        const noData = total - withIgnition;
+
+        // Update stats
+        document.getElementById('totalInspections').textContent = total;
+        document.getElementById('onTimeCount').textContent = onTime;
+        document.getElementById('overdueCount').textContent = overdue;
+        document.getElementById('noDataCount').textContent = noData;
+        document.getElementById('statsSection').style.display = 'block';
+
+        // Generate table
+        let html = '<table><thead><tr>';
+        html += '<th>Vehicle</th>';
+        html += '<th>Driver</th>';
+        html += '<th>Inspection Time</th>';
+        html += '<th>Ignition Time</th>';
+        html += '<th>Delay (minutes)</th>';
+        html += '<th>Status</th>';
+        html += '</tr></thead><tbody>';
+
+        // Sort: overdue first, then by delay descending
+        inspections.sort((a, b) => {
+          if (a.isOverdue && !b.isOverdue) return -1;
+          if (!a.isOverdue && b.isOverdue) return 1;
+          if (a.timeDiff !== null && b.timeDiff !== null) return b.timeDiff - a.timeDiff;
+          return 0;
+        });
+
+        inspections.forEach(insp => {
+          const rowClass = insp.isOverdue ? 'overdue' : insp.ignitionTime ? 'on-time' : '';
+          html += `<tr class="${rowClass}">`;
+          html += `<td><strong>${insp.vehicleName}</strong></td>`;
+          html += `<td>${insp.driverName}</td>`;
+          html += `<td>${insp.inspectionTime.toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}</td>`;
+          html += `<td>${insp.ignitionTime ? insp.ignitionTime.toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }) : '<em style="color: #999;">No data</em>'}</td>`;
+
+          if (insp.timeDiff !== null) {
+            const delayClass = insp.isOverdue ? 'overdue' : 'on-time';
+            html += `<td><span class="delay ${delayClass}">${insp.timeDiff}</span></td>`;
+            html += `<td><span class="badge ${insp.isOverdue ? 'overdue' : 'on-time'}">${insp.isOverdue ? '⚠️ OVERDUE' : '✅ ON TIME'}</span></td>`;
+          } else {
+            html += `<td><em style="color: #999;">-</em></td>`;
+            html += `<td><em style="color: #999;">No ignition data</em></td>`;
+          }
+
+          html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        document.getElementById('resultsTable').innerHTML = html;
+
+        if (overdue > 0) {
+          showMessage('statusMessage', `⚠️ Found ${overdue} overdue inspection(s) out of ${withIgnition} with ignition data (Alert window: ${alertWindow} minutes)`, 'warning');
+        } else {
+          showMessage('statusMessage', `✅ All ${withIgnition} inspections were completed within ${alertWindow} minutes of ignition!`, 'success');
+        }
+
+        console.log('=== SUMMARY ===');
+        console.log(`Total inspections: ${total}`);
+        console.log(`With ignition data: ${withIgnition}`);
+        console.log(`On time: ${onTime}`);
+        console.log(`Overdue: ${overdue}`);
+        console.log(`No ignition data: ${noData}`);
+
+      } catch (e) {
+        showMessage('statusMessage', `Error: ${e.message}`, 'error');
+        console.error('Error:', e);
+        document.getElementById('resultsTable').innerHTML = '';
+      } finally {
+        document.getElementById('fetchButton').disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
