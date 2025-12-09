@@ -595,19 +595,23 @@ async function getIgnitionData(fromDate, toDate) {
 // Find the most relevant ignition time for a DVIR
 function findRelevantIgnitionTime(deviceId, inspectionTime) {
   if (!ignitionData[deviceId] || ignitionData[deviceId].length === 0) {
+    console.log(`No ignition data for device: ${deviceId}`);
     return null;
   }
-  
+
   const deviceIgnitions = ignitionData[deviceId];
   let relevantIgnitionTime = null;
-  
+
+  console.log(`Searching for ignition time for device ${deviceId}, inspection at ${inspectionTime}`);
+  console.log(`Device has ${deviceIgnitions.length} ignition events`);
+
   // Find the last ignition ON event before the inspection
   for (let i = deviceIgnitions.length - 1; i >= 0; i--) {
     const ignitionEvent = deviceIgnitions[i];
-    
+
     if (ignitionEvent.timestamp <= inspectionTime && ignitionEvent.isIgnitionOn) {
       let sessionStart = ignitionEvent.timestamp;
-      
+
       // Look backwards to find when this ignition session started
       for (let j = i - 1; j >= 0; j--) {
         const prevEvent = deviceIgnitions[j];
@@ -616,12 +620,17 @@ function findRelevantIgnitionTime(deviceId, inspectionTime) {
         }
         sessionStart = prevEvent.timestamp;
       }
-      
+
       relevantIgnitionTime = sessionStart;
+      console.log(`✅ Found ignition time: ${relevantIgnitionTime}, inspection: ${inspectionTime}, diff: ${Math.round((inspectionTime - relevantIgnitionTime) / (1000 * 60))} minutes`);
       break;
     }
   }
-  
+
+  if (!relevantIgnitionTime) {
+    console.log(`❌ No ignition time found for device ${deviceId} before inspection at ${inspectionTime}`);
+  }
+
   return relevantIgnitionTime;
 }
 
@@ -629,8 +638,13 @@ function findRelevantIgnitionTime(deviceId, inspectionTime) {
 function filterActiveDefects(defects) {
   if (!Array.isArray(defects)) return defects;
 
-  return defects.filter(def => {
+  const filtered = defects.filter(def => {
     const repairStatus = (def.repairStatus || def.RepairStatus || '').toLowerCase();
+
+    // Log defect details for debugging
+    if (repairStatus) {
+      console.log('Defect repair status:', repairStatus, 'Full defect:', def);
+    }
 
     // Exclude completed and not necessary defects
     const isCompleted = repairStatus.includes('completed') ||
@@ -642,9 +656,18 @@ function filterActiveDefects(defects) {
                           repairStatus.includes('unnecessary') ||
                           repairStatus.includes('no action');
 
+    const shouldKeep = !isCompleted && !isNotNecessary;
+
+    if (!shouldKeep) {
+      console.log(`🗑️ Filtering out defect with status: "${repairStatus}"`);
+    }
+
     // Keep defect if it's not completed and not marked as not necessary
-    return !isCompleted && !isNotNecessary;
+    return shouldKeep;
   });
+
+  console.log(`Filtered ${defects.length - filtered.length} defects out of ${defects.length} total`);
+  return filtered;
 }
 
 // Check for overdue inspections using proper ignition time comparison
