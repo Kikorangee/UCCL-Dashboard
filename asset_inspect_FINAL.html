@@ -698,26 +698,40 @@ function filterActiveDefects(defects) {
 
   const filtered = defects.filter(def => {
     const repairStatus = (def.repairStatus || def.RepairStatus || '').toLowerCase();
+    const status = (def.status || def.Status || '').toLowerCase();
+    const repairStatusId = (def.repairStatusId || def.RepairStatusId || '').toLowerCase();
+
+    // Combine all status fields for checking
+    const allStatuses = [repairStatus, status, repairStatusId].join(' ').toLowerCase();
 
     // Log defect details for debugging
-    if (repairStatus) {
-      console.log('Defect repair status:', repairStatus, 'Full defect:', def);
+    if (def.repairStatus || def.RepairStatus || def.status || def.Status) {
+      console.log('Defect status fields:', { repairStatus, status, repairStatusId }, 'Full defect:', def);
     }
 
-    // Exclude completed and not necessary defects
-    const isCompleted = repairStatus.includes('completed') ||
-                       repairStatus.includes('complete') ||
-                       repairStatus.includes('repaired') ||
-                       repairStatus.includes('fixed');
+    // Exclude completed defects
+    const isCompleted = allStatuses.includes('completed') ||
+                       allStatuses.includes('complete') ||
+                       allStatuses.includes('repaired') ||
+                       allStatuses.includes('fixed') ||
+                       allStatuses.includes('repair completed') ||
+                       allStatuses.includes('completion');
 
-    const isNotNecessary = repairStatus.includes('not necessary') ||
-                          repairStatus.includes('unnecessary') ||
-                          repairStatus.includes('no action');
+    // Exclude not necessary defects - check all variations
+    const isNotNecessary = allStatuses.includes('not necessary') ||
+                          allStatuses.includes('notnecessary') ||
+                          allStatuses.includes('unnecessary') ||
+                          allStatuses.includes('no action') ||
+                          allStatuses.includes('noaction') ||
+                          allStatuses.includes('not needed') ||
+                          allStatuses.includes('notneed') ||
+                          allStatuses.includes('n/a') ||
+                          allStatuses.includes('na');
 
     const shouldKeep = !isCompleted && !isNotNecessary;
 
     if (!shouldKeep) {
-      console.log(`🗑️ Filtering out defect with status: "${repairStatus}"`);
+      console.log(`🗑️ Filtering out defect with status: "${repairStatus}" | "${status}" | "${repairStatusId}"`);
     }
 
     // Keep defect if it's not completed and not marked as not necessary
