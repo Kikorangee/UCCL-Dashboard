@@ -1031,33 +1031,38 @@ function renderTable(rows){
       try{
         const d = JSON.parse(r.defects);
         if(Array.isArray(d)&&d.length>0) {
-          const defectList = d.map(def => {
-            let defectName = '';
+          // Filter out completed and not necessary defects
+          const activeDefects = filterActiveDefects(d);
 
-            // Check DefectRemarks array for the remark text
-            if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
-              defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
-            }
+          if (activeDefects.length > 0) {
+            const defectList = activeDefects.map(def => {
+              let defectName = '';
 
-            // Check Defect object for defect name
-            if (!defectName && def.defect && typeof def.defect === 'object') {
-              defectName = def.defect.name || def.defect.Name || '';
-            }
+              // Check DefectRemarks array for the remark text
+              if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
+                defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
+              }
 
-            // Check Part object for part name
-            if (!defectName && def.part && typeof def.part === 'object') {
-              defectName = def.part.name || def.part.Name || '';
-            }
+              // Check Defect object for defect name
+              if (!defectName && def.defect && typeof def.defect === 'object') {
+                defectName = def.defect.name || def.defect.Name || '';
+              }
 
-            // Fallback to direct properties
-            if (!defectName) {
-              defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
-            }
+              // Check Part object for part name
+              if (!defectName && def.part && typeof def.part === 'object') {
+                defectName = def.part.name || def.part.Name || '';
+              }
 
-            const repairStatus = def.repairStatus || def.RepairStatus || '';
-            return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
-          }).join(', ');
-          defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+              // Fallback to direct properties
+              if (!defectName) {
+                defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
+              }
+
+              const repairStatus = def.repairStatus || def.RepairStatus || '';
+              return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
+            }).join(', ');
+            defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+          }
         }
       }
       catch(e){
@@ -1156,28 +1161,33 @@ function renderTableGroupedByZone(rows) {
         try{
           const d = JSON.parse(r.defects);
           if(Array.isArray(d)&&d.length>0) {
-            const defectList = d.map(def => {
-              let defectName = '';
-              // Check DefectRemarks array
-              if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
-                defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
-              }
-              // Check Defect object
-              if (!defectName && def.defect && typeof def.defect === 'object') {
-                defectName = def.defect.name || def.defect.Name || '';
-              }
-              // Check Part object
-              if (!defectName && def.part && typeof def.part === 'object') {
-                defectName = def.part.name || def.part.Name || '';
-              }
-              // Fallback
-              if (!defectName) {
-                defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
-              }
-              const repairStatus = def.repairStatus || def.RepairStatus || '';
-              return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
-            }).join(', ');
-            defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+            // Filter out completed and not necessary defects
+            const activeDefects = filterActiveDefects(d);
+
+            if (activeDefects.length > 0) {
+              const defectList = activeDefects.map(def => {
+                let defectName = '';
+                // Check DefectRemarks array
+                if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
+                  defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
+                }
+                // Check Defect object
+                if (!defectName && def.defect && typeof def.defect === 'object') {
+                  defectName = def.defect.name || def.defect.Name || '';
+                }
+                // Check Part object
+                if (!defectName && def.part && typeof def.part === 'object') {
+                  defectName = def.part.name || def.part.Name || '';
+                }
+                // Fallback
+                if (!defectName) {
+                  defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
+                }
+                const repairStatus = def.repairStatus || def.RepairStatus || '';
+                return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
+              }).join(', ');
+              defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+            }
           }
         }
         catch(e){
@@ -1242,28 +1252,33 @@ function renderTableGroupedByZone(rows) {
         try{
           const d = JSON.parse(r.defects);
           if(Array.isArray(d)&&d.length>0) {
-            const defectList = d.map(def => {
-              let defectName = '';
-              // Check DefectRemarks array
-              if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
-                defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
-              }
-              // Check Defect object
-              if (!defectName && def.defect && typeof def.defect === 'object') {
-                defectName = def.defect.name || def.defect.Name || '';
-              }
-              // Check Part object
-              if (!defectName && def.part && typeof def.part === 'object') {
-                defectName = def.part.name || def.part.Name || '';
-              }
-              // Fallback
-              if (!defectName) {
-                defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
-              }
-              const repairStatus = def.repairStatus || def.RepairStatus || '';
-              return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
-            }).join(', ');
-            defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+            // Filter out completed and not necessary defects
+            const activeDefects = filterActiveDefects(d);
+
+            if (activeDefects.length > 0) {
+              const defectList = activeDefects.map(def => {
+                let defectName = '';
+                // Check DefectRemarks array
+                if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
+                  defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
+                }
+                // Check Defect object
+                if (!defectName && def.defect && typeof def.defect === 'object') {
+                  defectName = def.defect.name || def.defect.Name || '';
+                }
+                // Check Part object
+                if (!defectName && def.part && typeof def.part === 'object') {
+                  defectName = def.part.name || def.part.Name || '';
+                }
+                // Fallback
+                if (!defectName) {
+                  defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
+                }
+                const repairStatus = def.repairStatus || def.RepairStatus || '';
+                return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
+              }).join(', ');
+              defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+            }
           }
         }
         catch(e){
