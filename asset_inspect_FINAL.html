@@ -562,15 +562,20 @@ async function getIgnitionData(fromDate, toDate) {
     ignitionData = {};
     
     statusData.forEach(status => {
-      if (status.device && status.data && status.datetime) {
-        const deviceId = extractId(status.device);
+      // Handle both lowercase and capitalized property names
+      const device = status.device || status.Device;
+      const data = status.data !== undefined ? status.data : status.Data;
+      const datetime = status.datetime || status.dateTime || status.DateTime;
+
+      if (device && data !== undefined && datetime) {
+        const deviceId = extractId(device);
         if (!ignitionData[deviceId]) {
           ignitionData[deviceId] = [];
         }
-        
+
         ignitionData[deviceId].push({
-          timestamp: new Date(status.datetime),
-          isIgnitionOn: status.data > 0
+          timestamp: new Date(datetime),
+          isIgnitionOn: data > 0
         });
       }
     });
