@@ -694,54 +694,33 @@ function findRelevantIgnitionTime(deviceId, inspectionTime) {
 
 // Filter to only include active defects (exclude completed and not necessary)
 function filterActiveDefects(defects) {
-  if (!Array.isArray(defects)) {
-    console.log('filterActiveDefects: Input not an array:', defects);
-    return defects;
-  }
+  if (!Array.isArray(defects)) return defects;
 
-  console.log('=== FILTERING DEFECTS ===');
-  console.log('Total defects to filter:', defects.length);
+  return defects.filter(def => {
+    // Convert entire object to string and check for exclusion patterns
+    const defectStr = JSON.stringify(def).toLowerCase();
 
-  // Log first defect to see complete structure
-  if (defects.length > 0) {
-    console.log('FULL FIRST DEFECT:', JSON.stringify(defects[0], null, 2));
-  }
+    // Exclude if contains any of these patterns
+    const excludePatterns = [
+      'not necessary',
+      'notnecessary',
+      'unnecessary',
+      'no action',
+      'completed',
+      'repaired',
+      'fixed',
+      'completion'
+    ];
 
-  const filtered = defects.filter((def, index) => {
-    // Convert entire defect to lowercase string for comprehensive matching
-    const fullDefectString = JSON.stringify(def).toLowerCase();
-
-    // Log every defect being checked
-    console.log(`[${index}] Checking defect:`, JSON.stringify(def));
-
-    // Exclude completed defects
-    const isCompleted = fullDefectString.includes('completed') ||
-                       fullDefectString.includes('complete') ||
-                       fullDefectString.includes('repaired') ||
-                       fullDefectString.includes('fixed') ||
-                       fullDefectString.includes('completion');
-
-    // Exclude not necessary defects - comprehensive check
-    const isNotNecessary = fullDefectString.includes('not necessary') ||
-                          fullDefectString.includes('unnecessary') ||
-                          fullDefectString.includes('no action') ||
-                          fullDefectString.includes('not needed');
-
-    const shouldKeep = !isCompleted && !isNotNecessary;
-
-    console.log(`[${index}] Keep: ${shouldKeep} | Completed: ${isCompleted} | NotNecessary: ${isNotNecessary}`);
-
-    if (!shouldKeep) {
-      console.log(`[${index}] 🗑️ FILTERING OUT:`, def);
-    } else {
-      console.log(`[${index}] ✅ KEEPING:`, def);
+    // If any exclude pattern is found, filter it out
+    for (let pattern of excludePatterns) {
+      if (defectStr.includes(pattern)) {
+        return false;
+      }
     }
 
-    return shouldKeep;
+    return true;
   });
-
-  console.log(`Final result: Kept ${filtered.length} defects, removed ${defects.length - filtered.length}`);
-  return filtered;
 }
 
 // Check for overdue inspections using proper ignition time comparison
