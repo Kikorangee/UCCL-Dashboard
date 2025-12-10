@@ -56,6 +56,22 @@
     .zone-stat-value{font-size:1.8em;font-weight:700;color:#667eea;margin:5px 0}
     .zone-stat-label{font-size:0.9em;color:#666}
     .zone-section{margin:25px 0;border:2px solid #e2e8f0;border-radius:10px;overflow:hidden}
+    .tabs{display:flex;gap:10px;margin-bottom:20px;border-bottom:2px solid #e2e8f0;flex-wrap:wrap}
+    .tab-button{padding:12px 20px;border:none;background:transparent;cursor:pointer;font-size:15px;font-weight:600;color:#666;border-bottom:3px solid transparent;transition:all 0.3s ease;margin-bottom:-2px}
+    .tab-button.active{color:#667eea;border-bottom-color:#667eea}
+    .tab-button:hover{color:#667eea}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    .inspection-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin:20px 0}
+    .stat-card{background:linear-gradient(135deg,#f7fafc,#edf2f7);padding:20px;border-radius:10px;text-align:center;border-left:4px solid #667eea}
+    .stat-card.ontime{border-left-color:#48bb78}
+    .stat-card.overdue{border-left-color:#f56565}
+    .stat-card.nodata{border-left-color:#cbd5e0}
+    .stat-value{font-size:2em;font-weight:700;color:#667eea;margin:10px 0}
+    .stat-card.ontime .stat-value{color:#48bb78}
+    .stat-card.overdue .stat-value{color:#f56565}
+    .stat-card.nodata .stat-value{color:#718096}
+    .stat-label{font-size:0.95em;color:#4a5568;font-weight:600}
     .zone-header{background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:15px;font-size:1.2em;font-weight:600}
     .zone-inspections{padding:0}
   </style>
@@ -199,11 +215,48 @@
         <button id="downloadReport" class="btn btn-warning" disabled>📄 Download Asset Inspection Report Details</button>
         <button id="logout" class="btn btn-danger">🚪 Logout</button>
       </div>
-      
-      <!-- Zone Statistics -->
-      <div id="zoneStatistics" style="display:none;"></div>
-      
-      <div id="dvirResult"></div>
+
+      <!-- View Tabs -->
+      <div class="tabs" id="viewTabs" style="display:none;">
+        <button class="tab-button active" data-tab="full-view">📊 Full View</button>
+        <button class="tab-button" data-tab="overdue-view">⏰ Overdue Only</button>
+      </div>
+
+      <!-- Full View Tab -->
+      <div id="full-view" class="tab-content active">
+        <!-- Zone Statistics -->
+        <div id="zoneStatistics" style="display:none;"></div>
+
+        <div id="dvirResult"></div>
+      </div>
+
+      <!-- Overdue Only View Tab -->
+      <div id="overdue-view" class="tab-content">
+        <!-- Inspection Statistics -->
+        <div id="statsSection" style="display:none;" style="margin-bottom:20px;">
+          <h3 style="color:#2d3748;font-size:1.3em;margin-bottom:15px;">📊 Inspection Statistics</h3>
+          <div class="inspection-stats">
+            <div class="stat-card">
+              <div class="stat-value" id="totalInspections">0</div>
+              <div class="stat-label">Total Inspections</div>
+            </div>
+            <div class="stat-card ontime">
+              <div class="stat-value" id="onTimeCount">0</div>
+              <div class="stat-label">On Time</div>
+            </div>
+            <div class="stat-card overdue">
+              <div class="stat-value" id="overdueCount">0</div>
+              <div class="stat-label">Overdue</div>
+            </div>
+            <div class="stat-card nodata">
+              <div class="stat-value" id="noDataCount">0</div>
+              <div class="stat-label">No Ignition Data</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="overdueResult"></div>
+      </div>
     </div>
   </div>
 
@@ -1388,6 +1441,101 @@ function filterDataByZone(data, selectedZone) {
   });
 }
 
+// Tab switching functionality
+function setupTabSwitching() {
+  const tabButtons = document.querySelectorAll('.tab-button');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const tabName = this.getAttribute('data-tab');
+
+      // Hide all tabs
+      tabContents.forEach(content => {
+        content.classList.remove('active');
+      });
+
+      // Remove active class from all buttons
+      tabButtons.forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      // Show selected tab and mark button as active
+      document.getElementById(tabName).classList.add('active');
+      this.classList.add('active');
+    });
+  });
+}
+
+// Render overdue-only view
+function renderOverdueOnlyView(data) {
+  const alertWindow = parseInt(document.getElementById('alertWindow').value) || 5;
+
+  // Filter for overdue inspections only
+  const overdueInspections = data.filter(row => row.isOverdue);
+
+  // Calculate statistics
+  const total = data.length;
+  const withIgnition = data.filter(d => d.ignitionTime !== null && d.ignitionTime !== undefined).length;
+  const onTime = data.filter(d => d.ignitionTime !== null && d.ignitionTime !== undefined && !d.isOverdue).length;
+  const overdue = overdueInspections.length;
+  const noData = total - withIgnition;
+
+  // Update stats display
+  document.getElementById('totalInspections').textContent = total;
+  document.getElementById('onTimeCount').textContent = onTime;
+  document.getElementById('overdueCount').textContent = overdue;
+  document.getElementById('noDataCount').textContent = noData;
+  document.getElementById('statsSection').style.display = 'block';
+
+  // Render overdue inspections table
+  const resultDiv = document.getElementById('overdueResult');
+  if (overdueInspections.length === 0) {
+    resultDiv.innerHTML = '<div class="alert alert-success">✅ No overdue inspections! All inspections are on time.</div>';
+    return;
+  }
+
+  let tableHtml = `
+    <h3 style="color:#2d3748;margin-bottom:15px;">⏰ Overdue Inspections (${overdue} of ${total})</h3>
+    <table class="dvir-table">
+      <thead>
+        <tr>
+          <th>Vehicle Name</th>
+          <th>Driver Name</th>
+          <th>Inspection Time</th>
+          <th>Ignition Time</th>
+          <th>Delay (minutes)</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  overdueInspections.forEach(row => {
+    const inspectionTime = new Date(row.dateTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
+    const ignitionTimeStr = row.ignitionTime ? new Date(row.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }) : 'No data';
+    const delay = row.timeToInspection !== undefined ? row.timeToInspection : 'N/A';
+
+    tableHtml += `
+      <tr style="background:#fff8dc;">
+        <td>${row.vehicleName || 'Unknown'}</td>
+        <td>${row.driverName || 'Unknown'}</td>
+        <td>${inspectionTime}</td>
+        <td>${ignitionTimeStr}</td>
+        <td><strong>${delay}</strong></td>
+        <td><span class="status-overdue">⚠️ OVERDUE</span></td>
+      </tr>
+    `;
+  });
+
+  tableHtml += `
+      </tbody>
+    </table>
+  `;
+
+  resultDiv.innerHTML = tableHtml;
+}
+
 document.getElementById('authButton').onclick = async function(){
   const server = document.getElementById('server').value.trim();
   const database = document.getElementById('database').value.trim();
@@ -1407,6 +1555,9 @@ document.getElementById('authButton').onclick = async function(){
     }
     showMessage('authResult','Authentication successful!','success');
     document.getElementById('dvirSection').style.display = '';
+    // Show tabs and initialize tab switching
+    document.getElementById('viewTabs').style.display = 'flex';
+    setupTabSwitching();
     // Initialize zone dropdown with predefined zones after authentication
     updateZoneDropdown();
     // Fetch zone definitions from Geotab for coordinate matching
@@ -1625,7 +1776,10 @@ document.getElementById('getDvir').onclick = async function(){
       showMessage('infoBanner', '✅ DVIR loaded! No locations to resolve.', 'success');
       renderZoneStatistics(mappedDvirData);
     }
-    
+
+    // Render the overdue-only view with statistics
+    renderOverdueOnlyView(mappedDvirData);
+
     document.getElementById('downloadCsv').disabled = false;
     document.getElementById('downloadReport').disabled = false;
 
@@ -1943,6 +2097,7 @@ document.getElementById('zoneFilter').addEventListener('change', function() {
   const filteredData = filterDataByZone(mappedDvirData, selectedZone);
   const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
   renderTable(sortedData);
+  renderOverdueOnlyView(mappedDvirData);
 });
 
 document.getElementById('alertWindow').addEventListener('change', function() {
@@ -1952,6 +2107,7 @@ document.getElementById('alertWindow').addEventListener('change', function() {
   const filteredData = filterDataByZone(mappedDvirData, selectedZone);
   const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
   renderTable(sortedData);
+  renderOverdueOnlyView(mappedDvirData);
 });
 
 document.getElementById('assetType').addEventListener('change', function() {
@@ -1961,6 +2117,7 @@ document.getElementById('assetType').addEventListener('change', function() {
   const filteredData = filterDataByZone(mappedDvirData, selectedZone);
   const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
   renderTable(sortedData);
+  renderOverdueOnlyView(mappedDvirData);
 });
 
 document.getElementById('enableOverdueAlerts').addEventListener('change', function() {
@@ -1970,6 +2127,7 @@ document.getElementById('enableOverdueAlerts').addEventListener('change', functi
   const filteredData = filterDataByZone(mappedDvirData, selectedZone);
   const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
   renderTable(sortedData);
+  renderOverdueOnlyView(mappedDvirData);
 });
 
 document.getElementById('groupByZone').addEventListener('change', function() {
@@ -1978,6 +2136,7 @@ document.getElementById('groupByZone').addEventListener('change', function() {
   const filteredData = filterDataByZone(mappedDvirData, selectedZone);
   const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
   renderTable(sortedData);
+  renderOverdueOnlyView(mappedDvirData);
 });
 
 // Simulate defect detection and auto-email
