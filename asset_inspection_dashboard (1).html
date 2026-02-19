@@ -1,0 +1,2879 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UCCL Asset Inspection Module</title>
+  <style>
+    /* LARGER TEXT - Optimized for Geotab */
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f7fa;min-height:100vh;color:#333;padding:12px;font-size:18px}
+    .container{max-width:100%;margin:0 auto}
+    .header,.card{background:#fff;border-radius:8px;padding:18px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+    .header{text-align:center}
+    .header h1{color:#2d3748;font-size:1.8em;font-weight:700;margin-bottom:8px}
+    .header p{font-size:1.1em;color:#666}
+    .card-title{color:#2d3748;font-size:1.5em;font-weight:700;margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid #e2e8f0}
+    .form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:12px}
+    .form-control{width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:6px;font-size:17px;transition:all .2s ease}
+    .form-control:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,.1)}
+    .btn{padding:11px 22px;border:none;border-radius:6px;font-size:17px;font-weight:600;cursor:pointer;transition:all .2s ease;margin:4px}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+    .btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+    .btn-success{background:linear-gradient(135deg,#48bb78,#38a169);color:#fff}
+    .btn-info{background:linear-gradient(135deg,#4299e1,#3182ce);color:#fff}
+    .btn-warning{background:linear-gradient(135deg,#ed8936,#dd6b20);color:#fff}
+    .btn-danger{background:linear-gradient(135deg,#f56565,#e53e3e);color:#fff}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+    .alert{padding:14px;border-radius:6px;margin:14px 0;font-weight:500;font-size:17px}
+    .alert-success{background:#c6f6d5;color:#22543d;border-left:4px solid #38a169}
+    .alert-error{background:#fed7d7;color:#742a2a;border-left:4px solid #e53e3e}
+    .alert-warning{background:#fefcbf;color:#744210;border-left:4px solid #d69e2e}
+    .alert-info{background:#ebf8ff;color:#2b6cb0;border-left:4px solid #4299e1}
+    /* LARGER TABLE TEXT */
+    .dvir-table{width:100%;border-collapse:collapse;margin-top:18px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+    .dvir-table th{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:13px 10px;text-align:left;font-weight:600;font-size:18px}
+    .dvir-table td{padding:11px 10px;border-bottom:1px solid #e2e8f0;font-size:17px;vertical-align:top;line-height:1.5}
+    .dvir-table tr:hover{background:#f7fafc}
+    .dvir-table tr:nth-child(even){background:#f8f9fa}
+    /* LARGER STATUS BADGES */
+    .status-safe{background:#c6f6d5;color:#22543d;padding:8px 14px;border-radius:6px;font-weight:600;font-size:16px}
+    .status-unsafe{background:#fed7d7;color:#742a2a;padding:8px 14px;border-radius:6px;font-weight:600;font-size:16px}
+    .status-unknown{background:#e2e8f0;color:#4a5568;padding:8px 14px;border-radius:6px;font-weight:600;font-size:16px}
+    .status-overdue{background:#fefcbf;color:#744210;padding:8px 14px;border-radius:6px;font-weight:600;font-size:16px}
+    .muted{color:#718096;font-size:16px}
+    .progress-bar{width:100%;background:#e2e8f0;border-radius:4px;overflow:hidden;margin:12px 0}
+    .progress-fill{height:28px;background:linear-gradient(90deg,#667eea,#764ba2);transition:width 0.3s ease;display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-weight:600}
+    .real-address{background:#d4edda;color:#155724;padding:10px 14px;border-radius:6px;font-weight:500;border-left:4px solid #28a745;font-size:17px}
+    .coord-only{color:#666;font-style:italic;font-size:16px}
+    .zone-pill{display:inline-block;background:#e2e8f0;border-radius:999px;padding:5px 11px;margin:2px;font-size:15px;color:#495057}
+    .config-section{background:#f8f9fa;padding:16px;border-radius:8px;margin:16px 0}
+    .config-section h4{margin-bottom:12px;color:#2d3748;font-size:1.25em}
+    .checkbox-group{margin:9px 0}
+    .checkbox-group label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:17px}
+    .checkbox-group input[type="checkbox"]{width:20px;height:20px}
+    .email-options{margin-top:14px;padding:14px;background:#e2e8f0;border-radius:8px}
+    .ignition-info{font-size:15px;color:#666;margin-top:4px}
+    .zone-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:16px 0}
+    .zone-stat-card{background:white;padding:14px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);text-align:center}
+    .zone-stat-value{font-size:2em;font-weight:700;color:#667eea;margin:5px 0}
+    .zone-stat-label{font-size:1em;color:#666}
+    .zone-section{margin:18px 0;border:2px solid #e2e8f0;border-radius:10px;overflow:hidden}
+    .zone-header{background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:13px;font-size:1.25em;font-weight:600}
+    .zone-inspections{padding:0}
+    .sms-log{max-height:280px;overflow-y:auto;background:#f8f9fa;padding:14px;border-radius:8px;margin-top:14px}
+    .log-entry{padding:10px 14px;margin:4px 0;border-radius:4px;font-size:16px;background:#fff}
+    .log-sms{background:#e7f5ff;border-left:3px solid #4299e1}
+    .log-error{background:#fed7d7;border-left:3px solid #e53e3e}
+    .log-success{background:#c6f6d5;border-left:3px solid #38a169}
+    .log-info{background:#f7fafc;border-left:3px solid #718096}
+    .sms-section{background:linear-gradient(135deg,#fff5f5,#fed7e2);border-left:4px solid #f56565;margin:16px 0}
+    .badge{display:inline-block;padding:6px 12px;border-radius:12px;font-size:15px;font-weight:600;margin:2px}
+    .badge-active{background:#48bb78;color:white}
+    .badge-inactive{background:#cbd5e0;color:#4a5568}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>UCCL Asset Inspection Dashboard</h1>
+      <p>United Civil Construction Ltd</p>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">Authentication</h3>
+      <div class="form-row">
+        <input id="server" class="form-control" placeholder="Server" value="my.geotab.com" />
+        <input id="database" class="form-control" placeholder="Database" value="uccnz" />
+      </div>
+      <div class="form-row">
+        <input id="username" class="form-control" placeholder="Username" value="" />
+        <input id="password" class="form-control" type="password" placeholder="Password" value="" />
+      </div>
+      <button id="authButton" class="btn btn-primary">🔐 Authenticate</button>
+      <div id="authResult"></div>
+    </div>
+
+    <div id="dvirSection" class="card" style="display:none;">
+      <h3 class="card-title">📋 Asset Inspection Reports</h3>
+
+      <!-- HUB ODOMETER UPDATE SECTION -->
+      <div class="config-section" style="background: linear-gradient(135deg, #e7f5ff, #c5e4fd); border-left: 4px solid #667eea;">
+        <h4>⛽ Hub Odometer Reading Entry (Sync to RUC Dashboard)</h4>
+        <div class="form-row">
+          <div>
+            <label for="rucFleetNumber">Fleet Number:</label>
+            <input id="rucFleetNumber" class="form-control" placeholder="Enter fleet number (e.g., 500)" type="number" />
+          </div>
+          <div>
+            <label for="rucHubOdometerReading">Hub Odometer Reading:</label>
+            <input id="rucHubOdometerReading" class="form-control" placeholder="Enter hub odometer reading (e.g., 123456)" type="number" />
+          </div>
+          <div style="display: flex; align-items: flex-end;">
+            <button id="submitHubOdometer" class="btn btn-success" style="margin-bottom: 0;">📤 Post to RUC Dashboard</button>
+          </div>
+        </div>
+        <div id="hubOdometerResult" style="margin-top: 15px;"></div>
+      </div>
+      
+      <!-- Configuration Section -->
+      <div class="config-section">
+        <h4>🔧 Configuration Options</h4>
+        <div class="form-row">
+          <div>
+            <label for="zoneFilter">Filter by Zone:</label>
+            <select id="zoneFilter" class="form-control">
+              <option value="">All Zones</option>
+              <option value="no-zone">No Zone Assigned</option>
+            </select>
+          </div>
+          <div>
+            <label for="alertWindow">Overdue Alert Window (minutes):</label>
+            <input id="alertWindow" class="form-control" type="number" value="5" min="1" />
+          </div>
+          <div>
+            <label for="assetType">Asset Type:</label>
+            <select id="assetType" class="form-control">
+              <option value="all">All Assets</option>
+              <option value="heavy">Heavy Equipment Only</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="enableOverdueAlerts" checked />
+            Enable Overdue Inspection Alerts
+          </label>
+        </div>
+        
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="enableAutoEmail" />
+            Auto-Email on Defect Detection
+          </label>
+        </div>
+
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="enableOverdueEmail" />
+            Auto-Email on Overdue Inspections
+          </label>
+        </div>
+
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="groupByZone" />
+            Group Inspections by Zone
+          </label>
+        </div>
+        
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="hideNotNecessary" checked />
+            Hide "Not Necessary" Defects
+          </label>
+        </div>
+        
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="hideUnknownStatus" />
+            Hide UNKNOWN Status Inspections
+          </label>
+        </div>
+        
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="hideNonDriverInspections" />
+            Hide Non-Driver Inspections (❌ No in Driver Inspected)
+          </label>
+        </div>
+        
+        <div id="emailOptions" class="email-options" style="display:none;">
+          <h4 style="margin-top:0;">Email Alert Configuration</h4>
+          <div style="margin-top:10px;">
+            <label>Email Recipients (comma-separated):</label>
+            <input id="emailRecipient" class="form-control" placeholder="e.g., user@example.com, another@example.com" />
+          </div>
+          <div style="margin-top:10px;">
+            <label>Defect Alert Subject:</label>
+            <input id="emailSubjectDefect" class="form-control" placeholder="Subject for defect alerts" value="⚠️ Asset Inspection Defect Detected" />
+          </div>
+          <div style="margin-top:10px;">
+            <label>Overdue Alert Subject:</label>
+            <input id="emailSubjectOverdue" class="form-control" placeholder="Subject for overdue alerts" value="⏰ Overdue Asset Inspection Alert" />
+          </div>
+          <div style="margin-top:20px;padding-top:15px;border-top:1px solid #ddd;">
+            <h4>🧪 Test Emails</h4>
+            <button id="testDefectBtn" class="btn" style="background:#e53e3e;color:white;padding:8px 16px;margin-right:10px;">Test Defect Email</button>
+            <button id="testOverdueBtn" class="btn" style="background:#f59e0b;color:white;padding:8px 16px;">Test Overdue Email</button>
+            <span id="testResult" style="margin-left:10px;font-size:14px;"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SMS ALERT CONFIGURATION -->
+      <div class="config-section sms-section">
+        <h4>📱 SMS Alert Configuration (eTXT / Spark NZ)</h4>
+
+        <!-- Proxy Server Status -->
+        <div id="proxyStatusBar" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:6px;background:#e2e8f0;margin-bottom:14px;font-size:15px;">
+          <span id="proxyStatusDot" style="width:12px;height:12px;border-radius:50%;background:#cbd5e0;flex-shrink:0;"></span>
+          <span id="proxyStatusText">⏳ Checking proxy server...</span>
+          <button onclick="checkProxyServer()" style="margin-left:auto;padding:4px 12px;font-size:13px;border:1px solid #a0aec0;border-radius:4px;background:white;cursor:pointer;">🔄 Recheck</button>
+        </div>
+
+        <div class="checkbox-group">
+          <label>
+            <input type="checkbox" id="enableSmsAlerts" />
+            Enable SMS Alerts for Overdue Pre-Starts
+          </label>
+        </div>
+
+        <!-- eTXT API Credentials -->
+        <div style="margin:16px 0;padding:15px;background:white;border-radius:8px;border:2px solid #e2e8f0;">
+          <h5 style="margin-bottom:12px;color:#2d3748;">🔑 eTXT API Credentials</h5>
+          <div class="form-row">
+            <div>
+              <label>API Key:</label>
+              <input id="etxtApiKey" class="form-control" placeholder="Your eTXT API Key" type="text" value="AOQ5xzsn3OMYEVQbDfBM" />
+            </div>
+            <div>
+              <label>API Secret:</label>
+              <input id="etxtApiSecret" class="form-control" placeholder="Your eTXT API Secret" type="password" value="0LOc4QYbmIx9CaRDtSWJIDwAIiZuGJ" />
+            </div>
+            <div style="display:flex;align-items:flex-end;">
+              <button id="loadEtxtContactsBtn" class="btn btn-info" style="margin-bottom:0;">📋 Load Driver Contacts</button>
+            </div>
+          </div>
+          <div id="etxtContactsStatus" style="margin-top:10px;font-size:15px;color:#4a5568;"></div>
+          <div id="etxtContactsMatchDetail" style="margin-top:8px;max-height:180px;overflow-y:auto;font-size:14px;"></div>
+        </div>
+
+          <div style="margin:20px 0;padding:15px;background:white;border-radius:8px;">
+            <h5 style="margin-bottom:10px;">🚛 Heavy Machinery & Trucks</h5>
+            <div class="form-row">
+              <div>
+                <label>Alert Threshold (minutes):</label>
+                <input id="smsHeavyThreshold" class="form-control" type="number" value="5" min="1" />
+              </div>
+            </div>
+            <div style="margin-top:10px;">
+              <label>SMS Message Template:</label>
+              <textarea id="smsHeavyTemplate" class="form-control" style="min-height:70px;resize:vertical;">URGENT: {vehicleName} has been operating for {minutes} minutes without a pre-start inspection. Complete your DVIR check immediately. - UCCL Safety</textarea>
+            </div>
+          </div>
+
+          <div style="margin:20px 0;padding:15px;background:white;border-radius:8px;">
+            <h5 style="margin-bottom:10px;">🚗 Light Vehicles</h5>
+            <div class="form-row">
+              <div>
+                <label>Alert Threshold (days):</label>
+                <input id="smsLightThreshold" class="form-control" type="number" value="5" min="1" />
+              </div>
+            </div>
+            <div class="checkbox-group">
+              <label>
+                <input type="checkbox" id="smsEnableBuzzer" checked />
+                Enable GPS Buzzer/Beep Alert
+              </label>
+            </div>
+            <div style="margin-top:10px;">
+              <label>SMS Message Template:</label>
+              <textarea id="smsLightTemplate" class="form-control" style="min-height:70px;resize:vertical;">{vehicleName} has not had a pre-start inspection in {days} days. Please complete your DVIR check before your next trip. - UCCL Safety</textarea>
+            </div>
+          </div>
+
+          <div style="margin-top:20px;padding-top:15px;border-top:1px solid #ddd;">
+            <h5>🧪 Test SMS</h5>
+            <div class="form-row">
+              <input id="testSmsNumber" class="form-control" placeholder="+6421234567" style="max-width:250px;" />
+              <button id="testSmsBtn" class="btn btn-warning">📤 Send Test SMS</button>
+            </div>
+            <span id="smsTestResult" style="font-size:14px;"></span>
+          </div>
+        </div>
+      </div>
+      
+      <div id="infoBanner" class="alert alert-info" style="display:none;"></div>
+      <div id="progressContainer" style="display:none;">
+        <div class="progress-bar">
+          <div id="progressBar" class="progress-fill" style="width:0%;">0%</div>
+        </div>
+        <div id="progressText" class="muted" style="text-align:center;margin-top:8px;"></div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label for="fromDate">From Date:</label>
+          <input id="fromDate" class="form-control" type="date" />
+        </div>
+        <div>
+          <label for="fromTime">From Time:</label>
+          <input id="fromTime" class="form-control" type="time" value="00:00" />
+        </div>
+        <div>
+          <label for="toDate">To Date:</label>
+          <input id="toDate" class="form-control" type="date" />
+        </div>
+        <div>
+          <label for="toTime">To Time:</label>
+          <input id="toTime" class="form-control" type="time" value="23:59" />
+        </div>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="display:block;margin-bottom:8px;font-weight:600;color:#2d3748;">Quick Date Selection:</label>
+        <button id="quickToday" class="btn" style="background:#667eea;color:white;padding:8px 16px;font-size:14px;">Today</button>
+        <button id="quickYesterday" class="btn" style="background:#667eea;color:white;padding:8px 16px;font-size:14px;">Yesterday</button>
+        <button id="quickLast7" class="btn" style="background:#667eea;color:white;padding:8px 16px;font-size:14px;">Last Week</button>
+        <button id="quickLast30" class="btn" style="background:#667eea;color:white;padding:8px 16px;font-size:14px;">Last 30 Days</button>
+        <button id="quickThisWeek" class="btn" style="background:#667eea;color:white;padding:8px 16px;font-size:14px;">This Week</button>
+        <button id="quickThisMonth" class="btn" style="background:#667eea;color:white;padding:8px 16px;font-size:14px;">This Month</button>
+      </div>
+      <div>
+        <button id="getDvir" class="btn btn-success" disabled>📋 Retrieve Asset Inspection Sheets</button>
+        <button id="downloadCsv" class="btn btn-info" disabled>📊 Download Excel</button>
+        <button id="downloadReport" class="btn btn-warning" disabled>📄 Download Asset Inspection Report Details</button>
+        <button id="checkSmsAlerts" class="btn btn-warning" disabled>📱 Check SMS Alerts Now</button>
+        <button id="logout" class="btn btn-danger" disabled>🚪 Logout</button>
+      </div>
+
+      <!-- SMS Alert Status -->
+      <div id="smsAlertStatus" class="config-section" style="display:none;margin-top:20px;">
+        <h4>📱 SMS Alert Status</h4>
+        <div id="smsStatusMessage"></div>
+        <div id="smsAlertsTable" style="margin-top:15px;"></div>
+        
+        <!-- SMS Activity Log -->
+        <div style="margin-top:20px;">
+          <h5>SMS Activity Log</h5>
+          <div id="smsLog" class="sms-log"></div>
+        </div>
+      </div>
+      
+      <!-- Zone Statistics -->
+      <div id="zoneStatistics" style="display:none;"></div>
+      
+      <div id="dvirResult"></div>
+    </div>
+  </div>
+
+<script>
+let credentials = null;
+let serverUsed = null;
+let mappedDvirData = [];
+let ignitionData = {};
+let geotabZones = []; // Store zone definitions with boundaries
+let geotabUsers = []; // Store Geotab users for email notifications
+
+// SMS Alert Variables
+let smsAlertHistory = new Map(); // Track sent alerts to avoid duplicates
+let smsLog = []; // SMS activity log
+let userPhoneMap = {}; // Map of user IDs to phone numbers
+
+// eTXT API Configuration - reads from UI fields at call time
+// ============================================================================
+// PROXY SERVER STATUS CHECK
+// ============================================================================
+async function checkProxyServer() {
+  const dot = document.getElementById('proxyStatusDot');
+  const text = document.getElementById('proxyStatusText');
+  if (!dot || !text) return;
+
+  dot.style.background = '#d69e2e';
+  text.textContent = '⏳ Checking proxy server at localhost:3001...';
+
+  try {
+    const res = await fetch('http://localhost:3001/health', { method: 'GET' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.smsCredentials && data.smsCredentials.includes('NOT SET')) {
+        dot.style.background = '#d69e2e';
+        text.innerHTML = '⚠️ <strong>Proxy server running</strong> but <strong>eTXT credentials not set</strong> — open sms-server.js and replace YOUR_ETXT_USERNAME / YOUR_ETXT_PASSWORD';
+      } else {
+        dot.style.background = '#38a169';
+        text.innerHTML = '✅ <strong>Proxy server running</strong> — SMS credentials configured';
+      }
+    } else {
+      throw new Error(`HTTP ${res.status}`);
+    }
+  } catch (e) {
+    dot.style.background = '#e53e3e';
+    text.innerHTML = '❌ <strong>Proxy server not running</strong> — double-click <code>start-sms-server.bat</code> to start it';
+  }
+}
+
+// Auto-check on page load
+setTimeout(checkProxyServer, 1500);
+
+function getEtxtConfig() {
+  return {
+    baseUrl: 'http://api.etxtservice.co.nz',
+    apiKey: (document.getElementById('etxtApiKey')?.value || '').trim(),
+    apiSecret: (document.getElementById('etxtApiSecret')?.value || '').trim()
+  };
+}
+
+// eTXT contact store: normalizedName -> phoneNumber
+let etxtContactMap = {}; // e.g. { "john smith": "+6421234567" }
+let etxtContactsLoaded = false;
+
+// ============================================================================
+// eTXT CONTACTS API - Fetch all contacts and build driver phone lookup
+// ============================================================================
+
+function normalizeName(name) {
+  return (name || '').toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+async function fetchETxtContacts() {
+  const config = getEtxtConfig();
+  if (!config.apiKey || !config.apiSecret) {
+    throw new Error('eTXT API Key and Secret are required');
+  }
+
+  const basicAuth = btoa(`${config.apiKey}:${config.apiSecret}`);
+  const allContacts = [];
+  let page = 1;
+  const pageSize = 100;
+  let hasMore = true;
+
+  while (hasMore) {
+    // Always route through local proxy — resolves CORS in all environments including Geotab
+    const response = await fetch(`http://localhost:3001/etxt-contacts?page=${page}&size=${pageSize}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${basicAuth}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      let errText = '';
+      try { errText = await response.text(); } catch(e) {}
+      throw new Error(`eTXT Contacts API error ${response.status}: ${errText || response.statusText}`);
+    }
+
+    const data = await response.json();
+    const contacts = Array.isArray(data) ? data : (data.contacts || data.content || data.data || []);
+    allContacts.push(...contacts);
+
+    hasMore = contacts.length === pageSize;
+    page++;
+    if (page > 50) break; // Safety: max 5000 contacts
+  }
+
+  return allContacts;
+}
+
+function buildETxtContactMap(contacts) {
+  const map = {};
+
+  contacts.forEach(contact => {
+    // Get mobile number from channels
+    const phoneChannel = (contact.channels || []).find(ch => ch.type === 'PHONE' || ch.type === 'SMS');
+    if (!phoneChannel || !phoneChannel.channelId) return;
+
+    let phone = phoneChannel.channelId.replace(/\s/g, '');
+    // Normalise to E.164 (+64...)
+    if (!phone.startsWith('+')) {
+      if (phone.startsWith('64')) phone = '+' + phone;
+      else if (phone.startsWith('0')) phone = '+64' + phone.slice(1);
+      else phone = '+64' + phone;
+    }
+
+    // Build lookup keys from name combinations
+    const firstName = (contact.firstName || '').trim();
+    const lastName = (contact.lastName || '').trim();
+    const alias = (contact.alias || '').trim();
+
+    const keys = [];
+    if (firstName && lastName) keys.push(normalizeName(`${firstName} ${lastName}`));
+    if (firstName && lastName) keys.push(normalizeName(`${lastName} ${firstName}`)); // reverse match
+    if (alias) keys.push(normalizeName(alias));
+    if (firstName && !lastName) keys.push(normalizeName(firstName));
+
+    keys.forEach(key => {
+      if (key) map[key] = phone;
+    });
+  });
+
+  return map;
+}
+
+async function loadAndMatchETxtContacts() {
+  const statusEl = document.getElementById('etxtContactsStatus');
+  const detailEl = document.getElementById('etxtContactsMatchDetail');
+  statusEl.innerHTML = '⏳ Fetching contacts from eTXT...';
+
+  try {
+    const contacts = await fetchETxtContacts();
+    etxtContactMap = buildETxtContactMap(contacts);
+    etxtContactsLoaded = true;
+
+    statusEl.innerHTML = `✅ Loaded <strong>${contacts.length}</strong> eTXT contacts → <strong>${Object.keys(etxtContactMap).length}</strong> name entries indexed`;
+
+    // If DVIR data is already loaded, re-match phones now
+    if (mappedDvirData.length > 0) {
+      matchDriverPhonesFromETxt();
+    }
+
+  } catch (err) {
+    let errMsg = err.message;
+    if (errMsg.includes('Failed to fetch') || errMsg.includes('ERR_CONNECTION_REFUSED') || errMsg.includes('NetworkError')) {
+      errMsg = 'Cannot reach proxy server. Make sure <strong>start-sms-server.bat</strong> is running, then try again.';
+      checkProxyServer(); // Update the status bar
+    } else if (errMsg.includes('401') || errMsg.includes('Unauthorized')) {
+      errMsg = 'Invalid API credentials. Check your eTXT API Key and Secret.';
+    } else if (errMsg.includes('404')) {
+      errMsg = 'eTXT Contacts API endpoint not found. Ensure the Contacts API is enabled on your eTXT account.';
+    }
+    statusEl.innerHTML = `❌ ${errMsg}`;
+    console.error('eTXT contacts error:', err);
+  }
+}
+
+// Match loaded DVIR driver names against eTXT contact map
+function matchDriverPhonesFromETxt() {
+  if (!etxtContactsLoaded || mappedDvirData.length === 0) return;
+
+  let matched = 0;
+  let unmatched = [];
+
+  // Build set of unique driver names in current data
+  const driverSet = {};
+  mappedDvirData.forEach(row => {
+    if (row.driverId && row.driverName && row.driverName !== 'Unknown Driver') {
+      driverSet[row.driverId] = row.driverName;
+    }
+  });
+
+  Object.entries(driverSet).forEach(([driverId, driverName]) => {
+    const key = normalizeName(driverName);
+    if (etxtContactMap[key]) {
+      userPhoneMap[driverId] = etxtContactMap[key];
+      matched++;
+    } else {
+      // Try partial: first word match only (e.g. "John" from "John Smith")
+      const firstWord = key.split(' ')[0];
+      const partialMatch = Object.entries(etxtContactMap).find(([k]) => k.startsWith(firstWord + ' '));
+      if (partialMatch) {
+        userPhoneMap[driverId] = partialMatch[1];
+        matched++;
+      } else {
+        unmatched.push(driverName);
+      }
+    }
+  });
+
+  // Update UI
+  const statusEl = document.getElementById('etxtContactsStatus');
+  const detailEl = document.getElementById('etxtContactsMatchDetail');
+  const totalDrivers = Object.keys(driverSet).length;
+
+  statusEl.innerHTML = `✅ eTXT contacts loaded | 📱 <strong>${matched}/${totalDrivers}</strong> drivers matched to a mobile number`;
+
+  if (unmatched.length > 0) {
+    detailEl.innerHTML = `<div style="color:#744210;background:#fefcbf;padding:8px;border-radius:4px;margin-top:4px;">
+      ⚠️ No eTXT contact found for: ${unmatched.map(n => `<strong>${n}</strong>`).join(', ')}
+    </div>`;
+  } else {
+    detailEl.innerHTML = `<div style="color:#22543d;background:#c6f6d5;padding:8px;border-radius:4px;margin-top:4px;">✅ All drivers matched successfully!</div>`;
+  }
+
+  addToSmsLog('info', `📋 eTXT contact match: ${matched}/${totalDrivers} drivers have mobile numbers`, unmatched.length > 0 ? `No match: ${unmatched.join(', ')}` : '');
+}
+
+// Predefined zone list from Advanced_Zone_List spreadsheet
+const PREDEFINED_ZONES = [
+  "Channel Infrastructure",
+  "Donald Road",
+  "Gillingham Road",
+  "Kaikohe",
+  "Kaikohe Work Area",
+  "Kaitaia Wastewater",
+  "Kiwirail",
+  "Mangawhai",
+  "Matauri Bay",
+  "Maungaturoto Solar Farm",
+  "Ngawha",
+  "Northpower Dargaville",
+  "Port Road Site Office",
+  "Rocket Lab",
+  "Ruakaka BESS",
+  "Ruakaka Solar Farm Site 1",
+  "Ruakaka Solar Farm Site 2",
+  "Ruakaka Solar Farm Site 3",
+  "Te Mihi"
+];
+
+function setDefaultDates(){
+  const today = new Date();
+  const lastWeek = new Date(today.getTime() - 7*24*60*60*1000);
+  document.getElementById('toDate').value = today.toISOString().split('T')[0];
+  document.getElementById('fromDate').value = lastWeek.toISOString().split('T')[0];
+  document.getElementById('fromTime').value = '00:00';
+  document.getElementById('toTime').value = '23:59';
+}
+setDefaultDates();
+
+// Quick date selection handlers
+document.getElementById('quickToday')?.addEventListener('click', function() {
+  const today = new Date();
+  document.getElementById('fromDate').value = today.toISOString().split('T')[0];
+  document.getElementById('toDate').value = today.toISOString().split('T')[0];
+  document.getElementById('fromTime').value = '00:00';
+  document.getElementById('toTime').value = '23:59';
+});
+
+document.getElementById('quickYesterday')?.addEventListener('click', function() {
+  const yesterday = new Date(Date.now() - 24*60*60*1000);
+  document.getElementById('fromDate').value = yesterday.toISOString().split('T')[0];
+  document.getElementById('toDate').value = yesterday.toISOString().split('T')[0];
+  document.getElementById('fromTime').value = '00:00';
+  document.getElementById('toTime').value = '23:59';
+});
+
+document.getElementById('quickLast7')?.addEventListener('click', function() {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  // Calculate last Monday (go back to this Monday, then subtract 7 days)
+  const thisMonday = new Date(today.getTime() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) * 24*60*60*1000);
+  const lastMonday = new Date(thisMonday.getTime() - 7*24*60*60*1000);
+  const lastSunday = new Date(lastMonday.getTime() + 6*24*60*60*1000);
+  document.getElementById('fromDate').value = lastMonday.toISOString().split('T')[0];
+  document.getElementById('toDate').value = lastSunday.toISOString().split('T')[0];
+  document.getElementById('fromTime').value = '00:00';
+  document.getElementById('toTime').value = '23:59';
+});
+
+document.getElementById('quickLast30')?.addEventListener('click', function() {
+  const today = new Date();
+  const last30 = new Date(Date.now() - 30*24*60*60*1000);
+  document.getElementById('fromDate').value = last30.toISOString().split('T')[0];
+  document.getElementById('toDate').value = today.toISOString().split('T')[0];
+  document.getElementById('fromTime').value = '00:00';
+  document.getElementById('toTime').value = '23:59';
+});
+
+document.getElementById('quickThisWeek')?.addEventListener('click', function() {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const monday = new Date(today.getTime() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) * 24*60*60*1000);
+  document.getElementById('fromDate').value = monday.toISOString().split('T')[0];
+  document.getElementById('toDate').value = today.toISOString().split('T')[0];
+  document.getElementById('fromTime').value = '00:00';
+  document.getElementById('toTime').value = '23:59';
+});
+
+document.getElementById('quickThisMonth')?.addEventListener('click', function() {
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  document.getElementById('fromDate').value = firstDay.toISOString().split('T')[0];
+  document.getElementById('toDate').value = today.toISOString().split('T')[0];
+  document.getElementById('fromTime').value = '00:00';
+  document.getElementById('toTime').value = '23:59';
+});
+
+function showMessage(elId, msg, type='info'){
+  const el = document.getElementById(elId);
+  const c = type==='error'?'alert-error':type==='success'?'alert-success':type==='warning'?'alert-warning':'alert-info';
+  el.style.display = '';
+  el.innerHTML = `<div class="alert ${c}">${msg}</div>`;
+}
+
+function updateProgress(current, total, text = '') {
+  const container = document.getElementById('progressContainer');
+  const bar = document.getElementById('progressBar');
+  const textEl = document.getElementById('progressText');
+  
+  if (total === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'block';
+  const percentage = Math.round((current / total) * 100);
+  bar.style.width = `${percentage}%`;
+  bar.textContent = `${percentage}%`;
+  textEl.textContent = text || `Processing ${current} of ${total} locations...`;
+}
+
+async function callGeotabAPI(method, params={}){
+  if (window.geotab && typeof window.geotab.call === 'function'){
+    return new Promise((resolve,reject)=>window.geotab.call(method, params, resolve, reject));
+  }
+  if (window.api && typeof window.api.call === 'function'){
+    return new Promise((resolve,reject)=>window.api.call(method, params, resolve, reject));
+  }
+  const requestBody = { method, params: credentials ? {...params, credentials} : params };
+  const res = await fetch(`https://${serverUsed}/apiv1`, {
+    method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'}, body: JSON.stringify(requestBody)
+  });
+  if(!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message || data.error.name);
+  return data.result;
+}
+
+function extractId(data){
+  if(!data) return null;
+  if(typeof data==='object' && data.id) return data.id;
+  if(typeof data==='string'){ try{ return JSON.parse(data).id || null }catch(e){ return data } }
+  return null;
+}
+
+function extractLocation(loc){
+  if(!loc) return {latitude:null, longitude:null};
+  if(typeof loc==='object'){
+    if(loc.location && loc.location.x && loc.location.y) return {latitude:loc.location.y, longitude:loc.location.x};
+    if(loc.x && loc.y) return {latitude:loc.y, longitude:loc.x};
+  }
+  if(typeof loc==='string'){
+    try{
+      const p = JSON.parse(loc);
+      if(p.location && p.location.x && p.location.y) return {latitude:p.location.y, longitude:p.location.x};
+      if(p.x && p.y) return {latitude:p.y, longitude:p.x};
+    }catch(e){}
+  }
+  return {latitude:null, longitude:null};
+}
+
+// Point-in-polygon algorithm (ray casting method)
+function isPointInPolygon(point, polygon) {
+  if (!polygon || polygon.length < 3) return false;
+  
+  const x = point.longitude;
+  const y = point.latitude;
+  let inside = false;
+  
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x;
+    const yi = polygon[i].y;
+    const xj = polygon[j].x;
+    const yj = polygon[j].y;
+    
+    const intersect = ((yi > y) !== (yj > y))
+        && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  
+  return inside;
+}
+
+// Fetch zone definitions from Geotab
+async function fetchGeotabZones() {
+  try {
+    showMessage('infoBanner', '📍 Fetching zone definitions from Geotab...', 'info');
+    
+    const zones = await callGeotabAPI('Get', {
+      typeName: 'Zone',
+      resultsLimit: 5000
+    });
+    
+    if (zones && zones.length > 0) {
+      // Filter to only include zones from our predefined list
+      geotabZones = zones.filter(zone => {
+        const zoneName = zone.name || zone.Name || '';
+        return PREDEFINED_ZONES.includes(zoneName);
+      }).map(zone => ({
+        id: zone.id,
+        name: zone.name || zone.Name,
+        points: zone.points || zone.Points || [],
+        // Convert points to usable format
+        polygon: (zone.points || zone.Points || []).map(p => ({
+          x: p.x || p.X || 0,
+          y: p.y || p.Y || 0
+        }))
+      }));
+      
+      console.log(`Loaded ${geotabZones.length} zone definitions from Geotab:`, geotabZones.map(z => z.name));
+      return geotabZones;
+    }
+  } catch (error) {
+    console.error('Error fetching zones from Geotab:', error);
+    showMessage('infoBanner', '⚠️ Could not fetch zone definitions. Zones may not be assigned correctly.', 'warning');
+  }
+  
+  return [];
+}
+
+// Fetch Geotab users for email notifications
+// Match inspection coordinates to zones
+function matchCoordinatesToZones(latitude, longitude) {
+  if (!latitude || !longitude || !geotabZones.length) {
+    return [];
+  }
+  
+  const matchedZones = [];
+  const point = { latitude, longitude };
+  
+  for (const zone of geotabZones) {
+    if (zone.polygon && zone.polygon.length >= 3) {
+      if (isPointInPolygon(point, zone.polygon)) {
+        matchedZones.push(zone.name);
+      }
+    }
+  }
+  
+  return matchedZones;
+}
+
+// Use Geotab's GetAddresses method
+async function getGeotabAddresses(coordinates) {
+  if (!coordinates.length) return [];
+  
+  // Convert to Geotab format: {x: lon, y: lat}
+  const geotabCoords = coordinates.map(c => ({ x: Number(c.lon), y: Number(c.lat) }));
+  
+  try {
+    const results = await callGeotabAPI('GetAddresses', { coordinates: geotabCoords });
+    
+    // Map results to extract formatted addresses and zones
+    return results.map(r => ({
+      formattedAddress: (r && (r.formattedAddress || r.FormattedAddress)) || '',
+      city: r && (r.city || r.City),
+      country: r && (r.country || r.Country),
+      postalCode: r && (r.postalCode || r.PostalCode),
+      street: r && (r.street || r.Street),
+      streetName: r && (r.streetName || r.StreetName),
+      streetNumber: r && (r.streetNumber || r.StreetNumber),
+      zones: (r && (r.zones || r.Zones) || []).map(z => (z && (z.name || z.Name)) || '').filter(Boolean)
+    }));
+  } catch (error) {
+    console.log('GetAddresses API error:', error);
+    return coordinates.map(() => ({ formattedAddress: '', zones: [] }));
+  }
+}
+
+async function resolveAllAddresses(rows) {
+  const points = [];
+  rows.forEach((r, idx) => {
+    if (r.latitude != null && r.longitude != null) {
+      points.push({ lat: r.latitude, lon: r.longitude, idx });
+    }
+  });
+  
+  if (!points.length) {
+    return;
+  }
+  
+  const BATCH_SIZE = 50;
+  
+  for (let start = 0; start < points.length; start += BATCH_SIZE) {
+    const chunk = points.slice(start, start + BATCH_SIZE);
+    const progress = Math.min(start + BATCH_SIZE, points.length);
+    
+    updateProgress(start, points.length, `Resolving addresses ${progress}/${points.length}...`);
+    
+    try {
+      const addresses = await getGeotabAddresses(chunk);
+      
+      // Apply addresses to rows
+      addresses.forEach((addr, i) => {
+        const rowIndex = chunk[i].idx;
+        const row = rows[rowIndex];
+        
+        if (addr.formattedAddress && addr.formattedAddress.trim()) {
+          row.resolvedAddress = addr.formattedAddress.trim();
+        }
+        
+        // Try to get zones from API first
+        let zones = addr.zones || [];
+        
+        // If no zones from API, try matching by coordinates
+        if (zones.length === 0 && geotabZones.length > 0) {
+          zones = matchCoordinatesToZones(row.latitude, row.longitude);
+          if (zones.length > 0) {
+            console.log(`Matched coordinates (${row.latitude}, ${row.longitude}) to zones:`, zones);
+          }
+        }
+        
+        row.zones = zones;
+      });
+      
+      // Re-render table with current progress
+      const selectedZone = document.getElementById('zoneFilter').value;
+      const filteredData = filterDataByZone(rows, selectedZone);
+      renderTable(filteredData);
+      
+    } catch (error) {
+      // Continue processing other batches
+      console.error('Error in address resolution batch:', error);
+    }
+    
+    // Small delay between batches
+    if (start + BATCH_SIZE < points.length) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+  
+  updateProgress(points.length, points.length, 'Complete!');
+}
+
+// Get ignition data for devices
+async function getIgnitionData(fromDate, toDate) {
+  try {
+    showMessage('infoBanner', '🔍 Retrieving ignition data for overdue calculations...', 'info');
+    
+    const statusData = await callGeotabAPI('Get', {
+      typeName: 'StatusData',
+      search: {
+        fromDate: fromDate + 'T00:00:00.000Z',
+        toDate: toDate + 'T23:59:59.999Z',
+        diagnosticSearch: {
+          id: 'DiagnosticIgnitionId'
+        }
+      }
+    });
+    
+    // Process ignition data
+    ignitionData = {};
+    
+    statusData.forEach(status => {
+      if (status.device && status.data && status.datetime) {
+        const deviceId = extractId(status.device);
+        if (!ignitionData[deviceId]) {
+          ignitionData[deviceId] = [];
+        }
+        
+        ignitionData[deviceId].push({
+          timestamp: new Date(status.datetime),
+          isIgnitionOn: status.data > 0
+        });
+      }
+    });
+    
+    // Sort ignition events by timestamp for each device
+    Object.keys(ignitionData).forEach(deviceId => {
+      ignitionData[deviceId].sort((a, b) => a.timestamp - b.timestamp);
+    });
+    
+    return ignitionData;
+    
+  } catch (error) {
+    console.error('Error getting ignition data:', error);
+    showMessage('infoBanner', '⚠️ Could not retrieve ignition data for overdue calculations', 'warning');
+    return {};
+  }
+}
+
+// Find the most relevant ignition time for a DVIR
+function findRelevantIgnitionTime(deviceId, inspectionTime) {
+  if (!ignitionData[deviceId] || ignitionData[deviceId].length === 0) {
+    return null;
+  }
+  
+  const deviceIgnitions = ignitionData[deviceId];
+  let relevantIgnitionTime = null;
+  
+  // Find the last ignition ON event before the inspection
+  for (let i = deviceIgnitions.length - 1; i >= 0; i--) {
+    const ignitionEvent = deviceIgnitions[i];
+    
+    if (ignitionEvent.timestamp <= inspectionTime && ignitionEvent.isIgnitionOn) {
+      let sessionStart = ignitionEvent.timestamp;
+      
+      // Look backwards to find when this ignition session started
+      for (let j = i - 1; j >= 0; j--) {
+        const prevEvent = deviceIgnitions[j];
+        if (!prevEvent.isIgnitionOn || (sessionStart - prevEvent.timestamp) > 30 * 60 * 1000) {
+          break;
+        }
+        sessionStart = prevEvent.timestamp;
+      }
+      
+      relevantIgnitionTime = sessionStart;
+      break;
+    }
+  }
+  
+  return relevantIgnitionTime;
+}
+
+// Check for overdue inspections using proper ignition time comparison
+function checkOverdueInspections(rows) {
+  const alertWindow = parseInt(document.getElementById('alertWindow').value) || 5;
+  const assetType = document.getElementById('assetType').value;
+  const enableAlerts = document.getElementById('enableOverdueAlerts').checked;
+  
+  if (!enableAlerts) {
+    return rows.map(row => {
+      row.isOverdue = false;
+      row.ignitionTime = null;
+      row.timeToInspection = null;
+      return row;
+    });
+  }
+  
+  const now = new Date();
+  
+  return rows.map(row => {
+    const isHeavyEquipment = row.vehicleName && (
+      row.vehicleName.toLowerCase().includes('excavator') ||
+      row.vehicleName.toLowerCase().includes('loader') ||
+      row.vehicleName.toLowerCase().includes('dozer') ||
+      row.vehicleName.toLowerCase().includes('crane') ||
+      row.vehicleName.toLowerCase().includes('grader') ||
+      row.vehicleName.toLowerCase().includes('compactor') ||
+      row.vehicleName.toLowerCase().includes('roller') ||
+      row.vehicleName.toLowerCase().includes('backhoe')
+    );
+    
+    if (assetType === 'heavy' && !isHeavyEquipment) {
+      row.isOverdue = false;
+      row.ignitionTime = null;
+      row.timeToInspection = null;
+      return row;
+    }
+    
+    const inspectionTime = new Date(row.dateTime);
+    const deviceId = row.deviceId;
+    
+    row.isOverdue = false;
+    row.ignitionTime = null;
+    row.timeToInspection = null;
+    
+    const ignitionTime = findRelevantIgnitionTime(deviceId, inspectionTime);
+    
+    if (ignitionTime) {
+      row.ignitionTime = ignitionTime;
+      const timeDiff = (inspectionTime - ignitionTime) / (1000 * 60);
+      row.timeToInspection = Math.round(timeDiff);
+      
+      if (row.isInspectedByDriver && timeDiff > alertWindow) {
+        row.isOverdue = true;
+        // Send email notification for overdue inspection
+        sendOverdueEmail(row).catch(err => console.error('Failed to send overdue email:', err));
+      } else if (!row.isInspectedByDriver) {
+        const timeSinceIgnition = (now - ignitionTime) / (1000 * 60);
+        if (timeSinceIgnition > alertWindow) {
+          row.isOverdue = true;
+          // Send email notification for overdue inspection
+          sendOverdueEmail(row).catch(err => console.error('Failed to send overdue email:', err));
+        }
+      }
+    }
+
+    return row;
+  });
+}
+
+// Generate zone statistics
+function generateZoneStatistics(rows) {
+  const zoneStats = {};
+  let totalInspections = 0;
+  let totalWithDefects = 0;
+  let totalOverdue = 0;
+  
+  rows.forEach(row => {
+    const zones = row.zones && row.zones.length > 0 ? row.zones : ['no-zone'];
+    
+    zones.forEach(zone => {
+      if (!zoneStats[zone]) {
+        zoneStats[zone] = {
+          inspections: 0,
+          withDefects: 0,
+          overdue: 0,
+          safe: 0,
+          unsafe: 0
+        };
+      }
+      
+      zoneStats[zone].inspections++;
+      totalInspections++;
+      
+      if (row.defects && row.defects !== '[]' && row.defects !== '') {
+        zoneStats[zone].withDefects++;
+        totalWithDefects++;
+      }
+      
+      if (row.isOverdue) {
+        zoneStats[zone].overdue++;
+        totalOverdue++;
+      }
+      
+      if (row.isSafeToOperate === true) {
+        zoneStats[zone].safe++;
+      } else if (row.isSafeToOperate === false) {
+        zoneStats[zone].unsafe++;
+      }
+    });
+  });
+  
+  return { zoneStats, totalInspections, totalWithDefects, totalOverdue };
+}
+
+// Render zone statistics
+function renderZoneStatistics(rows) {
+  const stats = generateZoneStatistics(rows);
+  const statsDiv = document.getElementById('zoneStatistics');
+  
+  let html = `<h3 class="card-title">📊 Zone Statistics</h3>`;
+  
+  // Overall statistics
+  html += `<div class="zone-stats">
+    <div class="zone-stat-card">
+      <div class="zone-stat-value">${stats.totalInspections}</div>
+      <div class="zone-stat-label">Total Inspections</div>
+    </div>
+    <div class="zone-stat-card">
+      <div class="zone-stat-value">${stats.totalWithDefects}</div>
+      <div class="zone-stat-label">With Defects</div>
+    </div>
+    <div class="zone-stat-card">
+      <div class="zone-stat-value">${stats.totalOverdue}</div>
+      <div class="zone-stat-label">Overdue</div>
+    </div>
+  </div>`;
+  
+  // Per-zone statistics
+  const sortedZones = Object.keys(stats.zoneStats).sort((a, b) => 
+    stats.zoneStats[b].inspections - stats.zoneStats[a].inspections
+  );
+  
+  if (sortedZones.length > 0) {
+    html += `<h4 style="margin:20px 0 10px 0;">Per Zone Breakdown</h4>`;
+    html += `<div class="zone-stats">`;
+    
+    sortedZones.forEach(zone => {
+      const zoneStat = stats.zoneStats[zone];
+      const defectRate = Math.round((zoneStat.withDefects / zoneStat.inspections) * 100);
+      const overdueRate = Math.round((zoneStat.overdue / zoneStat.inspections) * 100);
+      
+      html += `
+        <div class="zone-stat-card">
+          <div class="zone-stat-label" style="font-weight:600;margin-bottom:8px;">${zone === 'no-zone' ? 'No Zone' : zone}</div>
+          <div class="zone-stat-value">${zoneStat.inspections}</div>
+          <div class="zone-stat-label">Inspections</div>
+          <div style="margin-top:8px;font-size:0.9em;">
+            <div>🔧 ${zoneStat.withDefects} defects (${defectRate}%)</div>
+            <div>⏰ ${zoneStat.overdue} overdue (${overdueRate}%)</div>
+            <div>✅ ${zoneStat.safe} safe</div>
+            <div>❌ ${zoneStat.unsafe} unsafe</div>
+          </div>
+        </div>
+      `;
+    });
+    
+    html += `</div>`;
+  }
+  
+  statsDiv.innerHTML = html;
+  statsDiv.style.display = 'block';
+}
+
+// Sorting state
+let currentSortColumn = null;
+let currentSortDirection = 'asc';
+
+function sortData(data, column, direction) {
+  const sorted = [...data];
+  sorted.sort((a, b) => {
+    let valA, valB;
+
+    switch(column) {
+      case 'dateTime':
+        valA = a.rawDateTime || 0;
+        valB = b.rawDateTime || 0;
+        break;
+      case 'driverName':
+      case 'vehicleName':
+      case 'driverRemark':
+        valA = (a[column] || '').toLowerCase();
+        valB = (b[column] || '').toLowerCase();
+        break;
+      case 'odometer':
+      case 'engineHours':
+        valA = a[column] || 0;
+        valB = b[column] || 0;
+        break;
+      case 'isSafeToOperate':
+        valA = a.isSafeToOperate === true ? 2 : a.isSafeToOperate === false ? 0 : 1;
+        valB = b.isSafeToOperate === true ? 2 : b.isSafeToOperate === false ? 0 : 1;
+        break;
+      case 'isInspectedByDriver':
+        valA = a.isInspectedByDriver ? 1 : 0;
+        valB = b.isInspectedByDriver ? 1 : 0;
+        break;
+      case 'zones':
+        valA = (a.zones || []).join(',');
+        valB = (b.zones || []).join(',');
+        break;
+      case 'location':
+        valA = a.resolvedAddress || '';
+        valB = b.resolvedAddress || '';
+        break;
+      default:
+        valA = a[column];
+        valB = b[column];
+    }
+
+    if (valA < valB) return direction === 'asc' ? -1 : 1;
+    if (valA > valB) return direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+  return sorted;
+}
+
+function sortTable(column) {
+  // Toggle direction if clicking the same column, otherwise reset to ascending
+  if (currentSortColumn === column) {
+    currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSortColumn = column;
+    currentSortDirection = 'asc';
+  }
+
+  // Sort the data
+  const selectedZone = document.getElementById('zoneFilter').value;
+  const filteredByZone = filterDataByZone(mappedDvirData, selectedZone);
+  const filteredData = filterDataByStatusAndType(filteredByZone);
+  const sortedData = sortData(filteredData, column, currentSortDirection);
+
+  // Re-render the table
+  renderTable(sortedData);
+}
+
+function renderTable(rows){
+  const resultDiv = document.getElementById('dvirResult');
+  const groupByZone = document.getElementById('groupByZone').checked;
+
+  if (groupByZone) {
+    renderTableGroupedByZone(rows);
+    return;
+  }
+
+  let html = `<table class="dvir-table"><thead><tr>
+    <th onclick="sortTable('dateTime')" style="cursor:pointer;">Date/Time ${currentSortColumn === 'dateTime' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('driverName')" style="cursor:pointer;">Driver ${currentSortColumn === 'driverName' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('vehicleName')" style="cursor:pointer;">Vehicle ${currentSortColumn === 'vehicleName' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('isSafeToOperate')" style="cursor:pointer;">Status ${currentSortColumn === 'isSafeToOperate' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('isInspectedByDriver')" style="cursor:pointer;">Driver Inspected ${currentSortColumn === 'isInspectedByDriver' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th>Defects</th>
+    <th onclick="sortTable('location')" style="cursor:pointer;">Location ${currentSortColumn === 'location' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('zones')" style="cursor:pointer;">Zones ${currentSortColumn === 'zones' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('odometer')" style="cursor:pointer;">Odometer ${currentSortColumn === 'odometer' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('engineHours')" style="cursor:pointer;">Engine Hours ${currentSortColumn === 'engineHours' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+    <th onclick="sortTable('driverRemark')" style="cursor:pointer;">Hubbo KM's ${currentSortColumn === 'driverRemark' ? (currentSortDirection === 'asc' ? '▲' : '▼') : ''}</th>
+  </tr></thead><tbody>`;
+  
+  let overdueCount = 0;
+  
+  rows.forEach((r, index) => {
+    if (r.isOverdue) overdueCount++;
+
+    const status = r.isSafeToOperate===true?'<span class="status-safe">SAFE</span>':
+                  r.isSafeToOperate===false?'<span class="status-unsafe">⚠️ UNSAFE</span>':
+                  r.isOverdue?'<span class="status-overdue">⏰ OVERDUE</span>':
+                  '<span class="status-unknown">UNKNOWN</span>';
+
+    let defectDisplay = '<em class="muted">None</em>';
+    if (r.defects && r.defects !== '[]' && r.defects !== '') {
+      try{
+        const d = JSON.parse(r.defects);
+        if(Array.isArray(d)&&d.length>0) {
+          const defectList = d.map(def => {
+            let defectName = '';
+
+            // Check DefectRemarks array for the remark text
+            if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
+              defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
+            }
+
+            // Check Defect object for defect name
+            if (!defectName && def.defect && typeof def.defect === 'object') {
+              defectName = def.defect.name || def.defect.Name || '';
+            }
+
+            // Check Part object for part name
+            if (!defectName && def.part && typeof def.part === 'object') {
+              defectName = def.part.name || def.part.Name || '';
+            }
+
+            // Fallback to direct properties
+            if (!defectName) {
+              defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
+            }
+
+            const repairStatus = def.repairStatus || def.RepairStatus || '';
+            return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
+          }).join(', ');
+          defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+        }
+      }
+      catch(e){
+        console.error('Error parsing defects:', e, 'Raw defects:', r.defects);
+        if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>';
+      }
+    }
+
+    let locationDisplay = '<em class="muted">No location</em>';
+    if (r.latitude && r.longitude) {
+      if (r.resolvedAddress && r.resolvedAddress.trim() && r.resolvedAddress.length > 8) {
+        locationDisplay = `<div class="real-address">📍 ${r.resolvedAddress}</div>`;
+      } else {
+        const coords = `${Number(r.latitude).toFixed(6)}, ${Number(r.longitude).toFixed(6)}`;
+        locationDisplay = `<span class="coord-only">${coords}</span>`;
+      }
+    }
+
+    const zonesDisplay = r.zones && r.zones.length > 0
+      ? r.zones.map(z => `<span class="zone-pill">${z}</span>`).join('')
+      : '<em class="muted">No zone</em>';
+
+    let ignitionInfo = '';
+    if (r.ignitionTime) {
+      const ignitionStr = new Date(r.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
+      const timeDiff = r.timeToInspection;
+      ignitionInfo = `<div class="ignition-info">Ignition: ${ignitionStr} (${timeDiff}min before)</div>`;
+    }
+
+    html += `<tr data-inspection-id="${r.id}">
+      <td>${r.dateTime}${ignitionInfo}</td>
+      <td><strong>${r.driverName}</strong></td>
+      <td><strong>${r.vehicleName}</strong></td>
+      <td>${status}</td>
+      <td>${r.isInspectedByDriver===true?'✅ Yes':'❌ No'}</td>
+      <td>${defectDisplay}</td>
+      <td>${locationDisplay}</td>
+      <td>${zonesDisplay}</td>
+      <td>${r.odometer?Math.round(r.odometer/1000*100)/100+' km':'N/A'}</td>
+      <td>${r.engineHours?Math.round(r.engineHours/3600*100)/100+' hrs':'N/A'}</td>
+      <td>${r.driverRemark || '<em class="muted">No remarks</em>'}</td>
+    </tr>`;
+  });
+  
+  if (overdueCount > 0) {
+    html = `<div class="alert alert-warning">⚠️ <strong>${overdueCount} overdue inspection(s) detected!</strong> These inspections were completed more than ${document.getElementById('alertWindow').value} minutes after ignition.</div>` + html;
+  }
+  
+  html += `</tbody></table>`;
+  resultDiv.innerHTML = html;
+}
+
+// Render table grouped by zone
+function renderTableGroupedByZone(rows) {
+  const resultDiv = document.getElementById('dvirResult');
+  
+  const rowsByZone = {};
+  const noZoneRows = [];
+  
+  rows.forEach(row => {
+    if (row.zones && row.zones.length > 0) {
+      row.zones.forEach(zone => {
+        if (!rowsByZone[zone]) {
+          rowsByZone[zone] = [];
+        }
+        rowsByZone[zone].push(row);
+      });
+    } else {
+      noZoneRows.push(row);
+    }
+  });
+  
+  let html = '';
+  
+  Object.keys(rowsByZone).sort().forEach(zone => {
+    const zoneRows = rowsByZone[zone];
+    
+    html += `<div class="zone-section">
+      <div class="zone-header">📍 ${zone} (${zoneRows.length} inspections)</div>
+      <div class="zone-inspections">
+        <table class="dvir-table">
+          <thead><tr>
+            <th>Date/Time</th><th>Driver</th><th>Vehicle</th><th>Status</th><th>Driver Inspected</th>
+            <th>Defects</th><th>Location</th><th>Odometer</th><th>Engine Hours</th><th>Hubbo KM's</th>
+          </tr></thead>
+          <tbody>`;
+    
+    zoneRows.forEach(r => {
+      const status = r.isSafeToOperate===true?'<span class="status-safe">SAFE</span>':
+                    r.isSafeToOperate===false?'<span class="status-unsafe">⚠️ UNSAFE</span>':
+                    r.isOverdue?'<span class="status-overdue">⏰ OVERDUE</span>':
+                    '<span class="status-unknown">UNKNOWN</span>';
+
+      let defectDisplay = '<em class="muted">None</em>';
+      if (r.defects && r.defects !== '[]' && r.defects !== '') {
+        try{
+          const d = JSON.parse(r.defects);
+          if(Array.isArray(d)&&d.length>0) {
+            const defectList = d.map(def => {
+              let defectName = '';
+              // Check DefectRemarks array
+              if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
+                defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
+              }
+              // Check Defect object
+              if (!defectName && def.defect && typeof def.defect === 'object') {
+                defectName = def.defect.name || def.defect.Name || '';
+              }
+              // Check Part object
+              if (!defectName && def.part && typeof def.part === 'object') {
+                defectName = def.part.name || def.part.Name || '';
+              }
+              // Fallback
+              if (!defectName) {
+                defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
+              }
+              const repairStatus = def.repairStatus || def.RepairStatus || '';
+              return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
+            }).join(', ');
+            defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+          }
+        }
+        catch(e){
+          console.error('Error parsing defects:', e, 'Raw defects:', r.defects);
+          if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>';
+        }
+      }
+
+      let locationDisplay = '<em class="muted">No location</em>';
+      if (r.latitude && r.longitude) {
+        if (r.resolvedAddress && r.resolvedAddress.trim() && r.resolvedAddress.length > 8) {
+          locationDisplay = `<div class="real-address">📍 ${r.resolvedAddress}</div>`;
+        } else {
+          const coords = `${Number(r.latitude).toFixed(6)}, ${Number(r.longitude).toFixed(6)}`;
+          locationDisplay = `<span class="coord-only">${coords}</span>`;
+        }
+      }
+
+      let ignitionInfo = '';
+      if (r.ignitionTime) {
+        const ignitionStr = new Date(r.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
+        const timeDiff = r.timeToInspection;
+        ignitionInfo = `<div class="ignition-info">Ignition: ${ignitionStr} (${timeDiff}min before)</div>`;
+      }
+
+      html += `<tr data-inspection-id="${r.id}">
+        <td>${r.dateTime}${ignitionInfo}</td>
+        <td><strong>${r.driverName}</strong></td>
+        <td><strong>${r.vehicleName}</strong></td>
+        <td>${status}</td>
+        <td>${r.isInspectedByDriver===true?'✅ Yes':'❌ No'}</td>
+        <td>${defectDisplay}</td>
+        <td>${locationDisplay}</td>
+        <td>${r.odometer?Math.round(r.odometer/1000*100)/100+' km':'N/A'}</td>
+        <td>${r.engineHours?Math.round(r.engineHours/3600*100)/100+' hrs':'N/A'}</td>
+        <td>${r.driverRemark || '<em class="muted">No remarks</em>'}</td>
+      </tr>`;
+    });
+    
+    html += `</tbody></table></div></div>`;
+  });
+  
+  if (noZoneRows.length > 0) {
+    html += `<div class="zone-section">
+      <div class="zone-header">❓ No Zone Assigned (${noZoneRows.length} inspections)</div>
+      <div class="zone-inspections">
+        <table class="dvir-table">
+          <thead><tr>
+            <th>Date/Time</th><th>Driver</th><th>Vehicle</th><th>Status</th><th>Driver Inspected</th>
+            <th>Defects</th><th>Location</th><th>Odometer</th><th>Engine Hours</th><th>Hubbo KM's</th>
+          </tr></thead>
+          <tbody>`;
+    
+    noZoneRows.forEach(r => {
+      const status = r.isSafeToOperate===true?'<span class="status-safe">SAFE</span>':
+                    r.isSafeToOperate===false?'<span class="status-unsafe">⚠️ UNSAFE</span>':
+                    r.isOverdue?'<span class="status-overdue">⏰ OVERDUE</span>':
+                    '<span class="status-unknown">UNKNOWN</span>';
+
+      let defectDisplay = '<em class="muted">None</em>';
+      if (r.defects && r.defects !== '[]' && r.defects !== '') {
+        try{
+          const d = JSON.parse(r.defects);
+          if(Array.isArray(d)&&d.length>0) {
+            const defectList = d.map(def => {
+              let defectName = '';
+              // Check DefectRemarks array
+              if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
+                defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
+              }
+              // Check Defect object
+              if (!defectName && def.defect && typeof def.defect === 'object') {
+                defectName = def.defect.name || def.defect.Name || '';
+              }
+              // Check Part object
+              if (!defectName && def.part && typeof def.part === 'object') {
+                defectName = def.part.name || def.part.Name || '';
+              }
+              // Fallback
+              if (!defectName) {
+                defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
+              }
+              const repairStatus = def.repairStatus || def.RepairStatus || '';
+              return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
+            }).join(', ');
+            defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+          }
+        }
+        catch(e){
+          console.error('Error parsing defects:', e, 'Raw defects:', r.defects);
+          if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>';
+        }
+      }
+
+      let locationDisplay = '<em class="muted">No location</em>';
+      if (r.latitude && r.longitude) {
+        if (r.resolvedAddress && r.resolvedAddress.trim() && r.resolvedAddress.length > 8) {
+          locationDisplay = `<div class="real-address">📍 ${r.resolvedAddress}</div>`;
+        } else {
+          const coords = `${Number(r.latitude).toFixed(6)}, ${Number(r.longitude).toFixed(6)}`;
+          locationDisplay = `<span class="coord-only">${coords}</span>`;
+        }
+      }
+
+      let ignitionInfo = '';
+      if (r.ignitionTime) {
+        const ignitionStr = new Date(r.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
+        const timeDiff = r.timeToInspection;
+        ignitionInfo = `<div class="ignition-info">Ignition: ${ignitionStr} (${timeDiff}min before)</div>`;
+      }
+
+      html += `<tr data-inspection-id="${r.id}">
+        <td>${r.dateTime}${ignitionInfo}</td>
+        <td><strong>${r.driverName}</strong></td>
+        <td><strong>${r.vehicleName}</strong></td>
+        <td>${status}</td>
+        <td>${r.isInspectedByDriver===true?'✅ Yes':'❌ No'}</td>
+        <td>${defectDisplay}</td>
+        <td>${locationDisplay}</td>
+        <td>${r.odometer?Math.round(r.odometer/1000*100)/100+' km':'N/A'}</td>
+        <td>${r.engineHours?Math.round(r.engineHours/3600*100)/100+' hrs':'N/A'}</td>
+        <td>${r.driverRemark || '<em class="muted">No remarks</em>'}</td>
+      </tr>`;
+    });
+    
+    html += `</tbody></table></div></div>`;
+  }
+  
+  resultDiv.innerHTML = html;
+}
+
+// Send email notification via SMTP relay
+async function sendEmailNotification(type, data) {
+  // Get manual email recipients
+  const manualRecipients = document.getElementById('emailRecipient').value;
+
+  let recipientList = manualRecipients.split(',').map(r => r.trim()).filter(r => r);
+
+  if (recipientList.length === 0) {
+    console.warn('No email recipients configured. Please enter email addresses.');
+    showMessage('infoBanner', '⚠️ No email recipients configured', 'warning');
+    return;
+  }
+
+  let subject, body, htmlBody;
+
+  if (type === 'defect') {
+    subject = document.getElementById('emailSubjectDefect').value;
+    body = `⚠️ DEFECT DETECTED\n\n` +
+           `Vehicle: ${data.vehicleName}\n` +
+           `Driver: ${data.driverName}\n` +
+           `Date/Time: ${data.dateTime}\n` +
+           `Location: ${data.resolvedAddress || 'Unknown'}\n` +
+           `Defects: ${data.defects}\n\n` +
+           `Please review and take appropriate action.`;
+    htmlBody = `
+      <h2>⚠️ Defect Detected</h2>
+      <p><strong>Vehicle:</strong> ${data.vehicleName}</p>
+      <p><strong>Driver:</strong> ${data.driverName}</p>
+      <p><strong>Date/Time:</strong> ${data.dateTime}</p>
+      <p><strong>Location:</strong> ${data.resolvedAddress || 'Unknown'}</p>
+      <p><strong>Defects:</strong> ${data.defects}</p>
+      <p>Please review and take appropriate action.</p>
+    `;
+  } else if (type === 'overdue') {
+    subject = document.getElementById('emailSubjectOverdue').value;
+    body = `⏰ OVERDUE INSPECTION ALERT\n\n` +
+           `Vehicle: ${data.vehicleName}\n` +
+           `Driver: ${data.driverName}\n` +
+           `Ignition Time: ${new Date(data.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}\n` +
+           `Inspection Time: ${data.dateTime}\n` +
+           `Delay: ${data.timeToInspection} minutes\n` +
+           `Location: ${data.resolvedAddress || 'Unknown'}\n\n` +
+           `This inspection was completed ${data.timeToInspection} minutes after ignition, ` +
+           `exceeding the ${document.getElementById('alertWindow').value} minute threshold.`;
+    htmlBody = `
+      <h2>⏰ Overdue Inspection Alert</h2>
+      <p><strong>Vehicle:</strong> ${data.vehicleName}</p>
+      <p><strong>Driver:</strong> ${data.driverName}</p>
+      <p><strong>Ignition Time:</strong> ${new Date(data.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}</p>
+      <p><strong>Inspection Time:</strong> ${data.dateTime}</p>
+      <p><strong>Delay:</strong> ${data.timeToInspection} minutes</p>
+      <p><strong>Location:</strong> ${data.resolvedAddress || 'Unknown'}</p>
+      <p>This inspection was completed ${data.timeToInspection} minutes after ignition, exceeding the ${document.getElementById('alertWindow').value} minute threshold.</p>
+    `;
+  }
+
+  try {
+    // Send via SMTP relay server on localhost:3000
+    const response = await fetch('http://localhost:3000/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: recipientList,
+        subject: subject,
+        body: htmlBody
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Email relay failed');
+    }
+
+    const result = await response.json();
+    console.log('✅ Email sent via SMTP relay:', result.messageId);
+    console.log('📧 Recipients:', recipientList);
+    showMessage('infoBanner', `📧 Email sent successfully to ${recipientList.length} recipient(s): ${recipientList.join(', ')}`, 'success');
+  } catch (error) {
+    console.error('Email notification error:', error);
+    showMessage('infoBanner', `Failed to send notification: ${error.message}`, 'error');
+  }
+}
+
+// Send email for defects
+async function sendDefectEmail(defectRow) {
+  const enableAutoEmail = document.getElementById('enableAutoEmail').checked;
+  if (!enableAutoEmail) return;
+  await sendEmailNotification('defect', defectRow);
+}
+
+// Send email for overdue inspections
+async function sendOverdueEmail(overdueRow) {
+  const enableOverdueEmail = document.getElementById('enableOverdueEmail').checked;
+  if (!enableOverdueEmail) return;
+  await sendEmailNotification('overdue', overdueRow);
+}
+
+// ============================================================================
+// SMS ALERT FUNCTIONS (eTXT / Spark NZ)
+// ============================================================================
+
+function addToSmsLog(type, message, details = '') {
+  const timestamp = new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
+  const logEntry = {
+    timestamp,
+    type,
+    message,
+    details
+  };
+  
+  smsLog.unshift(logEntry);
+  if (smsLog.length > 50) smsLog.pop(); // Keep last 50 entries
+  
+  renderSmsLog();
+}
+
+function renderSmsLog() {
+  const logContainer = document.getElementById('smsLog');
+  if (!logContainer) return;
+  
+  let html = '';
+  smsLog.forEach(entry => {
+    const cssClass = entry.type === 'error' ? 'log-error' : 
+                     entry.type === 'sms' ? 'log-sms' : 
+                     entry.type === 'info' ? 'log-info' : 'log-success';
+    html += `
+      <div class="log-entry ${cssClass}">
+        <strong>${entry.timestamp}</strong> - ${entry.message}
+        ${entry.details ? `<br><small>${entry.details}</small>` : ''}
+      </div>
+    `;
+  });
+  
+  logContainer.innerHTML = html || '<em style="color: #999;">No SMS activity yet</em>';
+}
+
+async function sendETxtSMS(phoneNumber, message) {
+  // Use local proxy server to avoid CORS issues
+  const proxyUrl = 'http://localhost:3001/send-sms';
+  
+  const response = await fetch(proxyUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      phoneNumber: phoneNumber,
+      message: message
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || `Proxy server error: ${response.status}`);
+  }
+
+  return await response.json();
+}
+
+async function triggerGeotabBuzzer(deviceId) {
+  try {
+    await callGeotabAPI('Add', {
+      typeName: 'TextMessage',
+      entity: {
+        device: { id: deviceId },
+        messageContent: {
+          contentType: 'Normal',
+          message: 'Pre-start inspection overdue',
+          isDirectionToVehicle: true
+        },
+        isDirectionToVehicle: true
+      }
+    });
+    
+    return true;
+  } catch (error) {
+    console.error(`Failed to trigger buzzer for device ${deviceId}:`, error.message);
+    return false;
+  }
+}
+
+function isHeavyMachinery(vehicleName) {
+  const heavyKeywords = [
+    'excavator', 'loader', 'dozer', 'crane', 'grader',
+    'compactor', 'roller', 'backhoe', 'truck', 'tipper',
+    'dump', 'semi', 'tanker', 'bobcat', 'skid'
+  ];
+  const nameLower = vehicleName.toLowerCase();
+  return heavyKeywords.some(keyword => nameLower.includes(keyword));
+}
+
+async function checkAndSendSmsAlerts() {
+  const enableSms = document.getElementById('enableSmsAlerts').checked;
+  
+  if (!enableSms) {
+    addToSmsLog('info', 'SMS alerts are disabled');
+    return;
+  }
+  
+  if (!mappedDvirData || mappedDvirData.length === 0) {
+    showMessage('smsStatusMessage', '⚠️ No DVIR data loaded. Please retrieve inspection data first.', 'warning');
+    return;
+  }
+  
+  addToSmsLog('info', '🔍 Starting SMS compliance check...');
+  showMessage('smsStatusMessage', '🔍 Checking for overdue pre-start inspections...', 'info');
+  document.getElementById('smsAlertStatus').style.display = 'block';
+  
+  try {
+    const now = new Date();
+    const heavyThresholdMinutes = parseInt(document.getElementById('smsHeavyThreshold').value) || 5;
+    const lightThresholdDays = parseInt(document.getElementById('smsLightThreshold').value) || 5;
+    const enableBuzzer = document.getElementById('smsEnableBuzzer').checked;
+    
+    // Get current ignition status for all devices (already have this in ignitionData)
+    const alerts = [];
+    
+    // Process each inspection record
+    const deviceMap = {}; // Track latest status per device
+    
+    mappedDvirData.forEach(row => {
+      const deviceId = row.deviceId;
+      const vehicleName = row.vehicleName;
+      const isHeavy = isHeavyMachinery(vehicleName);
+      
+      if (!deviceMap[deviceId]) {
+        deviceMap[deviceId] = {
+          vehicleName,
+          deviceId,
+          isHeavy,
+          lastDvirTime: new Date(row.rawDateTime),
+          lastDvirData: row,
+          driverPhone: userPhoneMap[row.driverId] || null
+        };
+      } else {
+        // Keep the most recent DVIR
+        const existingTime = deviceMap[deviceId].lastDvirTime;
+        const currentTime = new Date(row.rawDateTime);
+        if (currentTime > existingTime) {
+          deviceMap[deviceId].lastDvirTime = currentTime;
+          deviceMap[deviceId].lastDvirData = row;
+          deviceMap[deviceId].driverPhone = userPhoneMap[row.driverId] || deviceMap[deviceId].driverPhone;
+        }
+      }
+    });
+    
+    // Check each device for compliance
+    Object.values(deviceMap).forEach(device => {
+      const { vehicleName, deviceId, isHeavy, lastDvirTime, lastDvirData, driverPhone } = device;
+      
+      // Check heavy machinery (X minute rule from ignition)
+      if (isHeavy && lastDvirData.isOverdue) {
+        const minutesSinceIgnition = lastDvirData.timeToInspection;
+        
+        if (minutesSinceIgnition >= heavyThresholdMinutes) {
+          const alertKey = `${deviceId}-heavy-${lastDvirData.ignitionTime}`;
+          
+          // Check if we haven't sent this alert recently (within last hour)
+          const lastAlert = smsAlertHistory.get(alertKey);
+          const cooldownMs = 60 * 60 * 1000; // 1 hour
+          
+          if (!lastAlert || (now - lastAlert) > cooldownMs) {
+            alerts.push({
+              type: 'heavy',
+              vehicleName,
+              deviceId,
+              driverPhone,
+              lastDvirData: lastDvirData,
+              minutesSinceIgnition: Math.round(minutesSinceIgnition),
+              lastDvirTime: lastDvirTime.toLocaleString('en-NZ'),
+              alertKey
+            });
+          }
+        }
+      }
+      
+      // Check light vehicles (X day rule)
+      if (!isHeavy) {
+        const daysSinceLastDvir = (now - lastDvirTime) / (1000 * 60 * 60 * 24);
+        
+        if (daysSinceLastDvir >= lightThresholdDays) {
+          const alertKey = `${deviceId}-light-${lastDvirTime.toISOString()}`;
+          
+          const lastAlert = smsAlertHistory.get(alertKey);
+          const cooldownMs = 24 * 60 * 60 * 1000; // 24 hours for light vehicles
+          
+          if (!lastAlert || (now - lastAlert) > cooldownMs) {
+            alerts.push({
+              type: 'light',
+              vehicleName,
+              deviceId,
+              driverPhone,
+              lastDvirData: lastDvirData,
+              daysSinceLastDvir: Math.round(daysSinceLastDvir),
+              lastDvirTime: lastDvirTime.toLocaleString('en-NZ'),
+              alertKey
+            });
+          }
+        }
+      }
+    });
+    
+    if (alerts.length > 0) {
+      addToSmsLog('warning', `⚠️ Found ${alerts.length} vehicle(s) requiring SMS alerts`);
+      showMessage('smsStatusMessage', `⚠️ Found ${alerts.length} overdue inspection(s)`, 'warning');
+      
+      let sentCount = 0;
+      let buzzerCount = 0;
+      
+      for (const alert of alerts) {
+        // Send SMS
+        if (alert.driverPhone) {
+          try {
+            let message;
+            if (alert.type === 'heavy') {
+              message = document.getElementById('smsHeavyTemplate').value
+                .replace('{vehicleName}', alert.vehicleName)
+                .replace('{minutes}', alert.minutesSinceIgnition);
+            } else {
+              message = document.getElementById('smsLightTemplate').value
+                .replace('{vehicleName}', alert.vehicleName)
+                .replace('{days}', alert.daysSinceLastDvir);
+            }
+            
+            await sendETxtSMS(alert.driverPhone, message);
+            const driverLabel = alert.lastDvirData ? alert.lastDvirData.driverName : 'Driver';
+            addToSmsLog('sms', `📱 SMS sent to ${driverLabel} (${alert.driverPhone})`, 
+              `${alert.vehicleName} - ${alert.type === 'heavy' ? alert.minutesSinceIgnition + ' min overdue' : alert.daysSinceLastDvir + ' days since last pre-start'}`);
+            
+            smsAlertHistory.set(alert.alertKey, now);
+            sentCount++;
+            
+          } catch (error) {
+            addToSmsLog('error', `❌ SMS failed for ${alert.vehicleName}`, error.message);
+          }
+        } else {
+          const driverLabel = alert.lastDvirData ? alert.lastDvirData.driverName : 'Unknown driver';
+          addToSmsLog('info', `⚠️ No mobile number for ${driverLabel} on ${alert.vehicleName}`, 
+            'Check eTXT contacts — name may not match');
+        }
+        
+        // Trigger buzzer for light vehicles
+        if (alert.type === 'light' && enableBuzzer) {
+          const buzzerSent = await triggerGeotabBuzzer(alert.deviceId);
+          if (buzzerSent) {
+            addToSmsLog('success', `🔔 Buzzer triggered for ${alert.vehicleName}`);
+            buzzerCount++;
+          }
+        }
+      }
+      
+      renderSmsAlertsTable(alerts);
+      showMessage('smsStatusMessage', 
+        `✅ SMS check complete: ${sentCount} SMS sent, ${buzzerCount} buzzer(s) triggered`, 
+        'success');
+      
+    } else {
+      addToSmsLog('success', '✅ All vehicles compliant - no alerts needed');
+      showMessage('smsStatusMessage', '✅ All vehicles compliant - no overdue inspections', 'success');
+      document.getElementById('smsAlertsTable').innerHTML = '';
+    }
+    
+  } catch (error) {
+    console.error('SMS alert check error:', error);
+    addToSmsLog('error', '❌ SMS check failed', error.message);
+    showMessage('smsStatusMessage', `❌ Error: ${error.message}`, 'error');
+  }
+}
+
+function renderSmsAlertsTable(alerts) {
+  const container = document.getElementById('smsAlertsTable');
+  if (!container || alerts.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  
+  let html = `<table class="dvir-table">
+    <thead>
+      <tr>
+        <th>Vehicle</th>
+        <th>Driver</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Last Inspection</th>
+        <th>Driver Mobile</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>`;
+  
+  alerts.forEach(alert => {
+    const statusText = alert.type === 'heavy' ? 
+      `${alert.minutesSinceIgnition} min without pre-start` :
+      `${alert.daysSinceLastDvir} days without pre-start`;
+    
+    const actionText = alert.driverPhone ? '✅ SMS Sent' : '⚠️ No Phone';
+    const driverName = alert.lastDvirData ? alert.lastDvirData.driverName : 'Unknown';
+    
+    html += `<tr>
+      <td><strong>${alert.vehicleName}</strong></td>
+      <td><strong>${driverName}</strong></td>
+      <td>${alert.type === 'heavy' ? '🚛 Heavy' : '🚗 Light'}</td>
+      <td><span class="status-unsafe">⚠️ ${statusText}</span></td>
+      <td>${alert.lastDvirTime}</td>
+      <td>${alert.driverPhone || '<em style="color:#e53e3e;">No eTXT contact match</em>'}</td>
+      <td>${actionText}</td>
+    </tr>`;
+  });
+  
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// Update zone dropdown with predefined zones from spreadsheet
+function updateZoneDropdown() {
+  const zoneFilter = document.getElementById('zoneFilter');
+  
+  // Clear existing options except "All Zones" and "No Zone Assigned"
+  zoneFilter.innerHTML = '<option value="">All Zones</option><option value="no-zone">No Zone Assigned</option>';
+  
+  // Add predefined zones from the spreadsheet
+  PREDEFINED_ZONES.forEach(zone => {
+    const option = document.createElement('option');
+    option.value = zone;
+    option.textContent = zone;
+    zoneFilter.appendChild(option);
+  });
+  
+  console.log('Updated zone dropdown with predefined zones:', PREDEFINED_ZONES);
+}
+
+// Filter data by selected zone
+function filterDataByZone(data, selectedZone) {
+  if (!selectedZone || selectedZone === '') {
+    return data;
+  }
+  
+  if (selectedZone === 'no-zone') {
+    // Return rows with no zones or empty zones array
+    return data.filter(row => !row.zones || row.zones.length === 0);
+  }
+  
+  // Return rows that have the selected zone in their zones array
+  return data.filter(row => {
+    return row.zones && Array.isArray(row.zones) && row.zones.includes(selectedZone);
+  });
+}
+
+// Filter to remove entries with "NotNecessary" defects
+function filterNotNecessaryDefects(data) {
+  return data.filter(row => {
+    // If no defects, keep the row
+    if (!row.defects || row.defects === '[]' || row.defects === '') {
+      return true;
+    }
+    
+    try {
+      const defects = JSON.parse(row.defects);
+      if (!Array.isArray(defects) || defects.length === 0) {
+        return true;
+      }
+      
+      // Check if ANY defect has "NotNecessary" status - if so, exclude this row
+      const hasNotNecessary = defects.some(def => {
+        const repairStatus = (def.repairStatus || def.RepairStatus || '').toLowerCase();
+        // Match: NotNecessary, notnecessary, Not Necessary, not necessary, etc.
+        return repairStatus.replace(/\s+/g, '') === 'notnecessary';
+      });
+      
+      // Keep the row ONLY if NO defects are "NotNecessary"
+      return !hasNotNecessary;
+      
+    } catch (e) {
+      // If we can't parse, keep the row
+      console.error('Error parsing defects for filtering:', e, row.defects);
+      return true;
+    }
+  });
+}
+
+// Filter data by status, inspection type, and NotNecessary defects
+function filterDataByStatusAndType(data) {
+  const hideNotNecessary = document.getElementById('hideNotNecessary')?.checked || false;
+  const hideUnknown = document.getElementById('hideUnknownStatus')?.checked || false;
+  const hideNonDriver = document.getElementById('hideNonDriverInspections')?.checked || false;
+  
+  let filtered = data;
+  
+  // Filter out "NotNecessary" defects if checkbox is checked
+  if (hideNotNecessary) {
+    filtered = filtered.filter(r => {
+      // If no defects, keep the record
+      if (!r.defects || r.defects === '[]' || r.defects === '') {
+        return true;
+      }
+      
+      // Check if defects contain "NotNecessary" text
+      const defectsStr = r.defects.toLowerCase();
+      if (defectsStr.includes('notnecessary') || defectsStr.includes('not necessary')) {
+        // Check if ALL defects are NotNecessary
+        try {
+          const defectArray = JSON.parse(r.defects);
+          if (Array.isArray(defectArray) && defectArray.length > 0) {
+            // Check each defect
+            const allNotNecessary = defectArray.every(def => {
+              const repairStatus = (def.repairStatus || def.RepairStatus || '').toLowerCase();
+              const remark = (def.remark || def.Remark || '').toLowerCase();
+              const defectRemarks = def.defectRemarks || [];
+              
+              // Check repair status
+              if (repairStatus.includes('notnecessary') || repairStatus.includes('not necessary')) {
+                return true;
+              }
+              
+              // Check remark
+              if (remark.includes('notnecessary') || remark.includes('not necessary')) {
+                return true;
+              }
+              
+              // Check defectRemarks array
+              if (Array.isArray(defectRemarks)) {
+                const hasNotNecessary = defectRemarks.some(dr => {
+                  const remarkText = (dr.remark || dr.Remark || '').toLowerCase();
+                  return remarkText.includes('notnecessary') || remarkText.includes('not necessary');
+                });
+                if (hasNotNecessary) return true;
+              }
+              
+              return false;
+            });
+            
+            // If all defects are NotNecessary, exclude this record
+            if (allNotNecessary) {
+              return false;
+            }
+          }
+        } catch (e) {
+          // If we can't parse, check the raw string
+          const defectsLower = r.defects.toLowerCase();
+          // Only exclude if it seems like all defects are NotNecessary
+          if (defectsLower.includes('notnecessary') || defectsLower.includes('not necessary')) {
+            return false;
+          }
+        }
+      }
+      
+      return true;
+    });
+  }
+  
+  // Filter out UNKNOWN status if checkbox is checked
+  if (hideUnknown) {
+    filtered = filtered.filter(r => {
+      // Keep record if it has a definite safe/unsafe status OR is overdue
+      return r.isSafeToOperate === true || 
+             r.isSafeToOperate === false || 
+             r.isOverdue === true;
+    });
+  }
+  
+  // Filter out non-driver inspections if checkbox is checked
+  if (hideNonDriver) {
+    filtered = filtered.filter(r => r.isInspectedByDriver === true);
+  }
+  
+  return filtered;
+}
+
+document.getElementById('authButton').onclick = async function(){
+  const server = document.getElementById('server').value.trim();
+  const database = document.getElementById('database').value.trim();
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  if(!server || !database || !username || !password){ 
+    showMessage('authResult','⚠️ Please fill in all fields (Server, Database, Username, Password)','error'); 
+    return; 
+  }
+  try{
+    showMessage('authResult','🔐 Authenticating to Geotab...','warning');
+    serverUsed = server;
+    const res = await callGeotabAPI('Authenticate', { userName:username, password, database });
+    if(res.path && res.path !== 'ThisServer'){
+      serverUsed = res.path;
+      console.log(`Redirected to server: ${serverUsed}`);
+      const res2 = await callGeotabAPI('Authenticate', { userName:username, password, database });
+      credentials = res2.credentials;
+    } else {
+      credentials = res.credentials;
+    }
+    showMessage('authResult','✅ Authentication successful! You can now retrieve inspection data.','success');
+    document.getElementById('dvirSection').style.display = '';
+    
+    // Enable buttons after successful authentication
+    document.getElementById('getDvir').disabled = false;
+    document.getElementById('logout').disabled = false;
+    
+    // Initialize zone dropdown with predefined zones after authentication
+    updateZoneDropdown();
+    // Fetch zone definitions from Geotab for coordinate matching
+    await fetchGeotabZones();
+  }catch(e){
+    serverUsed = null; // Reset on error
+    credentials = null;
+    showMessage('authResult',`❌ Authentication failed: ${e.message}`,'error');
+    console.error('Authentication error:', e);
+  }
+};
+
+document.getElementById('getDvir').onclick = async function(){
+  if(!credentials && !window.geotab && !window.api){ showMessage('infoBanner','Not authenticated','error'); return; }
+  
+  const fromDate = document.getElementById('fromDate').value;
+  const toDate = document.getElementById('toDate').value;
+  const fromTime = document.getElementById('fromTime').value || '00:00';
+  const toTime = document.getElementById('toTime').value || '23:59';
+  
+  if(!fromDate || !toDate){ showMessage('infoBanner','Please select both from and to dates','error'); return; }
+
+  // Construct datetime strings with time
+  const fromDateTime = `${fromDate}T${fromTime}:00.000Z`;
+  const toDateTime = `${toDate}T${toTime}:59.999Z`;
+
+  showMessage('infoBanner','Getting Asset Inspection logs...','warning');
+  document.getElementById('downloadCsv').disabled = true;
+  document.getElementById('downloadReport').disabled = true;
+
+  try{
+    // Fetch zone definitions if not already loaded
+    if (geotabZones.length === 0) {
+      await fetchGeotabZones();
+    }
+    
+    await getIgnitionData(fromDate, toDate);
+    
+    const dvirLogs = await callGeotabAPI('Get', {
+      typeName:'DVIRLog',
+      search:{ fromDate: fromDateTime, toDate: toDateTime }
+    });
+
+    if(!dvirLogs || dvirLogs.length===0){
+      showMessage('infoBanner','No DVIR logs for the selected range','warning');
+      document.getElementById('dvirResult').innerHTML='';
+      return;
+    }
+
+    console.log('=== DVIRLog RESPONSE INSPECTION ===');
+    console.log(`Total DVIRLog records fetched: ${dvirLogs.length}`);
+    if (dvirLogs.length > 0) {
+      const sampleLog = dvirLogs[0];
+      console.log('Sample DVIRLog properties:', Object.keys(sampleLog).join(', '));
+      console.log('Sample DVIRLog.dVIRDefects:', sampleLog.dVIRDefects);
+      console.log('Sample DVIRLog.driverRemark:', sampleLog.driverRemark);
+      console.log('Sample DVIRLog.certifyRemark:', sampleLog.certifyRemark);
+    }
+
+    // Map defects from dVIRDefects property (the actual defect objects)
+    let defectMap = {};
+    let totalDefects = 0;
+
+    dvirLogs.forEach(log => {
+      // Use dVIRDefects property which contains the actual defect objects
+      if (log.dVIRDefects && Array.isArray(log.dVIRDefects) && log.dVIRDefects.length > 0) {
+        defectMap[log.id] = log.dVIRDefects;
+        totalDefects += log.dVIRDefects.length;
+      }
+    });
+
+    const logsWithDefects = Object.keys(defectMap).length;
+
+    console.log('=== DEFECT MAPPING COMPLETE ===');
+    console.log(`Logs with remarks: ${dvirLogs.filter(l => l.driverRemark || l.certifyRemark).length}`);
+    console.log(`Logs with defects: ${logsWithDefects}`);
+    console.log(`Total defects: ${totalDefects}`);
+
+    if (totalDefects > 0) {
+      const firstDefect = Object.values(defectMap)[0][0];
+      console.log('Sample defect structure:', firstDefect);
+      console.log('Defect properties:', Object.keys(firstDefect).join(', '));
+    }
+
+    if (logsWithDefects > 0) {
+      showMessage('infoBanner', `✅ Loaded ${totalDefects} defect records from ${logsWithDefects} inspections`, 'success');
+    } else {
+      showMessage('infoBanner', `✅ No defects found in this date range`, 'success');
+    }
+
+    const driverIds = new Set(), deviceIds = new Set();
+    dvirLogs.forEach(l=>{ const did = extractId(l.driver); const vid = extractId(l.device); if(did) driverIds.add(did); if(vid) deviceIds.add(vid); });
+    const calls = [];
+    Array.from(driverIds).forEach(id=>calls.push({method:'Get', params:{typeName:'User', search:{id}}}));
+    Array.from(deviceIds).forEach(id=>calls.push({method:'Get', params:{typeName:'Device', search:{id}}}));
+    const lookup = await callGeotabAPI('ExecuteMultiCall', { calls });
+    const driverNames = {}; const deviceNames={}; let idx=0;
+    
+    // Extract driver names AND phone numbers for SMS alerts
+    userPhoneMap = {}; // Reset the phone map
+    Array.from(driverIds).forEach(id=>{ 
+      const r=lookup[idx++]; 
+      driverNames[id]=(r && r[0] && (r[0].name || `${r[0].firstName||''} ${r[0].lastName||''}`.trim())) || `Driver ${id}`;
+      
+      // Fallback: still extract phone from Geotab profile if available
+      if (r && r[0] && r[0].phoneNumber) {
+        let phone = r[0].phoneNumber.replace(/\s/g, '');
+        if (!phone.startsWith('+')) {
+          phone = '+64' + phone.replace(/^0+/, '');
+        }
+        userPhoneMap[id] = phone;
+      }
+    });
+    
+    Array.from(deviceIds).forEach(id=>{ const r=lookup[idx++]; deviceNames[id]=(r && r[0] && r[0].name) || `Device ${id}`; });
+
+    mappedDvirData = dvirLogs.map(l=>{
+      const driverId = extractId(l.driver);
+      const deviceId = extractId(l.device);
+      const loc = extractLocation(l.location);
+
+      // Handle defects - try multiple sources
+      let defectsString = '';
+      let defectsArray = [];
+
+      // First, try to get defects from the separately fetched defect map
+      if (defectMap[l.id] && defectMap[l.id].length > 0) {
+        defectsArray = defectMap[l.id];
+        defectsString = JSON.stringify(defectsArray);
+      }
+      // Otherwise, try the defects field from the DVIR log itself
+      else if (l.defects) {
+        if (typeof l.defects === 'string') {
+          defectsString = l.defects;
+        } else if (Array.isArray(l.defects)) {
+          defectsString = JSON.stringify(l.defects);
+        } else if (typeof l.defects === 'object') {
+          defectsString = JSON.stringify(l.defects);
+        }
+      }
+
+      return {
+        id:l.id,
+        dateTime:new Date(l.dateTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
+        rawDateTime:new Date(l.dateTime).getTime(), // Raw timestamp for sorting
+        driverName:driverNames[driverId] || 'Unknown Driver',
+        driverId:driverId || '',
+        vehicleName:deviceNames[deviceId] || 'Unknown Vehicle',
+        deviceId:deviceId || '',
+        isSafeToOperate:l.isSafeToOperate,
+        isInspectedByDriver:l.isInspectedByDriver,
+        driverRemark:l.driverRemark || l.certifyRemark || '',
+        odometer:l.odometer || 0,
+        engineHours:l.engineHours || 0,
+        latitude:loc.latitude,
+        longitude:loc.longitude,
+        resolvedAddress:'',
+        zones:[],
+        defects:defectsString,
+        isOverdue: false,
+        ignitionTime: null,
+        timeToInspection: null
+      };
+    });
+
+    const totalBeforeFilter = mappedDvirData.length;
+    
+    // Filter out entries with ANY "NotNecessary" defects
+    mappedDvirData = filterNotNecessaryDefects(mappedDvirData);
+    
+    const removedCount = totalBeforeFilter - mappedDvirData.length;
+    if (removedCount > 0) {
+      console.log(`✂️ Filtered out ${removedCount} inspections with [NotNecessary] repair status. Remaining: ${mappedDvirData.length}`);
+      showMessage('infoBanner', `📋 Loaded ${mappedDvirData.length} inspections (${removedCount} with [NotNecessary] filtered out)`, 'info');
+    } else {
+      console.log(`📋 Loaded ${mappedDvirData.length} inspections (no [NotNecessary] defects found)`);
+    }
+
+    mappedDvirData = checkOverdueInspections(mappedDvirData);
+
+    // Apply default sort (latest inspections first)
+    currentSortColumn = 'dateTime';
+    currentSortDirection = 'desc';
+
+    // Apply current filter before rendering
+    const selectedZone = document.getElementById('zoneFilter').value;
+    const filteredByZone = filterDataByZone(mappedDvirData, selectedZone);
+    const filteredData = filterDataByStatusAndType(filteredByZone);
+    const sortedData = sortData(filteredData, currentSortColumn, currentSortDirection);
+
+    console.log('=== SORT CHECK ===');
+    console.log('First 3 dates after sort:', sortedData.slice(0, 3).map(r => ({ date: r.dateTime, raw: r.rawDateTime })));
+    console.log('Last 3 dates after sort:', sortedData.slice(-3).map(r => ({ date: r.dateTime, raw: r.rawDateTime })));
+
+    renderTable(sortedData);
+
+    const locationsToResolve = mappedDvirData.filter(r => r.latitude != null && r.longitude != null);
+
+    if (locationsToResolve.length > 0) {
+      showMessage('infoBanner', `🌍 Resolving ${locationsToResolve.length} addresses and matching zones...`, 'info');
+
+      await resolveAllAddresses(mappedDvirData);
+
+      // Re-render with sorted data after addresses are resolved
+      const filteredByZoneAfterResolve = filterDataByZone(mappedDvirData, selectedZone);
+      const filteredDataAfterResolve = filterDataByStatusAndType(filteredByZoneAfterResolve);
+      const sortedDataAfterResolve = sortData(filteredDataAfterResolve, currentSortColumn, currentSortDirection);
+      renderTable(sortedDataAfterResolve);
+
+      renderZoneStatistics(mappedDvirData);
+
+      const successCount = mappedDvirData.filter(r => r.resolvedAddress && r.resolvedAddress.trim()).length;
+      const zoneCount = mappedDvirData.filter(r => r.zones && r.zones.length > 0).length;
+      const defectCount = mappedDvirData.filter(r => r.defects && r.defects !== '[]' && r.defects !== '').length;
+      const failCount = locationsToResolve.length - successCount;
+
+      if (successCount > 0) {
+        showMessage('infoBanner', `✅ SUCCESS! Addresses: ${successCount}/${locationsToResolve.length} | Zones: ${zoneCount}/${mappedDvirData.length} | Defects: ${defectCount}/${mappedDvirData.length}${failCount > 0 ? ` | ${failCount} addresses failed` : ''}`, 'success');
+      } else {
+        showMessage('infoBanner', `⚠️ Completed! Zones: ${zoneCount}/${mappedDvirData.length} | Defects: ${defectCount}/${mappedDvirData.length}`, 'warning');
+      }
+    } else {
+      showMessage('infoBanner', '✅ DVIR loaded! No locations to resolve.', 'success');
+      renderZoneStatistics(mappedDvirData);
+    }
+    
+    document.getElementById('downloadCsv').disabled = false;
+    document.getElementById('downloadReport').disabled = false;
+    document.getElementById('checkSmsAlerts').disabled = false;
+    
+    // Log phone number availability for SMS alerts
+    const phoneCount = Object.keys(userPhoneMap).length;
+    const totalDrivers = driverIds.size;
+    console.log(`📱 Geotab phone numbers: ${phoneCount} of ${totalDrivers} drivers have numbers in profile`);
+
+    // If eTXT contacts are already loaded, re-match now with actual driver names
+    if (etxtContactsLoaded) {
+      matchDriverPhonesFromETxt();
+    } else {
+      const statusEl = document.getElementById('etxtContactsStatus');
+      if (statusEl && !statusEl.innerHTML) {
+        statusEl.innerHTML = `ℹ️ ${totalDrivers} drivers loaded from Geotab. Load eTXT contacts above to match mobile numbers.`;
+      }
+      if (phoneCount > 0) {
+        console.log(`Using ${phoneCount} phone number(s) from Geotab profiles as fallback`);
+      }
+    }
+
+  }catch(e){
+    showMessage('infoBanner', `Failed: ${e.message}`, 'error');
+  }
+};
+
+document.getElementById('downloadCsv').onclick = function(){
+  if(!mappedDvirData || mappedDvirData.length===0){ showMessage('infoBanner','No DVIR data to export','warning'); return; }
+  
+  // Log zone info before download
+  const withZones = mappedDvirData.filter(r => r.zones && r.zones.length > 0).length;
+  console.log(`Downloading CSV with ${mappedDvirData.length} inspections (${withZones} with zones, ${mappedDvirData.length - withZones} without zones)`);
+  
+  const headers = ['DateTime','Driver_Name','Vehicle_Name','Safe_To_Operate','Driver_Inspected','Has_Defects','Defect_Count','Defect_Details','Address','Zones','Odometer_km','Engine_Hours','Ignition_Time','Time_To_Inspection_Min','Is_Overdue','Hubbo_KMs'];
+  let csv = headers.map(h=>`"${h}"`).join(',') + '\n';
+  mappedDvirData.forEach(r=>{
+    let hasDefects='NO', defectCount='0', defectDetails='';
+    if (r.defects && r.defects !== '[]' && r.defects !== '') {
+      try{
+        const d = JSON.parse(r.defects);
+        if(Array.isArray(d)&&d.length>0){
+          hasDefects='YES';
+          defectCount=String(d.length);
+          defectDetails = d.map(def => {
+            let defectName = '';
+            // Check DefectRemarks array
+            if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
+              defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
+            }
+            // Check Defect object
+            if (!defectName && def.defect && typeof def.defect === 'object') {
+              defectName = def.defect.name || def.defect.Name || '';
+            }
+            // Check Part object
+            if (!defectName && def.part && typeof def.part === 'object') {
+              defectName = def.part.name || def.part.Name || '';
+            }
+            // Fallback
+            if (!defectName) {
+              defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
+            }
+            const repairStatus = def.repairStatus || def.RepairStatus || '';
+            return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
+          }).join('; ');
+        }
+      }
+      catch(e){
+        console.error('Error parsing defects for CSV:', e, 'Raw defects:', r.defects);
+        if(r.defects.length>10){ hasDefects='YES'; defectCount='Unknown'; defectDetails='Parse error'; }
+      }
+    }
+    const zonesText = (r.zones||[]).join(' | ') || 'No Zone';
+    const row = [
+      r.dateTime, r.driverName, r.vehicleName,
+      r.isSafeToOperate===true?'SAFE':r.isSafeToOperate===false?'UNSAFE':'No',
+      r.isInspectedByDriver===true?'YES':'NO',
+      hasDefects, defectCount, defectDetails,
+      r.resolvedAddress || `${r.latitude || ''}, ${r.longitude || ''}`,
+      zonesText,
+      r.odometer ? Math.round(r.odometer/1000*100)/100 : '',
+      r.engineHours ? Math.round(r.engineHours/3600*100)/100 : '',
+      r.ignitionTime ? new Date(r.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }) : '',
+      r.timeToInspection || '',
+      r.isOverdue ? 'YES' : 'NO',
+      r.driverRemark || ''
+    ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
+    csv += row + '\n';
+  });
+  const ts = new Date().toISOString().slice(0,19).replace(/[:.]/g,'-');
+  const filename = `Geotab_DVIR_With_Addresses_${ts}.csv`;
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  a.href = url; a.download = filename; a.style.display='none';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showMessage('infoBanner', `📊 CSV "${filename}" downloaded with ${withZones} inspections containing zone data`, 'success');
+};
+
+document.getElementById('downloadReport').onclick = function(){
+  if(!mappedDvirData || mappedDvirData.length===0){ showMessage('infoBanner','No DVIR data to report','warning'); return; }
+  
+  // Calculate zone statistics for the report
+  const totalInspections = mappedDvirData.length;
+  const withZones = mappedDvirData.filter(r => r.zones && r.zones.length > 0).length;
+  const withoutZones = totalInspections - withZones;
+  
+  const zoneBreakdown = {};
+  mappedDvirData.forEach(r => {
+    if (r.zones && r.zones.length > 0) {
+      r.zones.forEach(z => {
+        zoneBreakdown[z] = (zoneBreakdown[z] || 0) + 1;
+      });
+    }
+  });
+  
+  const zoneSummaryHtml = `
+    <div style="background:#f8f9fa;padding:20px;margin:20px 0;border-radius:8px;border:2px solid #e2e8f0;">
+      <h2 style="margin:0 0 15px 0;color:#2d3748;">Zone Distribution Summary</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:15px;">
+        <div style="background:white;padding:15px;border-radius:8px;text-align:center;">
+          <div style="font-size:2em;font-weight:700;color:#667eea;">${totalInspections}</div>
+          <div style="color:#666;font-size:0.9em;">Total Inspections</div>
+        </div>
+        <div style="background:white;padding:15px;border-radius:8px;text-align:center;">
+          <div style="font-size:2em;font-weight:700;color:#48bb78;">${withZones}</div>
+          <div style="color:#666;font-size:0.9em;">With Zones</div>
+        </div>
+        <div style="background:white;padding:15px;border-radius:8px;text-align:center;">
+          <div style="font-size:2em;font-weight:700;color:#f56565;">${withoutZones}</div>
+          <div style="color:#666;font-size:0.9em;">Without Zones</div>
+        </div>
+      </div>
+      ${Object.keys(zoneBreakdown).length > 0 ? `
+        <h3 style="margin:15px 0 10px 0;color:#2d3748;">Inspections per Zone:</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;">
+          ${Object.entries(zoneBreakdown).sort((a,b) => b[1] - a[1]).map(([zone, count]) => `
+            <div style="background:white;padding:10px 15px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-weight:600;">${zone}</span>
+              <span style="background:#667eea;color:white;padding:4px 12px;border-radius:12px;font-weight:600;">${count}</span>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+  
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>DVIR Report (Working Addresses)</title>
+  <style>
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin:25px;color:#333;font-size:16px;line-height:1.5}
+    h1{margin:0 0 8px 0;font-size:2.2em;color:#2d3748} .muted{color:#666;font-size:15px}
+    table{width:100%;border-collapse:collapse;margin-top:20px}
+    th,td{border:1px solid #e2e8f0;padding:12px;font-size:15px;text-align:left;vertical-align:top}
+    th{background:#2c5aa0;color:#fff;font-weight:600}
+    tr:nth-child(even){background:#f7fafc}
+    .badge{padding:4px 8px;border-radius:4px;font-weight:700;font-size:13px;display:inline-block}
+    .safe{background:#c6f6d5;color:#22543d}
+    .unsafe{background:#fed7d7;color:#742a2a}
+    .unknown{background:#e2e8f0;color:#4a5568}
+    .overdue{background:#fefcbf;color:#744210}
+    .real-address{background:#d4edda;color:#155724;padding:6px 8px;border-radius:4px;font-weight:500;border-left:4px solid #28a745}
+    .coord-only{color:#666;font-style:italic}
+    .zone-pill{display:inline-block;background:#e2e8f0;border-radius:999px;padding:2px 6px;margin:1px;font-size:11px;color:#495057}
+    .ignition-info{font-size:12px;color:#666;margin-top:4px}
+  </style></head><body>
+  <h1>UCCL Asset Inspection Report</h1>
+  <div class="muted">Generated on ${new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' })}</div>
+  ${zoneSummaryHtml}
+  <table>
+    <thead><tr>
+      <th>Date/Time</th><th>Driver</th><th>Vehicle</th><th>Status</th><th>Driver Inspected</th>
+      <th>Defects</th><th>Location</th><th>Zones</th><th>Odometer</th><th>Engine Hours</th><th>Hubbo KM's</th>
+    </tr></thead>
+    <tbody>${mappedDvirData.map(r=>{
+      const status = r.isSafeToOperate===true?'<span class="badge safe">SAFE</span>':
+                    r.isSafeToOperate===false?'<span class="badge unsafe">⚠️ UNSAFE</span>':
+                    r.isOverdue?'<span class="badge overdue">⏰ OVERDUE</span>':
+                    '<span class="badge unknown">UNKNOWN</span>';
+      let defectDisplay = '<em class="muted">None</em>';
+      if (r.defects && r.defects !== '[]' && r.defects !== '') {
+        try{
+          const d = JSON.parse(r.defects);
+          if(Array.isArray(d)&&d.length>0) {
+            const defectList = d.map(def => {
+              let defectName = '';
+              // Check DefectRemarks array
+              if (def.defectRemarks && Array.isArray(def.defectRemarks) && def.defectRemarks.length > 0) {
+                defectName = def.defectRemarks[0].remark || def.defectRemarks[0].Remark || '';
+              }
+              // Check Defect object
+              if (!defectName && def.defect && typeof def.defect === 'object') {
+                defectName = def.defect.name || def.defect.Name || '';
+              }
+              // Check Part object
+              if (!defectName && def.part && typeof def.part === 'object') {
+                defectName = def.part.name || def.part.Name || '';
+              }
+              // Fallback
+              if (!defectName) {
+                defectName = def.name || def.Name || def.remark || def.Remark || 'Defect detected';
+              }
+              const repairStatus = def.repairStatus || def.RepairStatus || '';
+              return `${defectName}${repairStatus ? ' [' + repairStatus + ']' : ''}`;
+            }).join(', ');
+            defectDisplay = `<span style="color:#e53e3e;font-weight:600;">⚠️ ${defectList}</span>`;
+          }
+        }
+        catch(e){
+          console.error('Error parsing defects:', e, 'Raw defects:', r.defects);
+          if(r.defects.length>10) defectDisplay = '<span style="color:#e53e3e;font-weight:600;">⚠️ Defects present</span>';
+        }
+      }
+      let locationDisplay = '<em class="muted">No location</em>';
+      if (r.latitude && r.longitude) {
+        if (r.resolvedAddress && r.resolvedAddress.trim() && r.resolvedAddress.length > 8) {
+          locationDisplay = `<div class="real-address">📍 ${r.resolvedAddress}</div>`;
+        } else {
+          const coords = `${Number(r.latitude).toFixed(6)}, ${Number(r.longitude).toFixed(6)}`;
+          locationDisplay = `<span class="coord-only">${coords}</span>`;
+        }
+      }
+      const zones = (r.zones||[]).map(z=>`<span class="zone-pill">${z}</span>`).join('') || '<em class="muted">No zone</em>';
+      
+      let ignitionInfo = '';
+      if (r.ignitionTime) {
+        const ignitionStr = new Date(r.ignitionTime).toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' });
+        const timeDiff = r.timeToInspection;
+        ignitionInfo = `<div class="ignition-info">Ignition: ${ignitionStr} (${timeDiff}min before)</div>`;
+      }
+      
+      return `<tr>
+        <td>${r.dateTime}${ignitionInfo}</td>
+        <td><strong>${r.driverName}</strong></td>
+        <td><strong>${r.vehicleName}</strong></td>
+        <td>${status}</td>
+        <td>${r.isInspectedByDriver===true?'✅ Yes':'❌ No'}</td>
+        <td>${defectDisplay}</td>
+        <td>${locationDisplay}</td>
+        <td>${zones}</td>
+        <td>${r.odometer?Math.round(r.odometer/1000*100)/100+' km':'N/A'}</td>
+        <td>${r.engineHours?Math.round(r.engineHours/3600*100)/100+' hrs':'N/A'}</td>
+        <td>${r.driverRemark || '<em class="muted">No remarks</em>'}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></body></html>`;
+  const ts = new Date().toISOString().slice(0,19).replace(/[:.]/g,'-');
+  const filename = `Geotab_DVIR_Report_${ts}.html`;
+  const blob = new Blob([html], {type:'text/html;charset=utf-8;'});
+  const a = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  a.href = url; a.download = filename; a.style.display='none';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showMessage('infoBanner', `📄 HTML Report "${filename}" downloaded with zone distribution summary (${withZones}/${totalInspections} inspections with zones)`, 'success');
+};
+
+document.getElementById('logout').onclick = function(){
+  credentials = null;
+  serverUsed = null;
+  mappedDvirData = [];
+  ignitionData = {};
+  geotabZones = [];
+  document.getElementById('dvirSection').style.display = 'none';
+  document.getElementById('dvirResult').innerHTML = '';
+  document.getElementById('authResult').innerHTML = '';
+  document.getElementById('zoneStatistics').style.display = 'none';
+  showMessage('authResult','Logged out','success');
+};
+
+// Event listeners
+document.getElementById('enableAutoEmail').addEventListener('change', function() {
+  const overdueEnabled = document.getElementById('enableOverdueEmail').checked;
+  document.getElementById('emailOptions').style.display = (this.checked || overdueEnabled) ? 'block' : 'none';
+});
+
+document.getElementById('enableOverdueEmail').addEventListener('change', function() {
+  const defectEnabled = document.getElementById('enableAutoEmail').checked;
+  document.getElementById('emailOptions').style.display = (this.checked || defectEnabled) ? 'block' : 'none';
+});
+
+// Test defect email button
+document.getElementById('testDefectBtn').addEventListener('click', async function() {
+  const resultSpan = document.getElementById('testResult');
+  resultSpan.textContent = 'Sending test defect email...';
+  resultSpan.style.color = '#666';
+
+  const testDefect = {
+    vehicleName: 'TEST VEHICLE - Dummy Defect',
+    driverName: 'Test Driver',
+    dateTime: new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
+    resolvedAddress: 'Test Site - Dummy Location',
+    defects: 'Test defect: Brake fluid low, Windshield cracked'
+  };
+
+  try {
+    await sendEmailNotification('defect', testDefect);
+    resultSpan.textContent = '✅ Test defect email sent! Check your inbox.';
+    resultSpan.style.color = '#38a169';
+  } catch (err) {
+    resultSpan.textContent = '❌ Test failed: ' + err.message;
+    resultSpan.style.color = '#e53e3e';
+  }
+});
+
+// Test overdue email button
+document.getElementById('testOverdueBtn').addEventListener('click', async function() {
+  const resultSpan = document.getElementById('testResult');
+  resultSpan.textContent = 'Sending test overdue email...';
+  resultSpan.style.color = '#666';
+
+  const testOverdue = {
+    vehicleName: 'TEST VEHICLE - Overdue Inspection',
+    driverName: 'Test Driver',
+    dateTime: new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
+    resolvedAddress: 'Test Site - Dummy Location',
+    ignitionTime: Date.now() - 15*60*1000, // 15 minutes ago
+    timeToInspection: 15
+  };
+
+  try {
+    await sendEmailNotification('overdue', testOverdue);
+    resultSpan.textContent = '✅ Test overdue email sent! Check your inbox.';
+    resultSpan.style.color = '#38a169';
+  } catch (err) {
+    resultSpan.textContent = '❌ Test failed: ' + err.message;
+    resultSpan.style.color = '#e53e3e';
+  }
+});
+
+// Hub Odometer Submission Function
+document.getElementById('submitHubOdometer').addEventListener('click', function() {
+  const fleetNumber = document.getElementById('rucFleetNumber').value.trim();
+  const hubOdoReading = document.getElementById('rucHubOdometerReading').value.trim();
+  const resultEl = document.getElementById('hubOdometerResult');
+  
+  if (!fleetNumber || !hubOdoReading) {
+    resultEl.innerHTML = '<div class="alert alert-warning">⚠️ Please enter both Fleet Number and Hub Odometer Reading</div>';
+    return;
+  }
+  
+  try {
+    // Prepare data to send
+    const odometerData = {
+      fleetNumber: fleetNumber,
+      huboOdoReading: hubOdoReading,
+      timestamp: new Date().toISOString(),
+      source: 'asset_inspect'
+    };
+    
+    // Save to localStorage for RUC dashboard to read
+    let rucUpdates = JSON.parse(localStorage.getItem('rucOdometerUpdates') || '[]');
+    
+    // Check if this fleet already has a pending update
+    const existingIndex = rucUpdates.findIndex(r => r.fleetNumber === fleetNumber);
+    if (existingIndex >= 0) {
+      rucUpdates[existingIndex] = odometerData;
+    } else {
+      rucUpdates.push(odometerData);
+    }
+    
+    localStorage.setItem('rucOdometerUpdates', JSON.stringify(rucUpdates));
+    
+    // Show success message
+    resultEl.innerHTML = `
+      <div class="alert alert-success">
+        ✅ Hub Odometer Reading Posted Successfully!
+        <br><strong>Fleet #${fleetNumber}</strong> → ${hubOdoReading} km
+        <br><small>RUC Dashboard will be updated automatically. Click "Sync from Asset Inspection" in the RUC dashboard to see changes.</small>
+      </div>
+    `;
+    
+    // Clear inputs
+    document.getElementById('rucFleetNumber').value = '';
+    document.getElementById('rucHubOdometerReading').value = '';
+    
+    // Show message for 5 seconds
+    setTimeout(() => {
+      resultEl.innerHTML = '';
+    }, 5000);
+    
+  } catch (err) {
+    resultEl.innerHTML = `<div class="alert alert-error">❌ Error: ${err.message}</div>`;
+  }
+});
+
+// Test email notification button
+document.getElementById('zoneFilter').addEventListener('change', function() {
+  if (!mappedDvirData.length) return;
+  const selectedZone = this.value;
+  const filteredData = filterDataByZone(mappedDvirData, selectedZone);
+  const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
+  renderTable(sortedData);
+});
+
+document.getElementById('alertWindow').addEventListener('change', function() {
+  if (!mappedDvirData.length) return;
+  mappedDvirData = checkOverdueInspections(mappedDvirData);
+  const selectedZone = document.getElementById('zoneFilter').value;
+  const filteredData = filterDataByZone(mappedDvirData, selectedZone);
+  const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
+  renderTable(sortedData);
+});
+
+document.getElementById('assetType').addEventListener('change', function() {
+  if (!mappedDvirData.length) return;
+  mappedDvirData = checkOverdueInspections(mappedDvirData);
+  const selectedZone = document.getElementById('zoneFilter').value;
+  const filteredData = filterDataByZone(mappedDvirData, selectedZone);
+  const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
+  renderTable(sortedData);
+});
+
+document.getElementById('enableOverdueAlerts').addEventListener('change', function() {
+  if (!mappedDvirData.length) return;
+  mappedDvirData = checkOverdueInspections(mappedDvirData);
+  const selectedZone = document.getElementById('zoneFilter').value;
+  const filteredData = filterDataByZone(mappedDvirData, selectedZone);
+  const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
+  renderTable(sortedData);
+});
+
+document.getElementById('groupByZone').addEventListener('change', function() {
+  if (!mappedDvirData.length) return;
+  const selectedZone = document.getElementById('zoneFilter').value;
+  const filteredData = filterDataByZone(mappedDvirData, selectedZone);
+  const sortedData = currentSortColumn ? sortData(filteredData, currentSortColumn, currentSortDirection) : filteredData;
+  renderTable(sortedData);
+});
+
+// Simulate defect detection and auto-email
+document.addEventListener('click', function(e) {
+  if (e.target && e.target.classList.contains('status-unsafe')) {
+    const row = e.target.closest('tr');
+    const inspectionId = row ? row.getAttribute('data-inspection-id') : null;
+    if (inspectionId) {
+      const defectRow = mappedDvirData.find(r => r.id === inspectionId);
+      if (defectRow) {
+        sendDefectEmail(defectRow);
+      }
+    }
+  }
+});
+
+// eTXT Load Contacts Button
+document.getElementById('loadEtxtContactsBtn').addEventListener('click', async function() {
+  this.disabled = true;
+  this.textContent = '⏳ Loading...';
+  try {
+    await loadAndMatchETxtContacts();
+  } finally {
+    this.disabled = false;
+    this.textContent = '📋 Load Driver Contacts';
+  }
+});
+
+// SMS Alert Event Handlers
+document.getElementById('enableSmsAlerts').addEventListener('change', function() {
+  // smsOptions div is optional - guard against null
+  const smsOptions = document.getElementById('smsOptions');
+  if (smsOptions) {
+    smsOptions.style.display = this.checked ? 'block' : 'none';
+  }
+});
+
+document.getElementById('testSmsBtn').addEventListener('click', async function() {
+  const phoneNumber = document.getElementById('testSmsNumber').value.trim();
+  const resultSpan = document.getElementById('smsTestResult');
+  
+  if (!phoneNumber) {
+    resultSpan.innerHTML = '<span style="color:#e53e3e;">❌ Please enter a phone number</span>';
+    return;
+  }
+  
+  if (!phoneNumber.startsWith('+64')) {
+    resultSpan.innerHTML = '<span style="color:#e53e3e;">❌ Phone number must start with +64</span>';
+    return;
+  }
+  
+  resultSpan.innerHTML = '<span style="color:#4299e1;">📤 Sending test SMS...</span>';
+  
+  try {
+    const testMessage = 'Test message from UCCL Pre-Start Monitor. If you receive this, SMS alerts are configured correctly.';
+    await sendETxtSMS(phoneNumber, testMessage);
+    resultSpan.innerHTML = '<span style="color:#38a169;">✅ Test SMS sent successfully!</span>';
+    addToSmsLog('sms', '📱 Test SMS sent', `To: ${phoneNumber}`);
+  } catch (error) {
+    resultSpan.innerHTML = `<span style="color:#e53e3e;">❌ Failed: ${error.message}</span>`;
+    addToSmsLog('error', '❌ Test SMS failed', error.message);
+  }
+});
+
+document.getElementById('checkSmsAlerts').addEventListener('click', async function() {
+  await checkAndSendSmsAlerts();
+});
+
+if (window.geotab || window.api || (window.location && /geotab\.com/i.test(window.location.host))) {
+  document.getElementById('dvirSection').style.display='';
+  // Initialize zone dropdown with predefined zones on page load
+  updateZoneDropdown();
+}
+
+// Initialize SMS log
+renderSmsLog();
+</script>
+</body>
+</html>
